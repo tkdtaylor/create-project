@@ -174,9 +174,7 @@ command -v docker >/dev/null 2>&1 && echo "available" || echo "not found"
 
 If not found: tell the user Docker was not detected and skip this step entirely. Do not create any Docker files.
 
-If available, ask: *"Would you like to set up a Docker development environment? This uses a shared base image (Claude Code, git, Python) that is built once and reused across all your technical projects. A new workspace volume is created for this project — no per-project image build needed."*
-
-If yes:
+If available, tell the user: *"Setting up the Docker environment — this is how you'll run autonomous Claude Code sessions on this project. The base image (Claude Code, git, Python) is built once and shared across all your technical projects; each project gets its own isolated workspace volume."* Then proceed directly with the steps below. Do not ask — Docker is the standard setup for technical projects.
 
 **1. Check and build the shared base image**
 
