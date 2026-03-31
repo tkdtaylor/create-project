@@ -1,0 +1,54 @@
+{
+  "skill_name": "create-project",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to start a new project called 'fintracker'. I'm building a REST API in Python using FastAPI — it's a personal finance tracker that stores transaction data in PostgreSQL. I'll be containerizing it with Docker.",
+      "expected_output": "Technical project scaffolded with src/, artifacts/, docs/ structure. CLAUDE.md at root with FastAPI/PostgreSQL context and a Commands section. Step 3 recommends postgres and/or github MCP servers. Docker setup offered. Questions gathered in a single message before files created.",
+      "files": [],
+      "assertions": [
+        "CLAUDE.md was created at the project root",
+        "CLAUDE.md contains the project name 'fintracker'",
+        "CLAUDE.md has a '## Commands' section",
+        "CLAUDE.md mentions FastAPI or Python in the tech stack or commands section",
+        "The directory structure includes a src/ directory",
+        "The directory structure includes docs/tasks/ or docs/tasks/active/",
+        "CLAUDE.md contains a '## Recommended tooling' section",
+        "At least one database-related MCP (postgres, sqlite) or github MCP was recommended"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "can you set up a research project for me? call it 'llm-assistant-analysis'. i'm doing a competitive analysis of LLM coding assistants (cursor, github copilot, cody, etc) for a report i'm writing for my team lead. want to track sources and have a proper output doc at the end",
+      "expected_output": "Research project scaffolded with sources/, notes/, outputs/, docs/ structure. CLAUDE.md tailored to competitive analysis with a Research approach section. Step 3 recommends search MCPs (brave-search, tavily, or exa). First task offered around scoping the research.",
+      "files": [],
+      "assertions": [
+        "CLAUDE.md was created at the project root",
+        "CLAUDE.md contains the project name 'llm-assistant-analysis'",
+        "CLAUDE.md has a '## Research approach' section",
+        "CLAUDE.md's Research approach section mentions competitive analysis, LLM tools, or coding assistants",
+        "The directory structure includes a sources/ directory",
+        "The directory structure includes a notes/ directory",
+        "The directory structure includes an outputs/ directory",
+        "No src/ directory was created (this is not a technical project)",
+        "CLAUDE.md contains a '## Recommended tooling' section",
+        "At least one web search MCP (brave-search, tavily, exa, or fetch) was recommended"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "start a new project for me, let's call it 'home-reno'. I'm planning and tracking my home renovation — need to keep track of tasks, contractor quotes, material costs, and a rough timeline. not really coding, more just organized notes and lists",
+      "expected_output": "Correctly identified as 'other'/research type. Research structure created (sources/, notes/, outputs/, docs/). CLAUDE.md useful for planning/tracking. No TDD scaffolding or tech-specific files. Tooling suggestions lightweight and relevant.",
+      "files": [],
+      "assertions": [
+        "CLAUDE.md was created at the project root",
+        "CLAUDE.md contains the project name 'home-reno'",
+        "The project was NOT classified as technical — no src/ directory was created",
+        "No test-specs directory was created (test-spec scaffolding is for technical projects only)",
+        "The directory structure includes docs/tasks/ or equivalent task tracking",
+        "CLAUDE.md contains a '## Recommended tooling' section",
+        "No heavy developer tools were recommended (postgres, puppeteer, code-scanner, reverse-engineer)"
+      ]
+    }
+  ]
+}

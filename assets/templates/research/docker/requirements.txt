@@ -1,0 +1,17 @@
+# requirements.txt — {{PROJECT_NAME}}
+# Pre-populated with standard research tooling.
+# The base image provides: python3, pip, pandoc, poppler-utils, wget
+# Add project-specific packages below the defaults.
+
+# HTTP and web scraping
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.2.2
+
+# PDF text extraction (structured — better than pdftotext for tables and columns)
+pdfminer.six==20231228
+
+# HTML → Markdown conversion (for saving web sources cleanly)
+markdownify==0.12.1
+
+# ── Add project-specific packages below ──────────────────────────────────────

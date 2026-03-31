@@ -1,0 +1,42 @@
+# docker-compose.yml — {{PROJECT_NAME}}
+# Generated: {{DATE}}
+#
+# Uses the shared claude-project-dev base image (managed by the create-project skill).
+# The base image is built once and reused across all technical projects.
+# This project's workspace lives entirely in the named volume below.
+#
+# Usage:
+#   docker compose run --rm dev        — open an interactive shell
+#   docker compose run --rm dev <cmd>  — run a single command and exit
+#
+# First run: the entrypoint seeds the workspace from the host and installs
+# Python deps from requirements.txt into /app/.venv automatically.
+
+services:
+  dev:
+    image: claude-project-dev:latest
+    volumes:
+      # Named volume — this project's isolated, persistent workspace
+      - workspace:/app
+      # Host project root — read-only, used for first-run seeding only
+      - type: bind
+        source: ..
+        target: /host
+        read_only: true
+      # Share host Claude Code settings with the container (read-only).
+      # T6 ensures this file exists on the host before the compose file is written.
+      # ${HOME} is resolved by Docker Compose from the host environment at runtime.
+      - type: bind
+        source: "${HOME}/.claude/settings.json"
+        target: /home/developer/.claude/settings.json
+        read_only: true
+    working_dir: /app
+    env_file:
+      - ../.env
+    stdin_open: true
+    tty: true
+
+volumes:
+  workspace:
+    # Explicit name avoids the compose-project-name prefix
+    name: "{{PROJECT_NAME}}-workspace"

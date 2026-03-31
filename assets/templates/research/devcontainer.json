@@ -1,0 +1,18 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "dockerComposeFile": "../docker/docker-compose.yml",
+  "service": "research",
+  "workspaceFolder": "/workspace",
+  // Connect as the non-root developer user (matches the user the entrypoint drops to)
+  "remoteUser": "developer",
+  // Shut down only this container when VS Code disconnects (volume persists)
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      // Add VS Code extension IDs here — they will be installed automatically
+      // when the devcontainer opens. Example:
+      //   "ms-python.python", "yzhang.markdown-all-in-one"
+      "extensions": []
+    }
+  }
+}
