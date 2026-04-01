@@ -72,6 +72,9 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
+| `.claude/settings.json` | `.claude/settings.json` |
+
+The `.claude/settings.json` template has no placeholders — copy it as-is. It pre-configures Claude Code permissions so bash commands are auto-approved inside the container, with prompts retained for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.).
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
 

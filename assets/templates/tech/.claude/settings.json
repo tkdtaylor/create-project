@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": ["Bash(*)", "Read", "Write", "Edit", "Glob", "Grep"],
+    "ask": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(dd :*)",
+      "Bash(mkfs:*)"
+    ]
+  }
+}

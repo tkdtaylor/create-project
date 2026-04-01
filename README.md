@@ -16,6 +16,31 @@ Triggered by phrases like "start a new project", "scaffold a codebase", or "set 
 7. **Technical:** adds a VS Code devcontainer config automatically so you can open the project inside the container
 8. Recommends MCPs, hooks, and installed skills suited to the project; offers to create `.claude/agents/` files for the suggested agents
 
+## First-time setup
+
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). No manual configuration needed per project.
+
+If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(*)", "Read", "Write", "Edit", "Glob", "Grep"],
+    "ask": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(dd :*)",
+      "Bash(mkfs:*)"
+    ]
+  }
+}
+```
+
+---
+
 ## Dependencies
 
 ### Required
