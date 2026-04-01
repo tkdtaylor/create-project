@@ -145,7 +145,7 @@ If yes:
 gh repo create <project-name> --private --source=. --remote=origin --push
 ```
 
-3. Generate a fine-grained PAT scoped to this repository only:
+3. Generate a fine-grained PAT scoped to this repository only, and save it to a temp file immediately — shell variables do not persist across tool calls:
 ```bash
 REPO_OWNER=$(gh api user --jq '.login')
 GIT_TOKEN=$(gh api --method POST /user/personal-access-tokens \
@@ -157,11 +157,13 @@ GIT_TOKEN=$(gh api --method POST /user/personal-access-tokens \
     -F "permissions[contents]=write" \
     -F "permissions[metadata]=read" \
     --jq '.token' 2>/dev/null || echo "")
+[ -n "$GIT_TOKEN" ] && echo "$GIT_TOKEN" > /tmp/.create-project-pat || true
+echo "TOKEN_SAVED=$([ -f /tmp/.create-project-pat ] && echo yes || echo no)"
 ```
 
-4. If `GIT_TOKEN` is non-empty: token was generated. Note it — T6 will write it to `.env`.
+4. If token was saved: T6 will read it from `/tmp/.create-project-pat`. Do not try to echo or use the token value again — it is already on disk.
 
-   If empty (insufficient `gh` auth scope): tell the user to run `gh auth refresh -h github.com -s write:personal_access_tokens` and retry, or create a fine-grained PAT manually at https://github.com/settings/personal-access-tokens/new (Repository access: this repo only; Permissions: Contents read/write, Metadata read-only). T6 will prompt for it.
+   If saving failed (insufficient `gh` auth scope): tell the user to run `gh auth refresh -h github.com -s write:personal_access_tokens` and retry, or create a fine-grained PAT manually at https://github.com/settings/personal-access-tokens/new (Repository access: this repo only; Permissions: Contents read/write, Metadata read-only). T6 will prompt for it.
 
 ---
 
@@ -174,7 +176,21 @@ command -v docker >/dev/null 2>&1 && echo "available" || echo "not found"
 
 If not found: tell the user Docker was not detected and skip this step entirely. Do not create any Docker files.
 
-If available, tell the user: *"Setting up the Docker environment — this is how you'll run autonomous Claude Code sessions on this project. The base image (Claude Code, git, Python) is built once and shared across all your technical projects; each project gets its own isolated workspace volume."* Then proceed directly with the steps below. Do not ask — Docker is the standard setup for technical projects.
+If available, tell the user: *"Setting up the Docker environment — this is how you'll run autonomous Claude Code sessions on this project. The base image (Claude Code, git, Python) is built once and shared across all your technical projects; each project gets its own isolated workspace volume and a project-specific image with the right runtime installed."* Then proceed with the steps below. Do not ask — Docker is the standard setup for technical projects.
+
+**0. Detect docker compose**
+
+```bash
+if docker compose version >/dev/null 2>&1; then
+    echo "COMPOSE=docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+    echo "COMPOSE=docker-compose"
+else
+    echo "COMPOSE=none"
+fi
+```
+
+Store the result as `COMPOSE` — used in step 8 when writing CLAUDE.md commands.
 
 **1. Check and build the shared base image**
 
@@ -199,22 +215,68 @@ else
 fi
 ```
 
-**2. Create the project workspace volume**
+**2. Write project Dockerfile**
 
+The base image has Claude Code, git, Python, and Node. Each project needs a Dockerfile that extends it with the project's own runtime and aligns the container uid/gid to the host — this is required so that bind-mounted host files (`.env`, `.credentials.json`) are readable and writable inside the container.
+
+Read host uid and gid:
 ```bash
-docker volume create {{PROJECT_NAME}}-workspace
+HOST_UID=$(id -u)
+HOST_GID=$(id -g)
+echo "HOST_UID=$HOST_UID HOST_GID=$HOST_GID"
 ```
 
-The volume is empty at creation. The container entrypoint seeds it from the host project and installs Python dependencies on first run.
+Write `docker/Dockerfile`. Start with this base for every project:
+```dockerfile
+# <project-name> dev image
+# Extends the shared Claude Code base with the <tech-stack> toolchain.
+FROM claude-project-dev:latest
 
-**3. Ensure Claude settings file exists on host**
-
-The docker-compose.yml bind-mounts `~/.claude/settings.json` read-only into the container. If the file doesn't exist, Docker will fail to start. Create it now if needed:
-```bash
-mkdir -p ~/.claude && touch ~/.claude/settings.json
+# Align container uid/gid to host so bind-mounted host files are accessible.
+RUN usermod -u <HOST_UID> developer \
+ && groupmod -g <HOST_GID> developer \
+ && chown -R developer:developer /app /home/developer
 ```
 
-**4. Write per-project files**
+Then append the tech-stack runtime installation:
+
+- **Rust**:
+  ```dockerfile
+  USER developer
+  ENV PATH="/home/developer/.cargo/bin:$PATH"
+  RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable --no-modify-path
+  USER root
+  ```
+- **Go**:
+  ```dockerfile
+  RUN GO_VERSION=1.22.0 \
+   && curl -sL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C /usr/local -xz
+  ENV PATH="/usr/local/go/bin:$PATH"
+  ```
+- **Python / Node**: already in the base image — no additional steps needed.
+- **Other**: add a `# TODO: install <runtime> toolchain` comment.
+
+After writing the file, build the project image:
+```bash
+docker build -t <project-name>-dev:latest -f docker/Dockerfile docker/
+```
+
+**3. Create the project workspace volume**
+
+```bash
+docker volume create <project-name>-workspace
+```
+
+The volume is empty at creation. The entrypoint seeds it from the host project and installs Python dependencies on first run.
+
+**4. Ensure Claude config files exist on host**
+
+The container bind-mounts `~/.claude/settings.json` and `~/.claude/.credentials.json`. If either is missing, Docker will fail to start. Create them now if needed:
+```bash
+mkdir -p ~/.claude && touch ~/.claude/settings.json && touch ~/.claude/.credentials.json
+```
+
+**5. Write per-project files**
 
 Read each file from `$CLAUDE_SKILL_DIR/assets/templates/tech/docker/`, substitute the placeholders below, and write to `docker/<filename>`. Two files are exceptions — write them to the **project root**, not inside `docker/`:
 - `.env.example` → project root
@@ -227,7 +289,7 @@ Read each file from `$CLAUDE_SKILL_DIR/assets/templates/tech/docker/`, substitut
 
 Do not substitute `${HOME}` — that is a Docker Compose variable resolved at runtime, not a skill placeholder.
 
-**5. Update `.gitignore`**
+**6. Update `.gitignore`**
 
 Append to `.gitignore` (create it if it does not exist):
 ```
@@ -238,48 +300,45 @@ Append to `.gitignore` (create it if it does not exist):
 .venv/
 ```
 
-**6. Write `.env` with git credentials**
+**7. Write `.env` with git credentials**
 
-First, read the host git identity — these values are pre-filled regardless of whether GitHub was configured:
+Read host git identity and the PAT saved in T5:
 ```bash
 HOST_GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
 HOST_GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+GIT_TOKEN=$(cat /tmp/.create-project-pat 2>/dev/null || echo "")
+rm -f /tmp/.create-project-pat
 ```
 
-If a GitHub repo was created in T5 and a token was generated automatically:
-- Create `.env` at the project root with the generated values:
+If `GIT_TOKEN` is non-empty (token was saved in T5):
+- Create `.env` at the project root:
   ```
   ANTHROPIC_API_KEY=
-  GIT_TOKEN=<token-from-T5>
+  GIT_TOKEN=<GIT_TOKEN value>
   GIT_REMOTE_URL=https://github.com/<owner>/<project-name>.git
   GIT_USER_NAME=<HOST_GIT_NAME value, or blank if empty>
   GIT_USER_EMAIL=<HOST_GIT_EMAIL value, or blank if empty>
   ```
-- Tell the user to fill in `ANTHROPIC_API_KEY`. If `GIT_USER_NAME` or `GIT_USER_EMAIL` are blank, note that they need to be filled in too.
+- Tell the user to fill in `ANTHROPIC_API_KEY`.
 
-If no GitHub setup was done in T5 or token generation failed:
-- Ask: *"Does this project have a remote git repository? I can configure the container to authenticate using a fine-grained token scoped to this repo only — the container can push and pull commits without touching your other repos or system credentials."*
-- If yes: create `.env` at the project root with git identity pre-filled:
-  ```
-  ANTHROPIC_API_KEY=
-  GIT_TOKEN=
-  GIT_REMOTE_URL=
-  GIT_USER_NAME=<HOST_GIT_NAME value, or blank if empty>
-  GIT_USER_EMAIL=<HOST_GIT_EMAIL value, or blank if empty>
-  ```
-  Tell them to fill in `ANTHROPIC_API_KEY`, `GIT_TOKEN`, and `GIT_REMOTE_URL`. For GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens → this repo only, Contents read/write + Metadata read-only.
-- If no: copy `.env.example` to `.env` with git identity pre-filled (leave token and remote URL blank).
-- The container entrypoint configures git using these values on every start — the token is never written to disk inside the container.
+If no token was saved:
+- Ask: *"Does this project have a remote git repository? I can configure the container to authenticate using a fine-grained token scoped to this repo only."*
+- If yes: create `.env` with git identity pre-filled, leave `GIT_TOKEN` and `GIT_REMOTE_URL` blank, and tell the user to fill them in.
+- If no: copy `.env.example` to `.env` with git identity pre-filled, leave token and remote URL blank.
 
-**7. Append Docker commands to `CLAUDE.md`**
+The container entrypoint configures git from these values on every start — the token is never written to disk inside the container.
 
-Add the following block to the `## Commands` section of `CLAUDE.md`. Substitute `<project-name>` with the actual lowercased, hyphenated project name:
+**8. Append Docker commands to `CLAUDE.md`**
+
+Add the following block to the `## Commands` section of `CLAUDE.md`. Substitute `<project-name>` with the actual lowercased, hyphenated project name.
+
+If `COMPOSE` is `docker compose` or `docker-compose`:
 ```bash
-# Docker
-docker compose -f docker/docker-compose.yml run --rm dev                      # open shell (seeds workspace + installs deps on first run)
-docker compose -f docker/docker-compose.yml run --rm dev python -m pytest     # run tests in container
+# Docker (run from host, outside the container)
+<COMPOSE> -f docker/docker-compose.yml run --rm dev           # open shell
+<COMPOSE> -f docker/docker-compose.yml run --rm dev <cmd>     # run a command
 
-# Export workspace → host (run on the host, not inside the container)
+# Export workspace → host
 docker run --rm -v <project-name>-workspace:/src:ro -v "$(pwd)":/dst debian:bookworm-slim cp -r /src/. /dst/
 
 # Backup / restore workspace volume
@@ -287,13 +346,37 @@ docker run --rm -v <project-name>-workspace:/src:ro -v "$(pwd)":/dst debian:book
 docker run --rm -v <project-name>-workspace:/dst -v "$(pwd)":/src debian:bookworm-slim tar xzf /src/workspace-backup.tar.gz -C /dst
 ```
 
-**8. Offer to initialize**
-
-Ask: *"Docker is ready. Would you like me to initialize the workspace volume now? This seeds your project files into the container and installs Python dependencies (takes a moment on first run)."*
-
-If yes:
+If `COMPOSE` is `none` (docker compose plugin not installed), use plain `docker run`:
 ```bash
-docker compose -f docker/docker-compose.yml run --rm dev echo "Workspace initialized."
+# Docker (run from host, outside the container)
+docker run --rm -it \
+  -v <project-name>-workspace:/app \
+  -v "$(pwd)":/host:ro \
+  -v "$HOME/.claude/settings.json":/home/developer/.claude/settings.json:ro \
+  -v "$HOME/.claude/.credentials.json":/home/developer/.claude/.credentials.json:ro \
+  -v "$(pwd)/.env":/app/.env \
+  --env-file .env \
+  <project-name>-dev:latest
+
+# Export workspace → host
+docker run --rm -v <project-name>-workspace:/src:ro -v "$(pwd)":/dst debian:bookworm-slim cp -r /src/. /dst/
+
+# Backup / restore workspace volume
+docker run --rm -v <project-name>-workspace:/src:ro -v "$(pwd)":/dst debian:bookworm-slim tar czf /dst/workspace-backup.tar.gz -C /src .
+docker run --rm -v <project-name>-workspace:/dst -v "$(pwd)":/src debian:bookworm-slim tar xzf /src/workspace-backup.tar.gz -C /dst
+```
+
+**9. Seed the workspace volume**
+
+```bash
+docker run --rm \
+  -v <project-name>-workspace:/app \
+  -v "$(pwd)":/host:ro \
+  -v "$HOME/.claude/settings.json":/home/developer/.claude/settings.json:ro \
+  -v "$HOME/.claude/.credentials.json":/home/developer/.claude/.credentials.json:ro \
+  --env-file .env \
+  <project-name>-dev:latest \
+  echo "Workspace initialized."
 ```
 
 ---
@@ -302,18 +385,18 @@ docker compose -f docker/docker-compose.yml run --rm dev echo "Workspace initial
 
 Only run this step if Docker was configured in Step T6.
 
-Ask: *"Would you like to add a devcontainer.json for VS Code? This lets you open the project directly inside the Docker workspace via the Dev Containers extension — your editor, terminal, and Claude Code all run in the isolated container."*
-
-If yes:
+Create `.devcontainer/devcontainer.json` so VS Code can open the project directly inside the Docker workspace — Claude Code, the terminal, and the editor all run in the isolated container.
 
 1. Create the `.devcontainer/` directory
-2. Read `$CLAUDE_SKILL_DIR/assets/templates/tech/devcontainer.json`, substitute `{{PROJECT_NAME}}` with the project name, and write to `.devcontainer/devcontainer.json`
+2. Read `$CLAUDE_SKILL_DIR/assets/templates/tech/devcontainer.json`, substitute `{{PROJECT_NAME}}` with the project name (lowercased, hyphenated), and write to `.devcontainer/devcontainer.json`
 
-To use it: install the **Dev Containers** extension in VS Code, then either:
+Do not ask — always create the devcontainer when Docker is set up.
+
+To use it: install the **Dev Containers** extension in VS Code, then:
 - Open the project folder → VS Code detects `.devcontainer/` and prompts to reopen in container
 - Or: Command Palette → *Dev Containers: Reopen in Container*
 
-The container will start (seeding the workspace volume on first open if needed) and VS Code will connect to `/app` inside the container.
+The container starts (seeding the workspace volume on first open if needed) and VS Code connects to `/app` inside. Claude Code, the project runtime, and all files are available immediately.
 
 ---
 

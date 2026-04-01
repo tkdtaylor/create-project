@@ -1,12 +1,27 @@
 {
   "name": "{{PROJECT_NAME}}",
-  "dockerComposeFile": "../docker/docker-compose.yml",
-  "service": "dev",
+  "build": {
+    // Project Dockerfile extends the shared base with the project's runtime and uid fix
+    "dockerfile": "../docker/Dockerfile"
+  },
+  // Workspace lives in a named Docker volume — persists across container rebuilds
+  "workspaceMount": "source={{PROJECT_NAME}}-workspace,target=/app,type=volume",
   "workspaceFolder": "/app",
-  // Connect as the non-root developer user (matches the user the entrypoint drops to)
+  "mounts": [
+    // Host project root — read-only, used by the entrypoint to seed the volume on first open
+    "source=${localWorkspaceFolder},target=/host,type=bind,readonly=true",
+    // .env bind-mounted writable so it can be edited from VS Code inside the container
+    "source=${localWorkspaceFolder}/.env,target=/app/.env,type=bind",
+    // Claude Code settings (read-only)
+    "source=${localEnv:HOME}/.claude/settings.json,target=/home/developer/.claude/settings.json,type=bind,readonly=true",
+    // Claude Code credentials — required for `claude` to authenticate inside the container
+    "source=${localEnv:HOME}/.claude/.credentials.json,target=/home/developer/.claude/.credentials.json,type=bind,readonly=true"
+  ],
+  // Pass .env vars into the container environment (ANTHROPIC_API_KEY, GIT_TOKEN, etc.)
+  "runArgs": ["--env-file", "${localWorkspaceFolder}/.env"],
+  // Run as the non-root developer user (the entrypoint drops to this after init)
   "remoteUser": "developer",
-  // Shut down only this container when VS Code disconnects (volume persists)
-  "shutdownAction": "stopCompose",
+  "shutdownAction": "stopContainer",
   "customizations": {
     "vscode": {
       // Add VS Code extension IDs here — they will be installed automatically
