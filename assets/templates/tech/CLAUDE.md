@@ -43,6 +43,22 @@ The key distinction: `docs/` is the input side (read before you act), `src/` is 
 3. Write the test spec before any implementation code
 4. Move tasks to `completed/` and update `coverage-tracker.md` when done
 
+## Commit checkpoints
+
+Commit and push at each of these milestones — do not batch unrelated work into a single commit:
+
+| Milestone | What to stage | Suggested message |
+|-----------|--------------|-------------------|
+| ADR written | `docs/architecture/decisions/NNN-*.md` | `docs: add ADR NNN — <decision title>` |
+| Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
+| Task completed | `src/` changes, moved task file, updated `coverage-tracker.md` | `feat: complete task NNN — <name>` |
+
+```bash
+git add <relevant files>
+git commit -m "<message>"
+git push
+```
+
 ## Do not
 
 - Do not modify files in `docs/` unless explicitly asked — they are planning documents, not implementation
