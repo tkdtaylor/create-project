@@ -9,16 +9,45 @@ Scaffolds a new project with a structure matched to what's actually being built.
 
 ---
 
-## Step 1 — Gather project info
+## Step 1 — Interview the user
 
-Check `$ARGUMENTS` for context clues. If the current directory name is descriptive, use it as a starting point.
+The goal of this step is to reach **high confidence** that you understand the project well enough to make a plan and execute it — not just to collect a name and type. Do not rush to scaffold. A project built on a fuzzy goal produces wasted structure.
 
-Ask in a single message — don't fire questions one at a time:
+Check `$ARGUMENTS` and the current directory name for any starting context.
 
-- **Project name** — what to call it
-- **Description** — one or two sentences on what it is
-- **Project type** — see options below; if unclear from context, ask explicitly
-- **Key tools or tech** — language/framework for technical projects; main sources or domains for research
+### 1a — Open the interview
+
+Start with a single opening message. Don't fire every question at once — lead with what you need most and let the conversation develop naturally:
+
+- What are they building or investigating, and why?
+- Who is it for — themselves, a team, end users, stakeholders?
+- What does **done** look like? How will they know it worked?
+
+### 1b — Probe until the goal is unambiguous
+
+After each answer, evaluate whether you could write the first task right now with clear acceptance criteria. If not, keep asking. Good follow-up angles:
+
+- **Scope**: What's in, what's explicitly out?
+- **Constraints**: Deadlines, tech choices already decided, dependencies on other systems?
+- **Unknowns**: What are they most uncertain about? Is there prior work, existing code, or research to build on?
+- **Success bar**: What would make this a failure even if it's "done"?
+
+Push on vague answers. "Build an API" is not enough — what does it serve, what data flows through it, what calls it? "Do some research" is not enough — what decision does the research inform, and what form does the output take?
+
+Keep rounds short. One or two focused questions per message — don't interrogate in walls of text.
+
+### 1c — Confirm understanding before proceeding
+
+Once you believe you have enough to plan, write a concise summary:
+
+- What is being built / investigated
+- Who it's for and what problem it solves
+- What the end state looks like (definition of done)
+- Any key constraints or known unknowns
+
+Then ask: *"Does this capture it accurately, or is there anything missing before I set up the project?"*
+
+Do not move to Step 2 until the user confirms the summary is correct. If they correct or expand it, update your understanding and re-confirm.
 
 ### Project types
 
@@ -28,7 +57,7 @@ Ask in a single message — don't fire questions one at a time:
 | **research** | Synthesizing information — literature review, competitive analysis, topic investigation, report writing, summarizing documents |
 | **other** | Neither fits well — planning, tracking, organising, decision support. Uses the research base structure but with domain-specific top-level folders. Ask one follow-up: "What are the main categories you need to track?" then create named folders for those (e.g. `contractors/`, `costs/`, `timeline/` for a renovation; `decisions/`, `stakeholders/`, `risks/` for a project plan). |
 
-Do not start creating files until you have at least the name and type.
+Determine the project type from the conversation — only ask explicitly if it is genuinely unclear after the interview.
 
 ---
 
