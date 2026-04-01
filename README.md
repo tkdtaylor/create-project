@@ -6,14 +6,14 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 
 Triggered by phrases like "start a new project", "scaffold a codebase", or "set up a research project". The skill:
 
-1. Asks for project name, description, type, and key tools
+1. Interviews you until the goal, scope, and success criteria are unambiguous — confirms a written summary before touching any files
 2. Creates a type-matched directory structure with template files
 3. Generates a `CLAUDE.md` so every future session starts with full project context
 4. **Technical:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, etc.)
 4. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material
 5. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
-6. Optionally sets up Docker — a shared base image + a per-project named volume
-7. Optionally adds a VS Code devcontainer config for working entirely inside the container
+6. **Technical:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
+7. **Technical:** adds a VS Code devcontainer config automatically so you can open the project inside the container
 8. Recommends MCPs, hooks, and installed skills suited to the project; offers to create `.claude/agents/` files for the suggested agents
 
 ## Dependencies
@@ -31,15 +31,15 @@ npm install -g @anthropic-ai/claude-code
 
 ### For Docker workspaces (steps T6/R6)
 
-**Docker** (Engine + Compose plugin, or Docker Desktop)
-The skill checks for Docker automatically and skips the Docker setup steps if it's not found.
+**Docker Engine**
+The skill checks for Docker automatically and skips the Docker setup steps if it's not found. Docker Compose is optional — the skill detects whether `docker compose` (v2 plugin) or `docker-compose` (v1 standalone) is available and writes commands accordingly. If neither is installed, it falls back to plain `docker run` commands.
 
 - **Mac / Windows:** Install Docker Desktop → https://www.docker.com/products/docker-desktop
-- **Linux:** Install Docker Engine + Compose plugin:
+- **Linux:** Install Docker Engine (Compose plugin optional but recommended):
   ```bash
   # Debian / Ubuntu
   curl -fsSL https://get.docker.com | sh
-  sudo apt-get install docker-compose-plugin
+  sudo apt-get install docker-compose-plugin   # optional
   sudo usermod -aG docker $USER   # log out and back in after this
   ```
   → https://docs.docker.com/engine/install/
@@ -107,7 +107,9 @@ The Docker setup gives Claude (or any tool) a fully isolated, persistent workspa
 |---|---|---|
 | `/app` or `/workspace` | Named volume — project workspace | Yes |
 | `/host` | Host project root (bind mount) | No — read-only |
+| `/app/.env` | Host `.env` file (bind mount) | Yes |
 | `~/.claude/settings.json` | Host Claude Code settings (bind mount) | No — read-only |
+| `~/.claude/.credentials.json` | Host Claude Code auth token (bind mount) | No — read-only |
 | Everything else on host | Nothing | — |
 
 The container runs as a non-root `developer` user. The entrypoint performs privileged init steps as root then drops to `developer` via `gosu` before starting the shell. This means Claude Code cannot install system packages, modify OS config, or escalate privileges.
@@ -126,9 +128,10 @@ The skill stores a `sha256` hash of each Dockerfile as a Docker label and rebuil
 ### Per-project (created in seconds)
 
 - Named Docker volume (`<project-name>-workspace`) — the container's isolated, persistent workspace
-- `docker/docker-compose.yml` referencing the shared image
+- `docker/Dockerfile` extending the shared base with the project's runtime (Rust, Go, etc.) and a uid/gid fix so bind-mounted host files are accessible
+- `docker/docker-compose.yml` building from the project Dockerfile, with all required volume and credential mounts
 - `.env` with API keys and git credentials (gitignored) — `GIT_USER_NAME` and `GIT_USER_EMAIL` pre-filled from host git config if set
-- Optionally `.devcontainer/devcontainer.json` for VS Code
+- `.devcontainer/devcontainer.json` for VS Code — created automatically
 
 ### Entrypoint behaviour (runs on every `docker compose run`)
 
@@ -163,7 +166,8 @@ assets/
       CLAUDE.md
       devcontainer.json
       docker/
-        docker-compose.yml       # references shared image, defines named volume
+        Dockerfile               # extends shared base with project runtime + uid fix
+        docker-compose.yml       # builds project image, mounts volume + credentials
         .env.example             # documents all required env vars including git creds
         requirements.txt
       [architecture, task, roadmap templates...]
