@@ -144,6 +144,14 @@ For **research projects**, always create source-evaluator and outline-builder at
 
 If no agents are clearly warranted (e.g. a simple one-off script), say so and skip rather than padding.
 
+After completing 3a–3d, commit everything created or modified in this step:
+```bash
+git add CLAUDE.md
+test -d .claude/agents/ && git add .claude/agents/ || true
+git diff --cached --quiet || git commit -m "chore: add project agents and tooling recommendations"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
 ---
 
 ## File naming conventions (all project types)

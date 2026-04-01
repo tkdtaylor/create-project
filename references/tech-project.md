@@ -115,6 +115,13 @@ If yes, generate the minimal files needed to make the first test case in the tes
 
 If the stack doesn't map to these patterns, use your judgment or ask what a "hello world" looks like for this project.
 
+After creating task files and any scaffold, commit:
+```bash
+git add docs/tasks/ src/
+git diff --cached --quiet || git commit -m "chore: add first task, test spec, and starter scaffold"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
 ---
 
 ## Step T5 — Initialize git and remote
@@ -382,6 +389,15 @@ docker run --rm \
   echo "Workspace initialized."
 ```
 
+**10. Commit Docker files**
+
+```bash
+git add docker/ .env.example .gitignore CLAUDE.md
+test -f requirements.txt && git add requirements.txt || true
+git commit -m "chore: add Docker development environment"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
 ---
 
 ## Step T7 — VS Code devcontainer
@@ -400,6 +416,12 @@ To use it: install the **Dev Containers** extension in VS Code, then:
 - Or: Command Palette → *Dev Containers: Reopen in Container*
 
 The container starts (seeding the workspace volume on first open if needed) and VS Code connects to `/app` inside. Claude Code, the project runtime, and all files are available immediately.
+
+```bash
+git add .devcontainer/
+git commit -m "chore: add VS Code devcontainer"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
 
 ---
 
