@@ -59,5 +59,11 @@ if [ -n "$GIT_REMOTE_URL" ] && [ -d "$WORKSPACE/.git" ]; then
         || true
 fi
 
-# ── Step 5: Drop privileges and exec ─────────────────────────────────────────
+# ── Step 5: Ensure Claude Code directories exist ────────────────────────────
+# ~/.claude/ is bind-mounted from the host. Claude Code expects certain
+# subdirectories to exist (e.g. plans/ for plan mode). Create them as the
+# developer user so there are no permission issues.
+gosu developer mkdir -p /home/developer/.claude/plans
+
+# ── Step 6: Drop privileges and exec ─────────────────────────────────────────
 exec gosu developer "$@"

@@ -286,9 +286,9 @@ The volume is empty at creation. The entrypoint seeds it from the host project a
 
 **4. Ensure Claude config directory exists on host**
 
-The container bind-mounts the entire `~/.claude/` directory writable so Claude Code can read credentials, refresh tokens, and write session state. Create it if needed:
+The container bind-mounts the entire `~/.claude/` directory writable so Claude Code can read credentials, refresh tokens, and write session state. Create it and required subdirectories if needed:
 ```bash
-mkdir -p ~/.claude
+mkdir -p ~/.claude/plans
 ```
 
 **5. Write per-project files**
