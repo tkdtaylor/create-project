@@ -42,17 +42,19 @@ The key distinction: `docs/` is the input side (read before you act), `src/` is 
 2. Check `docs/architecture/overview.md` for system context
 3. Write the test spec before any implementation code
 4. Move tasks to `completed/` and update `coverage-tracker.md` when done
+5. **Commit and push immediately after each milestone** — never start the next task without committing the current one first
 
-## Commit checkpoints
+## Commit rules
 
-Commit and push at each of these milestones — do not batch unrelated work into a single commit:
+**You must commit and push after every milestone.** Do not batch multiple tasks into one commit. Do not continue to the next task until the current one is committed and pushed.
 
-| Milestone | What to stage | Suggested message |
-|-----------|--------------|-------------------|
+| Milestone | What to stage | Message |
+|-----------|--------------|---------|
 | ADR written | `docs/architecture/decisions/NNN-*.md` | `docs: add ADR NNN — <decision title>` |
 | Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
 | Task completed | `src/` changes, moved task file, updated `coverage-tracker.md` | `feat: complete task NNN — <name>` |
 
+After each milestone:
 ```bash
 git add <relevant files>
 git commit -m "<message>"

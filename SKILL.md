@@ -173,24 +173,26 @@ When asked to add a task to an existing project:
 2. For **technical projects**: create the test spec first, then the task file
 3. For **research projects**: create the task file directly — the research question and "done when" criteria serve as the spec
 4. Add a row to the coverage or progress tracker
-5. Commit:
+5. Commit and push immediately:
    ```bash
    git add docs/tasks/
    git commit -m "test: add spec for task NNN — <name>"
    git push
    ```
 
+**Important: you must commit and push after every milestone. Never start the next task without committing the current one first. Do not batch multiple tasks into a single commit.**
+
 When a task is completed:
 1. Move the task file from `tasks/active/` to `tasks/completed/`
 2. Update the status in `coverage-tracker.md`
-3. Commit:
+3. Commit and push before starting anything else:
    ```bash
    git add src/ docs/tasks/ docs/tasks/test-specs/coverage-tracker.md
    git commit -m "feat: complete task NNN — <name>"
    git push
    ```
 
-When an ADR is written:
+When an ADR is written, commit and push immediately:
 ```bash
 git add docs/architecture/decisions/
 git commit -m "docs: add ADR NNN — <decision title>"
