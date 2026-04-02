@@ -2,6 +2,8 @@
 
 A Claude Code skill that scaffolds new projects with opinionated structure, isolated Docker workspaces, and Claude-specific tooling setup.
 
+> **Note:** This skill is a work in progress. If you run into any issues, please [open an issue](https://github.com/tkdtaylor/create-project-skill/issues) on the repo.
+
 ## What it does
 
 Triggered by phrases like "start a new project", "scaffold a codebase", or "set up a research project". The skill:
