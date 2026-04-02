@@ -279,11 +279,11 @@ docker volume create <project-name>-workspace
 
 The volume is empty at creation. The entrypoint seeds it from the host project and installs Python dependencies on first run.
 
-**4. Ensure Claude config files exist on host**
+**4. Ensure Claude config directory exists on host**
 
-The container bind-mounts `~/.claude/settings.json` and `~/.claude/.credentials.json`. If either is missing, Docker will fail to start. Create them now if needed:
+The container bind-mounts the entire `~/.claude/` directory writable so Claude Code can read credentials, refresh tokens, and write session state. Create it if needed:
 ```bash
-mkdir -p ~/.claude && touch ~/.claude/settings.json && touch ~/.claude/.credentials.json
+mkdir -p ~/.claude
 ```
 
 **5. Write per-project files**
@@ -362,8 +362,7 @@ If `COMPOSE` is `none` (docker compose plugin not installed), use plain `docker 
 docker run --rm -it \
   -v <project-name>-workspace:/app \
   -v "$(pwd)":/host:ro \
-  -v "$HOME/.claude/settings.json":/home/developer/.claude/settings.json:ro \
-  -v "$HOME/.claude/.credentials.json":/home/developer/.claude/.credentials.json:ro \
+  -v "$HOME/.claude":/home/developer/.claude \
   -v "$(pwd)/.env":/app/.env \
   --env-file .env \
   <project-name>-dev:latest
@@ -382,8 +381,7 @@ docker run --rm -v <project-name>-workspace:/dst -v "$(pwd)":/src debian:bookwor
 docker run --rm \
   -v <project-name>-workspace:/app \
   -v "$(pwd)":/host:ro \
-  -v "$HOME/.claude/settings.json":/home/developer/.claude/settings.json:ro \
-  -v "$HOME/.claude/.credentials.json":/home/developer/.claude/.credentials.json:ro \
+  -v "$HOME/.claude":/home/developer/.claude \
   --env-file .env \
   <project-name>-dev:latest \
   echo "Workspace initialized."

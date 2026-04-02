@@ -29,17 +29,11 @@ services:
       - type: bind
         source: "../.env"
         target: /app/.env
-      # Share host Claude Code settings with the container (read-only).
-      # ${HOME} is resolved by Docker Compose from the host environment at runtime.
+      # Claude Code config directory — mounted writable so Claude can refresh tokens
+      # and write session state. ${HOME} is resolved by Docker Compose at runtime.
       - type: bind
-        source: "${HOME}/.claude/settings.json"
-        target: /home/developer/.claude/settings.json
-        read_only: true
-      # Claude Code credentials — required for `claude` to authenticate in the container
-      - type: bind
-        source: "${HOME}/.claude/.credentials.json"
-        target: /home/developer/.claude/.credentials.json
-        read_only: true
+        source: "${HOME}/.claude"
+        target: /home/developer/.claude
     working_dir: /app
     env_file:
       - ../.env
