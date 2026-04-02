@@ -12,15 +12,16 @@ Triggered by phrases like "start a new project", "scaffold a codebase", or "set 
 2. Creates a type-matched directory structure with template files
 3. Generates a `CLAUDE.md` so every future session starts with full project context
 4. **Technical:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, etc.)
-4. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material
-5. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
-6. **Technical:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
-7. **Technical:** adds a VS Code devcontainer config automatically so you can open the project inside the container
-8. Recommends MCPs, hooks, and installed skills suited to the project; offers to create `.claude/agents/` files for the suggested agents
+5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material
+6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
+7. **Technical:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
+8. **Technical:** adds a VS Code devcontainer config automatically so you can open the project inside the container
+9. Recommends MCPs, hooks, and installed skills suited to the project; offers to create `.claude/agents/` files for the suggested agents
+10. **Technical:** installs a plan mode hook that automatically splits plans into task files and a context-saving skeleton, with a task-executor agent for working through them efficiently
 
 ## First-time setup
 
-Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). No manual configuration needed per project.
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures a PostToolUse hook that restructures plans into task files when you exit plan mode. No manual configuration needed per project.
 
 If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
 
@@ -135,8 +136,7 @@ The Docker setup gives Claude (or any tool) a fully isolated, persistent workspa
 | `/app` or `/workspace` | Named volume — project workspace | Yes |
 | `/host` | Host project root (bind mount) | No — read-only |
 | `/app/.env` | Host `.env` file (bind mount) | Yes |
-| `~/.claude/settings.json` | Host Claude Code settings (bind mount) | No — read-only |
-| `~/.claude/.credentials.json` | Host Claude Code auth token (bind mount) | No — read-only |
+| `~/.claude/` | Host Claude Code config directory (bind mount) | Yes — writable so Claude can refresh tokens and write session state |
 | Everything else on host | Nothing | — |
 
 The container runs as a non-root `developer` user. The entrypoint performs privileged init steps as root then drops to `developer` via `gosu` before starting the shell. This means Claude Code cannot install system packages, modify OS config, or escalate privileges.
@@ -192,6 +192,12 @@ assets/
     tech/                        # Per-project templates — technical projects
       CLAUDE.md
       devcontainer.json
+      .claude/
+        settings.json            # permissions + PostToolUse hook for plan restructuring
+        scripts/
+          restructure-plan.py    # splits plans into task files on exit from plan mode
+        agents/
+          task-executor.md       # ephemeral agent for executing one task at a time
       docker/
         Dockerfile               # extends shared base with project runtime + uid fix
         docker-compose.yml       # builds project image, mounts volume + credentials
@@ -235,3 +241,7 @@ Example — pin a specific Claude Code version:
 # assets/base/tech.Dockerfile
 RUN npm install -g @anthropic-ai/claude-code@1.x.x
 ```
+
+## Acknowledgments
+
+The plan mode optimization (context-saving skeleton + ephemeral task executor) is adapted from [plan-plus](https://github.com/RandyHaylor/plan-plus) by Randy Haylor. The original splits plans into step files and uses lightweight skeletons to reduce context token usage. This skill adapts that approach to work within its opinionated task structure, TDD workflow, and commit conventions.
