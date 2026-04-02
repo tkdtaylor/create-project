@@ -10,5 +10,19 @@
       "Bash(dd :*)",
       "Bash(mkfs:*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/restructure-plan.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }

@@ -73,8 +73,13 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
+| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
+| `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 
-The `.claude/settings.json` template has no placeholders — copy it as-is. It pre-configures Claude Code permissions so bash commands are auto-approved inside the container, with prompts retained for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.).
+The following templates have no placeholders — copy them as-is:
+- `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and a PostToolUse hook that restructures plans into task files on exit from plan mode.
+- `.claude/scripts/restructure-plan.py` — the hook script. Splits plan steps into `docs/tasks/backlog/` task files, creates test spec stubs, updates the coverage tracker, and replaces the plan with a lightweight skeleton.
+- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD, commits after completion, and reports back without bloating the main conversation.
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
 

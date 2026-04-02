@@ -61,6 +61,20 @@ git commit -m "<message>"
 git push
 ```
 
+## Plan mode
+
+When you exit plan mode, a hook automatically restructures the plan:
+- Each step becomes a task file in `docs/tasks/backlog/`
+- Test spec stubs are created for each task
+- The plan is replaced with a lightweight skeleton to save context tokens
+- The full plan is backed up to `docs/plans/`
+
+Use the **task-executor** agent to work through tasks one at a time. Each agent call is ephemeral — it reads the task file, does the work, commits, and reports back without bloating the main conversation.
+
+```
+use task-executor — task: docs/tasks/backlog/NNN-name.md, spec: docs/tasks/test-specs/NNN-name-test-spec.md
+```
+
 ## Do not
 
 - Do not modify files in `docs/` unless explicitly asked — they are planning documents, not implementation
