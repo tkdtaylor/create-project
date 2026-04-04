@@ -6,22 +6,22 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 
 ## What it does
 
-Triggered by phrases like "start a new project", "scaffold a codebase", or "set up a research project". The skill:
+Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", or "start a data science project". The skill:
 
 1. Interviews you until the goal, scope, and success criteria are unambiguous — confirms a written summary before touching any files
 2. Creates a type-matched directory structure with template files
 3. Generates a `CLAUDE.md` so every future session starts with full project context
-4. **Technical:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, etc.)
+4. **Technical / Data:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, data pipeline skeleton, etc.)
 5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material
 6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
-7. **Technical:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
-8. **Technical:** adds a VS Code devcontainer config automatically so you can open the project inside the container
+7. **Technical / Data:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
+8. **Technical / Data:** adds a VS Code devcontainer config automatically so you can open the project inside the container
 9. Recommends MCPs, hooks, and installed skills suited to the project; offers to create `.claude/agents/` files for the suggested agents
-10. **Technical:** installs a plan mode hook that automatically splits plans into task files and a context-saving skeleton, with a task-executor agent for working through them efficiently
+10. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction — with a task-executor agent for working through tasks efficiently
 
 ## First-time setup
 
-Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures a PostToolUse hook that restructures plans into task files when you exit plan mode. No manual configuration needed per project.
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures three hooks: plan restructuring on exit from plan mode, secret file write protection, and context recovery after compaction. No manual configuration needed per project.
 
 If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
 
@@ -57,7 +57,7 @@ npm install -g @anthropic-ai/claude-code
 
 ---
 
-### For Docker workspaces (steps T6/R6)
+### For Docker workspaces (steps T6/D6/R6)
 
 **Docker Engine**
 The skill checks for Docker automatically and skips the Docker setup steps if it's not found. Docker Compose is optional — the skill detects whether `docker compose` (v2 plugin) or `docker-compose` (v1 standalone) is available and writes commands accordingly. If neither is installed, it falls back to plain `docker run` commands.
@@ -74,7 +74,7 @@ The skill checks for Docker automatically and skips the Docker setup steps if it
 
 ---
 
-### For automatic GitHub repo creation and scoped tokens (steps T5/R5)
+### For automatic GitHub repo creation and scoped tokens (steps T5/D5/R5)
 
 **GitHub CLI (`gh`)**
 Optional. If installed, the skill can create the GitHub repository and generate a fine-grained personal access token scoped to that repo only — no manual PAT setup needed. Without it, the skill gives manual instructions instead.
@@ -103,7 +103,7 @@ gh auth refresh -h github.com -s write:personal_access_tokens
 
 ---
 
-### For VS Code IDE integration (steps T7/R7)
+### For VS Code IDE integration (steps T7/D7/R7)
 
 **VS Code Dev Containers extension**
 Optional. Lets you open the project directly inside the Docker container — your editor, terminal, and Claude Code all run in the isolated workspace.
@@ -121,7 +121,8 @@ code --install-extension ms-vscode-remote.remote-containers
 
 | Type | Use when | Key structure |
 |------|----------|---------------|
-| **technical** | Building software — APIs, CLIs, scripts, data pipelines | `src/`, `artifacts/`, `docs/` with TDD scaffolding (test specs before tasks) |
+| **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/` with TDD scaffolding (test specs before tasks) |
+| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/`, `models/`, `tests/`, `docs/` with dual TDD + experiment tracking |
 | **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/`, `docs/` |
 | **other** | Planning, tracking, organising — wedding planning, job search, project management | Research base structure with domain-specific top-level folders (e.g. `vendors/`, `budget/`, `timeline/`) chosen by the user |
 
@@ -193,9 +194,11 @@ assets/
       CLAUDE.md
       devcontainer.json
       .claude/
-        settings.json            # permissions + PostToolUse hook for plan restructuring
+        settings.json            # permissions + hooks (plan, secrets, post-compact)
         scripts/
           restructure-plan.py    # splits plans into task files on exit from plan mode
+          protect-secrets.py     # blocks writes to private keys and credential files
+          post-compact.py        # re-injects task context after context compaction
         agents/
           task-executor.md       # ephemeral agent for executing one task at a time
       docker/
@@ -204,9 +207,17 @@ assets/
         .env.example             # documents all required env vars including git creds
         requirements.txt
       [architecture, task, roadmap templates...]
+    data/                        # Per-project templates — data / ML projects
+      CLAUDE.md
+      devcontainer.json
+      .claude/                   # same hooks and agents as tech (adapted for ML workflow)
+      docker/                    # same Docker pattern as tech
+      experiment-tracker.md      # tracks experiment runs alongside coverage-tracker
+      [architecture, task, roadmap templates...]
     research/                    # Per-project templates — research projects
       CLAUDE.md
       devcontainer.json
+      .claude/                   # same hooks, research-adapted task-executor agent
       docker/
         docker-compose.yml
         .env.example
@@ -214,6 +225,7 @@ assets/
       [outline, task, research-log templates...]
 references/
   tech-project.md                # Step-by-step setup for technical projects (T1–T7)
+  data-project.md                # Step-by-step setup for data / ML projects (D1–D7)
   research-project.md            # Step-by-step setup for research / other projects (R1–R7)
   tooling.md                     # Skills, MCP servers, hooks, and agents catalog with project-type matching
 evals/
