@@ -232,6 +232,66 @@ rm -rf ~/.claude/skills/create-project && cp -r /path/to/create-project-skill ~/
 
 The installed directory name must match the `name:` field in `SKILL.md` (`create-project`).
 
+## Upgrading existing projects
+
+Projects created with an older version of this skill won't automatically get new features (hooks, agents, boundaries, etc.). You can retrofit them by copying the relevant files from the current templates into your project.
+
+### What to copy
+
+The files below live in `assets/templates/<type>/` (where `<type>` is `tech`, `data`, or `research`). Copy them into the matching paths in your existing project:
+
+| File | What it adds |
+|------|-------------|
+| `.claude/settings.json` | Permissions + hooks (plan restructuring, secret protection, post-compact recovery) |
+| `.claude/scripts/restructure-plan.py` | Plan-to-tasks hook on exit from plan mode |
+| `.claude/scripts/protect-secrets.py` | Blocks writes to private keys and credential files |
+| `.claude/scripts/post-compact.py` | Re-injects task context after context compaction |
+| `.claude/agents/task-executor.md` | Ephemeral agent for executing one task at a time |
+
+Quick copy for a tech project (run from your project root):
+
+```bash
+SKILL=~/.claude/skills/create-project/assets/templates/tech
+mkdir -p .claude/scripts .claude/agents
+cp "$SKILL/.claude/settings.json" .claude/settings.json
+cp "$SKILL/.claude/scripts/"*.py .claude/scripts/
+cp "$SKILL/.claude/agents/task-executor.md" .claude/agents/task-executor.md
+```
+
+Replace `tech` with `data` or `research` for other project types.
+
+### Updating CLAUDE.md
+
+The templates now include commit rules, three-tier boundaries (Always / Ask First / Never), anti-rationalization tables, and a plan mode section. You can either:
+- Manually add these sections to your existing `CLAUDE.md` (look at the current template for the format)
+- Or regenerate `CLAUDE.md` from the template and merge with your project-specific content
+
+### Updating Docker mounts
+
+If your project was created before the `~/.claude/` writable mount fix, update your Docker config:
+
+**devcontainer.json** — replace individual read-only mounts:
+```jsonc
+// Old (broken — Claude can't refresh tokens)
+"source=${localEnv:HOME}/.claude/settings.json,target=/home/developer/.claude/settings.json,type=bind,readonly=true",
+"source=${localEnv:HOME}/.claude/.credentials.json,target=/home/developer/.claude/.credentials.json,type=bind,readonly=true"
+
+// New (working)
+"source=${localEnv:HOME}/.claude,target=/home/developer/.claude,type=bind"
+```
+
+**docker-compose.yml** — same change in the volumes section.
+
+## Adding to an existing codebase
+
+This skill is designed for new projects, but the hooks, agents, and conventions work in any codebase. To adopt them in an existing project without the full scaffold:
+
+1. **Copy `.claude/`** — settings, scripts, and agents (same as the upgrade steps above)
+2. **Create a `CLAUDE.md`** at the project root — describe your project structure, commands, conventions, and paste in the boundaries / commit rules / plan mode sections from the template
+3. **Optionally adopt the task structure** — create `docs/tasks/active/`, `backlog/`, `completed/`, and `docs/tasks/test-specs/` if you want the plan restructuring hook to work (it detects `docs/tasks/` to activate)
+
+You don't need to adopt the full directory structure. The hooks are the most portable piece — they work in any project with a `.claude/` directory. The plan restructuring hook simply won't fire if `docs/tasks/` doesn't exist.
+
 ## Updating the base Docker images
 
 Edit the relevant Dockerfile in `assets/base/` then sync the skill. The next time `create-project` runs the Docker setup step it detects the hash change and rebuilds. Existing project volumes are unaffected — the new image is used on the next `docker compose run`.
