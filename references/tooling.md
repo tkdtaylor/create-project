@@ -184,37 +184,37 @@ Always offer to **create the agent files** — not just list them in CLAUDE.md. 
 
 Suggest these as role-based agents that inhabit a specific perspective on the codebase. Choose the subset that matches what this project will actually need — not all are relevant to every project type.
 
-**architect**
+**architect** *(tier: deep)*
 Reviews proposed features, data model changes, and service boundaries against `docs/architecture/overview.md`. Flags design inconsistencies, identifies unexpected coupling, and drafts ADRs when a non-obvious decision was made. Knows the system's current shape and asks "does this fit?" before "how do we build this?".
 Invoke: *"use the architect agent to review this design"* or *"draft an ADR for [decision]"*
 Best for: API design, schema changes, adding new services, any choice that will be hard to reverse.
 
-**task-planner**
+**task-planner** *(tier: balanced)*
 Takes a feature description and produces a paired task file + test spec following the project's naming conventions. Asks clarifying questions about edge cases and acceptance criteria before writing anything — the output is a well-scoped task, not a vague to-do.
 Invoke: *"use the task-planner to break down [feature]"*
 Best for: features with unclear scope, anything that touches multiple layers, or when you're not sure where to start.
 
-**code-reviewer**
+**code-reviewer** *(tier: balanced)*
 Reviews changed files against the architecture docs, coding conventions, and the test spec for the current task. Flags drift from the agreed design, missing coverage, and common mistakes for this stack. Reads the task spec first so it understands what "done" means.
 Invoke: *"use the code-reviewer on these changes"*
 Best for: before committing a task, especially after a long implementation session.
 
-**qa**
+**qa** *(tier: balanced)*
 Reads the test spec for the current task, runs the test suite, and reports failures with context from the relevant source files. Identifies missing test cases based on the spec's acceptance criteria. Understands the difference between a test gap and a genuine bug.
 Invoke: *"use the qa agent on task 003"*
 Best for: after implementation is complete, before marking a task done.
 
-**dependency-auditor**
+**dependency-auditor** *(tier: fast)*
 Reads the project's dependency manifest (`package.json`, `requirements.txt`, `go.mod`, etc.), identifies outdated or CVE-flagged packages, and proposes a pinned upgrade path. Checks for packages that have been abandoned or forked under suspicious names.
 Invoke: *"use the dependency-auditor"*
 Best for: before releases, after a long period without updates, or when adding a batch of new dependencies.
 
-**docs-writer**
+**docs-writer** *(tier: fast)*
 Generates or updates README sections, API reference docs, inline docstrings, and changelog entries from the current source code. Follows the audience and tone set in CLAUDE.md. Doesn't invent behavior — only documents what the code actually does.
 Invoke: *"use the docs-writer to document [module or endpoint]"*
 Best for: libraries, public APIs, or any project where docs chronically lag behind the code.
 
-**security-auditor**
+**security-auditor** *(tier: deep)*
 Reviews source code for OWASP Top 10 vulnerabilities, insecure defaults, secrets committed in code, and injection risks in user-facing paths. Works from source files — complements the `code-scanner` skill (which focuses on supply-chain attacks in dependencies rather than application code).
 Invoke: *"use the security-auditor on the auth module"* or *"run a security pass before we ship"*
 Best for: projects handling user input, authentication, payment data, or any externally-facing surface.
@@ -234,32 +234,55 @@ Not every agent fits every project. Pick 3–4 that genuinely apply:
 
 ### Research project agents
 
-**source-evaluator**
+**source-evaluator** *(tier: balanced)*
 Assesses a URL or document for relevance and credibility: source type (primary/secondary/tertiary), publication date, author credentials, methodology quality, and alignment with the active research question. Logs the verdict and key quotes to `docs/research-log.md`. Skips sources that are clearly out of scope rather than writing a full evaluation.
 Invoke: *"use the source-evaluator on [URL or filename]"*
 Best for: filtering a large batch of sources quickly, or vetting a high-stakes claim before including it in an output.
 
-**outline-builder**
+**outline-builder** *(tier: balanced)*
 Takes accumulated notes from `notes/by-topic/` and proposes an updated `docs/outline.md` structured for the target output type (report, blog post, analysis, literature review). Highlights thin sections where notes are sparse and flags gaps that need more research before writing.
 Invoke: *"use the outline-builder to update the outline"*
 Best for: after a research sprint, before committing to a draft structure.
 
-**gap-analyst**
+**gap-analyst** *(tier: deep)*
 Reviews the current outline and notes to find what's missing: unanswered research questions, underexplored counterarguments, missing data points, and unsupported claims that need a source. Produces a prioritized list of gaps with suggested searches or sources to close each one.
 Invoke: *"use the gap-analyst before I start writing"*
 Best for: end-of-sprint checkpoint, especially when the outline feels complete but something seems off.
 
-**summary-writer**
+**summary-writer** *(tier: fast)*
 Drafts a section of `outputs/drafts/` from the notes for that topic, following the tone and audience defined in CLAUDE.md. Stays faithful to the source material — flags anything that would require inference rather than just paraphrasing it in.
 Invoke: *"use the summary-writer for [section name]"*
 Best for: translating dense research notes into readable prose without losing nuance or accuracy.
 
-### Agent file format
+### Model routing for agents
+
+Agents should use the right model for the job — not the most expensive one for every task. Assign each agent a **tier** based on what it does, then map that tier to the best available model at project creation time.
+
+#### Tiers
+
+| Tier | Use for | Examples |
+|------|---------|---------|
+| **fast** | Scoped, mechanical work with clear instructions — the task spec defines what to do | task-executor, docs-writer, summary-writer |
+| **balanced** | Moderate reasoning with some judgment calls | code-reviewer, qa, source-evaluator, outline-builder |
+| **deep** | Complex reasoning, architecture decisions, ambiguous problems | architect, security-auditor, gap-analyst |
+
+#### Configuring at project creation time
+
+When writing agent files in Step 3d, detect what models are available and map tiers to actual model identifiers. The approach depends on the tool:
+
+- **Claude Code**: Check which models the session has access to. Use the `model` frontmatter field. Typical mapping: fast → `haiku` or `sonnet`, balanced → `sonnet`, deep → `opus`. If only one model is available, use `inherit` for all.
+- **Cursor / Windsurf / other tools**: Model selection is usually a UI setting, not per-agent config. Note the recommended tier in a comment in the agent file so the user can configure their tool accordingly.
+
+If you're unsure what models are available, default to `inherit` — it's always safe. The tier comment in the agent file still documents the intent for future adjustment.
+
+#### Agent file format
 
 ```markdown
 ---
 name: agent-name
 description: When to invoke this agent and what it does — be specific about the trigger phrases
+model: <set during project setup based on available models>
+# model-tier: fast | balanced | deep
 ---
 
 # Role

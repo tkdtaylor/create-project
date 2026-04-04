@@ -140,7 +140,11 @@ Use the subtype guidance table in `references/tooling.md` to select 3–4 agents
 
 Then ask: *"Would you like me to create these agent files now? I can write `.claude/agents/<name>.md` for each so you can start using them immediately."*
 
-If yes, write each agent file using the format in `references/tooling.md`. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
+If yes:
+
+1. **Detect available models** — check what models are accessible in this session. Map them to tiers using the guidance in `references/tooling.md` (fast, balanced, deep). If only one model is available or you can't determine the options, default all agents to `inherit`.
+
+2. **Write each agent file** using the format in `references/tooling.md`. Set the `model` field based on the tier mapping. Add a `# model-tier:` comment so users can adjust later if they switch tools or gain access to different models. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
 
 For **research projects**, always create source-evaluator and outline-builder at minimum. gap-analyst is worth adding if the project has a well-defined output (report, paper, analysis).
 

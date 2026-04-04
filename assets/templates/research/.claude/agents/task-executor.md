@@ -2,6 +2,7 @@
 name: task-executor
 description: Execute a single research task. Reads the task file, searches for information, synthesizes findings, logs searches, and reports back. Context is ephemeral — won't bloat the main conversation.
 model: inherit
+# model-tier: fast — scoped research tasks with clear questions; set to fastest capable model
 color: blue
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "WebFetch"]
 ---

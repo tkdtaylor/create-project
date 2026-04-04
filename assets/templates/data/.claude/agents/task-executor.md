@@ -2,6 +2,7 @@
 name: task-executor
 description: Execute a single task from the project plan. Reads the task file and test spec, implements, tests, runs experiments, commits, and reports back. Context is ephemeral — won't bloat the main conversation.
 model: inherit
+# model-tier: fast — scoped implementation work with clear specs; set to fastest capable model
 color: green
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 ---
