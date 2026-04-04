@@ -182,7 +182,7 @@ When asked to add a task to an existing project:
 
 **Important: you must commit and push after every milestone. Never start the next task without committing the current one first. Do not batch multiple tasks into a single commit.**
 
-When a task is completed:
+When a **technical** task is completed:
 1. Move the task file from `tasks/active/` to `tasks/completed/`
 2. Update the status in `coverage-tracker.md`
 3. Commit and push before starting anything else:
@@ -192,9 +192,26 @@ When a task is completed:
    git push
    ```
 
-When an ADR is written, commit and push immediately:
+When a **research** task is completed:
+1. Move the task file from `tasks/active/` to `tasks/completed/`
+2. Update the status in `progress-tracker.md`
+3. Commit and push before starting anything else:
+   ```bash
+   git add sources/ notes/ docs/tasks/ docs/research-log.md docs/tasks/progress-tracker.md
+   git commit -m "research: complete task NNN — <name>"
+   git push
+   ```
+
+When an ADR is written (tech), commit and push immediately:
 ```bash
 git add docs/architecture/decisions/
 git commit -m "docs: add ADR NNN — <decision title>"
+git push
+```
+
+When an outline is updated (research), commit and push immediately:
+```bash
+git add docs/outline.md
+git commit -m "docs: update outline — <what changed>"
 git push
 ```

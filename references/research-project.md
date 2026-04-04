@@ -81,6 +81,16 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 | `research-log.md` | `docs/research-log.md` |
 | `outline.md` | `docs/outline.md` |
 | `progress-tracker.md` | `docs/tasks/progress-tracker.md` |
+| `.claude/settings.json` | `.claude/settings.json` |
+| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
+| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
+| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
+
+The following templates have no placeholders — copy them as-is:
+- `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
+- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
+- `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time.
 
 For `outline.md`: if the user has described what they're trying to produce (a report, a summary, an analysis), pre-populate the outline structure with a reasonable skeleton for that output type. Leave section bodies blank but give the headings real names where possible.
 
@@ -212,10 +222,11 @@ docker volume create {{PROJECT_NAME}}-workspace
 
 The volume is empty at creation. The container entrypoint seeds it from the host project and installs Python dependencies on first run.
 
-**3. Ensure Claude settings file exists on host**
+**3. Ensure Claude config directory exists on host**
 
+The container bind-mounts the entire `~/.claude/` directory writable so Claude Code can read credentials, refresh tokens, and write session state. Create it and required subdirectories if needed:
 ```bash
-mkdir -p ~/.claude && touch ~/.claude/settings.json
+mkdir -p ~/.claude/plans
 ```
 
 **4. Write per-project files**

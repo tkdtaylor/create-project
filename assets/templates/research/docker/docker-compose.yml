@@ -28,12 +28,15 @@ services:
         source: ..
         target: /host
         read_only: true
-      # Share host Claude Code settings with the container (read-only).
-      # R6 ensures this file exists on the host before the compose file is written.
+      # .env bind-mounted writable so it can be edited from inside the container
       - type: bind
-        source: "${HOME}/.claude/settings.json"
-        target: /home/developer/.claude/settings.json
-        read_only: true
+        source: "../.env"
+        target: /workspace/.env
+      # Claude Code config directory — mounted writable so Claude can refresh tokens
+      # and write session state. ${HOME} is resolved by Docker Compose at runtime.
+      - type: bind
+        source: "${HOME}/.claude"
+        target: /home/developer/.claude
     working_dir: /workspace
     env_file:
       - ../.env
