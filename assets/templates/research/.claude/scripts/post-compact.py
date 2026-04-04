@@ -24,6 +24,9 @@ def main():
     cwd = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
     project = Path(cwd)
 
+    if not project.is_dir():
+        sys.exit(0)
+
     parts = []
 
     # Git branch
