@@ -16,6 +16,7 @@ Skills are instruction sets that extend Claude's behavior for specific workflows
 | Any project (if hooks will be configured) | `update-config` | Adds/edits hooks in `.claude/settings.json` without manual JSON editing. Relevant whenever a hook is being recommended. |
 | Technical project, pre-shipping | `code-scanner` | Scans for supply-chain attacks, backdoors, and credential harvesting in dependencies and new packages |
 | Technical project with iterative code changes | `simplify` | Reviews changed code for over-engineering, dead code, and reuse opportunities — good to suggest after heavy implementation sprints |
+| Any technical project | `agent-skills` collection | Production-grade SDLC workflow skills — spec writing, TDD, code review, debugging, security hardening, git workflow, and more. Not a single skill but a collection to install individually as needed. See [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) |
 | Building with Claude API or Anthropic SDK | `claude-api` | Best-practice patterns for Claude API usage, streaming, tool use, and agent loops |
 | Binary analysis, CTF, security research | `reverse-engineer` | Ghidra-based decompilation in a sandboxed Docker container |
 | Project with recurring checks or polling | `loop` | Runs a prompt or command on a configurable interval — useful for build status, test-watch, or research progress checks |

@@ -50,3 +50,4 @@ When done, return:
 3. Test results
 4. Whether the task is complete or needs more work
 5. Any blockers or decisions deferred
+6. Things you noticed but intentionally didn't touch (scope discipline)
