@@ -53,7 +53,8 @@ Do not move to Step 2 until the user confirms the summary is correct. If they co
 
 | Type | Choose when... |
 |------|---------------|
-| **technical** | Building software — web app, CLI, API, library, script, data pipeline, automation |
+| **technical** | Building software — web app, CLI, API, library, script, automation |
+| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work with notebooks and datasets |
 | **research** | Synthesizing information — literature review, competitive analysis, topic investigation, report writing, summarizing documents |
 | **other** | Neither fits well — planning, tracking, organising, decision support. Uses the research base structure but with domain-specific top-level folders. Ask one follow-up: "What are the main categories you need to track?" then create named folders for those (e.g. `contractors/`, `costs/`, `timeline/` for a renovation; `decisions/`, `stakeholders/`, `risks/` for a project plan). |
 
@@ -66,6 +67,7 @@ Determine the project type from the conversation — only ask explicitly if it i
 Based on the project type, read the appropriate reference file and follow it completely before returning to Step 3:
 
 - **technical** → read and follow `$CLAUDE_SKILL_DIR/references/tech-project.md`
+- **data** → read and follow `$CLAUDE_SKILL_DIR/references/data-project.md`
 - **research** or **other** → read and follow `$CLAUDE_SKILL_DIR/references/research-project.md`
 
 The reference file covers: directory structure, template files, CLAUDE.md, first task offer, and git initialization.

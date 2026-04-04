@@ -1,0 +1,35 @@
+# Core data science
+numpy
+pandas
+scipy
+
+# ML (uncomment what you need)
+# scikit-learn
+# torch
+# tensorflow
+# xgboost
+# lightgbm
+
+# Visualization
+matplotlib
+seaborn
+
+# Notebooks
+jupyterlab
+ipykernel
+
+# Data handling
+# pyarrow
+# polars
+
+# Experiment tracking
+# mlflow
+
+# Testing
+pytest
+pytest-cov
+
+# Utilities
+python-dotenv
+pyyaml
+tqdm
