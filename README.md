@@ -245,3 +245,7 @@ RUN npm install -g @anthropic-ai/claude-code@1.x.x
 ## Acknowledgments
 
 The plan mode optimization (context-saving skeleton + ephemeral task executor) is adapted from [plan-plus](https://github.com/RandyHaylor/plan-plus) by Randy Haylor. The original splits plans into step files and uses lightweight skeletons to reduce context token usage. This skill adapts that approach to work within its opinionated task structure, TDD workflow, and commit conventions.
+
+The post-compact context recovery hook and protect-secrets hook are adapted from [claudeframework](https://github.com/dixus/claudeframework) by Holger Kreissl. The task-executor's self-review step before committing is also inspired by their pre-flight review pattern.
+
+The three-tier boundary system (Always / Ask First / Never) and anti-rationalization tables in the CLAUDE.md template are adapted from [agent-skills](https://github.com/addyosmani/agent-skills) by Addy Osmani.

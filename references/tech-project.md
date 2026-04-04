@@ -74,12 +74,16 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
 | `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
+| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
+| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 
 The following templates have no placeholders — copy them as-is:
-- `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and a PostToolUse hook that restructures plans into task files on exit from plan mode.
-- `.claude/scripts/restructure-plan.py` — the hook script. Splits plan steps into `docs/tasks/backlog/` task files, creates test spec stubs, updates the coverage tracker, and replaces the plan with a lightweight skeleton.
-- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD, commits after completion, and reports back without bloating the main conversation.
+- `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and three hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, and context recovery after compaction.
+- `.claude/scripts/restructure-plan.py` — PostToolUse hook. Splits plan steps into `docs/tasks/backlog/` task files, creates test spec stubs, updates the coverage tracker, and replaces the plan with a lightweight skeleton.
+- `.claude/scripts/protect-secrets.py` — PreToolUse hook. Hard-blocks writes to private keys, credential files, and auth configs (`.pem`, `.key`, `service-account*.json`, `.npmrc`, etc.).
+- `.claude/scripts/post-compact.py` — PostCompact hook. Re-injects the active task, test spec, and plan status into the conversation after context compaction so Claude doesn't lose track of what it was doing.
+- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD with self-review, commits after completion, and reports back without bloating the main conversation.
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
 
