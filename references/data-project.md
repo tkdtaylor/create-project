@@ -6,6 +6,8 @@ Follow these steps for data science, machine learning, and analytics projects. R
 
 ```
 project-root/
+├── README.md                         # Project landing page (for GitHub and users)
+├── CLAUDE.md                         # Project context for Claude Code sessions
 ├── data/
 │   ├── raw/                          # Original, immutable data
 │   ├── processed/                    # Cleaned and transformed data
@@ -23,7 +25,6 @@ project-root/
 ├── tests/                            # Unit tests for src/ modules
 ├── artifacts/                        # Reports, exported plots, presentations
 └── docs/
-    ├── README.md
     ├── architecture/
     │   ├── overview.md
     │   ├── tech-stack.md
@@ -94,7 +95,7 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute p
 
 | Template | Output path |
 |----------|-------------|
-| `README.md` | `docs/README.md` |
+| `README.md` | `README.md` (project root — GitHub landing page) |
 | `architecture-overview.md` | `docs/architecture/overview.md` |
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
@@ -112,6 +113,8 @@ The following templates have no placeholders — copy them as-is:
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD for code, experiment workflow for ML, commits after completion.
 
 Fill in the tech stack table using what the user provided. If a layer wasn't mentioned, use `—`.
+
+**For `README.md` at the project root:** substitute `{{PROJECT_NAME}}`, `{{PROJECT_DESCRIPTION}}`, and `{{TECH_STACK}}`. Tailor the test command to the actual stack (e.g. `pytest`, `nose2`). Fill in the "Data" section with whatever the user described — data sources, formats, access requirements. This README is the first thing users see on GitHub.
 
 ---
 

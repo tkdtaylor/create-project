@@ -6,13 +6,14 @@ Follow these steps for software/code projects. Return to the main skill (Step 3)
 
 ```
 project-root/
+├── README.md                         # Project landing page (for GitHub and users)
+├── CLAUDE.md                         # Project context for Claude Code sessions
 ├── src/                              # Code outputs — written by Claude, committed to repo
 ├── artifacts/                        # Non-code outputs (diagrams, schemas, exports)
 │   ├── diagrams/
 │   ├── schemas/
 │   └── exports/
 └── docs/                             # Documentation — inputs that guide implementation
-    ├── README.md
     ├── architecture/
     │   ├── overview.md
     │   ├── tech-stack.md
@@ -67,7 +68,7 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 
 | Template | Output path |
 |----------|-------------|
-| `README.md` | `docs/README.md` |
+| `README.md` | `README.md` (project root — GitHub landing page) |
 | `architecture-overview.md` | `docs/architecture/overview.md` |
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
@@ -86,6 +87,8 @@ The following templates have no placeholders — copy them as-is:
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD with self-review, commits after completion, and reports back without bloating the main conversation.
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
+
+**For `README.md` at the project root:** substitute `{{PROJECT_NAME}}`, `{{PROJECT_DESCRIPTION}}`, and `{{TECH_STACK}}`, then tailor the "Run locally" commands to the actual stack (e.g. `npm test`, `pytest`, `go test ./...`). Mark anything unknown as `# TODO: fill in`. This README is the first thing users see on GitHub — make the project purpose and getting-started instructions clear.
 
 ---
 

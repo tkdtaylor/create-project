@@ -23,6 +23,8 @@ Keep `docs/` as-is (task tracking, log, README). Adapt the CLAUDE.md "Research a
 
 ```
 project-root/
+├── README.md                   # Project landing page (for GitHub and users)
+├── CLAUDE.md                   # Project context for Claude Code sessions
 ├── sources/                    # Input materials — never edited, only read
 │   ├── local/                  # PDFs, docs, files the user provides
 │   └── web/                    # Saved pages, downloaded references, search results
@@ -32,7 +34,6 @@ project-root/
 │   ├── drafts/                 # Work in progress
 │   └── final/                  # Completed and approved pieces
 └── docs/                       # Project management
-    ├── README.md               # Entry point
     ├── research-log.md         # Running log of searches, sources reviewed, status
     ├── outline.md              # Structure of the intended output(s)
     └── tasks/
@@ -77,7 +78,7 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 
 | Template | Output path |
 |----------|-------------|
-| `README.md` | `docs/README.md` |
+| `README.md` | `README.md` (project root — GitHub landing page) |
 | `research-log.md` | `docs/research-log.md` |
 | `outline.md` | `docs/outline.md` |
 | `progress-tracker.md` | `docs/tasks/progress-tracker.md` |
@@ -91,6 +92,8 @@ The following templates have no placeholders — copy them as-is:
 - `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
 - `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time.
+
+**For `README.md` at the project root:** substitute `{{PROJECT_NAME}}` and `{{PROJECT_DESCRIPTION}}`. This README is the first thing someone sees on GitHub — the description should make the research goal and intended output clear.
 
 For `outline.md`: if the user has described what they're trying to produce (a report, a summary, an analysis), pre-populate the outline structure with a reasonable skeleton for that output type. Leave section bodies blank but give the headings real names where possible.
 

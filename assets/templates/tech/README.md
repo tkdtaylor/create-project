@@ -2,28 +2,71 @@
 
 {{PROJECT_DESCRIPTION}}
 
-## Structure
+## Tech stack
 
-| Directory | Purpose |
-|-----------|---------|
-| `src/` | Source code — written by Claude, committed to repo |
-| `artifacts/` | Non-code outputs (diagrams, schemas, exports) |
-| `docs/` | All documentation — inputs that guide implementation |
+{{TECH_STACK}}
 
-## Navigation
+## Getting started
 
-- [Architecture overview](architecture/overview.md) — system design and decisions
-- [Tech stack](architecture/tech-stack.md) — languages, frameworks, infrastructure
-- [Roadmap](plans/roadmap.md) — milestones and planned work
-- [Active tasks](tasks/active/) — what's being worked on now
-- [Test specs](tasks/test-specs/) — TDD specs and coverage tracker
+### Run locally
 
-## Workflow
+```bash
+# TODO: fill in — install dependencies
+# TODO: fill in — run tests
+# TODO: fill in — start the app / run the entry point
+```
 
-1. Pick a task from [`tasks/active/`](tasks/active/) or [`tasks/backlog/`](tasks/backlog/)
-2. Verify its paired test spec exists in [`tasks/test-specs/`](tasks/test-specs/)
-3. Paste the task file + test spec + relevant architecture sections into a new Claude session
-4. Implement until all test cases pass
-5. Move the task to [`tasks/completed/`](tasks/completed/) and update the coverage tracker
+### Run in Docker (recommended)
 
-Tasks follow Unix philosophy — one task does one thing. When in doubt, break it smaller.
+If Docker was set up during project creation, the container has Claude Code, the full runtime, and git pre-configured:
+
+```bash
+# Open an interactive shell inside the container
+docker compose -f docker/docker-compose.yml run --rm dev
+
+# Or open the project in VS Code with the Dev Containers extension
+# Command Palette → "Dev Containers: Reopen in Container"
+```
+
+See [CLAUDE.md](CLAUDE.md) for full Docker and command reference.
+
+## Project structure
+
+```
+src/          source code
+artifacts/    non-code outputs (diagrams, schemas, exports)
+tests/        unit tests
+docs/         documentation
+  architecture/   system design, ADRs, tech stack
+  plans/          roadmap, sprints
+  tasks/          active, backlog, completed task files
+    test-specs/   TDD specs (written before implementation)
+```
+
+## How to work on this project
+
+This project follows a TDD + task-based workflow:
+
+1. **Pick a task** from [`docs/tasks/active/`](docs/tasks/active/) or [`docs/tasks/backlog/`](docs/tasks/backlog/)
+2. **Read its test spec** in [`docs/tasks/test-specs/`](docs/tasks/test-specs/) — no implementation starts without one
+3. **Implement** until all test cases pass
+4. **Move** the task to [`docs/tasks/completed/`](docs/tasks/completed/) and commit
+
+Tasks are scoped small — one task does one thing. When in doubt, break it smaller.
+
+### Working with Claude Code
+
+This project is set up to work with Claude Code. [CLAUDE.md](CLAUDE.md) is loaded automatically in every session and contains the project conventions, commit rules, and boundaries.
+
+Key workflow:
+- Use **plan mode** to plan multi-task work — a hook will restructure plans into task files automatically
+- Use the **task-executor** agent to implement individual tasks in ephemeral context
+- Every milestone (ADR, test spec, task completion) gets its own commit
+
+## Key files
+
+- [CLAUDE.md](CLAUDE.md) — project context for Claude Code sessions
+- [docs/architecture/overview.md](docs/architecture/overview.md) — system design
+- [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) — full tech stack table
+- [docs/plans/roadmap.md](docs/plans/roadmap.md) — planned work
+- [docs/tasks/test-specs/coverage-tracker.md](docs/tasks/test-specs/coverage-tracker.md) — test coverage by task
