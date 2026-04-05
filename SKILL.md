@@ -80,15 +80,27 @@ This step runs after the type-specific setup and uses the full project context �
 
 Read `$CLAUDE_SKILL_DIR/references/tooling.md` before starting — it contains the full catalog and matching logic for all recommendations below.
 
+### Tool preference order
+
+When recommending tools in the steps below, apply this preference order:
+
+1. **Skills first** — they are lightweight (no background process, no auth setup, no per-session context cost) and invoke on-demand by task description. Prefer a skill whenever one exists that covers the need.
+2. **Hooks next** — for automated behaviors that should happen every time (pre-commit, post-edit, etc.)
+3. **Agents** — for reusable role-based workflows within the project
+4. **MCP servers last** — only when a skill cannot do the job. MCPs are worth the overhead when you need live data access (databases, live APIs), authenticated external services, or real-time tool integration that skills cannot provide via prompts alone.
+
+Before recommending an MCP, ask: *"Is there a skill that already does this, or a task description that would trigger one?"* If yes, recommend the skill instead.
+
 ### 3a — Enrich CLAUDE.md
 
 Read the `CLAUDE.md` at the project root. Append a `## Recommended tooling` section. This section stays in CLAUDE.md so future sessions know what tools are available without being told again.
 
-Use the project context to write real content — not a copy of the catalog, but a curated short list with a sentence on why each tool is relevant *to this specific project*. Include:
+Use the project context to write real content — not a copy of the catalog, but a curated short list with a sentence on why each tool is relevant *to this specific project*. Follow the tool preference order above. Include:
 
-- **MCP servers**: name, one-line purpose, install command
-- **Skills**: name, trigger phrase, why it applies here
+- **Skills**: name, trigger phrase, why it applies here *(list these first)*
 - **Hooks**: what event, what it runs, stub command
+- **Agents**: name, when to invoke, tier *(covered in 3d)*
+- **MCP servers**: name, one-line purpose, install command *(only if a skill doesn't cover the need)*
 
 Cap it at what's genuinely useful. Three targeted suggestions beat ten generic ones. If nothing in the catalog clearly applies, say so and skip the section.
 
@@ -97,17 +109,18 @@ Example format to append:
 ```markdown
 ## Recommended tooling
 
-### MCP servers
-- **brave-search** — web search during research sessions. Install: `claude mcp add brave-search ...`
-
 ### Skills
 - **code-scanner** — run before shipping. Trigger: "scan this for vulnerabilities"
+- **simplify** — review changed code after heavy implementation. Trigger: "simplify this module"
 
 ### Hooks
 - Pre-commit lint: runs `npm run lint` before every git commit (add via `/update-config`)
+
+### MCP servers
+- **postgres** — live database queries during development (no skill alternative for live data access)
 ```
 
-### 3b — Installed skills
+### 3b — Installed skills *(recommend first)*
 
 ```bash
 ls ~/.claude/skills/
@@ -115,18 +128,25 @@ ls ~/.claude/skills/
 
 Read the `name` and `description` frontmatter from each skill's `SKILL.md`. Cross-reference against the project using the matching table in `references/tooling.md`. Present relevant installed skills as a short table: name, one-line description, why it applies.
 
-### 3c — MCP servers
+Then check for skills in the catalog that are *not* installed but would be useful. Suggest installing them before moving on to MCP recommendations — skills are the preferred tooling type.
 
-Using the catalog in `references/tooling.md`, identify MCP servers that fit the project. For each:
+### 3c — MCP servers *(only where skills can't help)*
+
+Before adding an MCP, verify that no skill covers the same need. MCPs are appropriate for:
+- Live data sources (databases, live APIs)
+- Authenticated external services (GitHub API, Slack, cloud providers)
+- Real-time tool integration that can't be expressed as a task description
+
+Using the catalog in `references/tooling.md`, identify MCP servers that fit these criteria for the project. For each:
 - Name and what it unlocks
-- Why it's relevant to this project
+- Why a skill can't do this job
 - Install command or link
 
 Then do a targeted web search to catch anything not in the catalog:
 - `Claude Code MCP [tech-stack or domain]`
 - `site:github.com modelcontextprotocol server [relevant-domain]`
 
-Surface anything relevant with source URL. Don't install — present options and let the user choose.
+Surface anything relevant with source URL. Don't install — present options and let the user choose. If every MCP you were about to recommend is already covered by an existing skill, skip this section entirely.
 
 ### 3d — Hooks and agents
 

@@ -2,11 +2,29 @@
 
 Reference for Step 3 — matching project signals to tools from the Claude Code ecosystem. Use this to populate recommendations and the CLAUDE.md `## Recommended tooling` section.
 
+## Preference order
+
+When recommending tools, prefer them in this order:
+
+1. **Skills** — lightweight, on-demand, no background process. The default choice.
+2. **Hooks** — for automated behaviors that run on specific events.
+3. **Agents** — for reusable role-based workflows within the project.
+4. **MCP servers** — only when a skill can't do the job.
+
+**Why skills first:** a skill adds zero cost when not in use — it's just a markdown file on disk that Claude loads when the user describes a matching task. An MCP server adds tools to every session (context overhead), often needs auth configuration, and runs as a background process. Skills are easier to install, easier to share, and don't affect cold-start performance.
+
+**When to prefer an MCP:** only when you need something a skill genuinely cannot provide via task descriptions alone:
+- Live data access (databases, streaming APIs, real-time metrics)
+- Authenticated external services where the auth must persist across calls
+- Tool integration that requires stateful connections
+
+If a skill already exists for the need, always recommend the skill.
+
 ---
 
 ## Skills
 
-Skills are instruction sets that extend Claude's behavior for specific workflows. They're invoked by describing a task that matches their description.
+Skills are instruction sets that extend Claude's behavior for specific workflows. They're invoked by describing a task that matches their description. **This is the preferred tool type — recommend a skill whenever one covers the need.**
 
 ### Matching table
 
@@ -33,6 +51,8 @@ To install a `.skill` file: drag it into Claude Code, or `claude skill install <
 ## MCP Servers
 
 MCP (Model Context Protocol) servers extend what Claude can do in a session — giving it access to tools, databases, APIs, and services. They're configured in `.claude/settings.json` or via `claude mcp add`.
+
+**Before recommending an MCP, check if a skill covers the need.** MCPs add context overhead to every session and require auth configuration. Only use them for things skills genuinely can't do: live data, authenticated services, or stateful integrations.
 
 ### Catalog
 
@@ -70,21 +90,22 @@ MCP (Model Context Protocol) servers extend what Claude can do in a session — 
 
 ### Matching by project type
 
-**Research project → prioritize:**
-- `brave-search` or `tavily` or `exa` — web search is the core workflow
-- `fetch` — pull specific pages or papers on demand
-- `memory` — preserve findings across sessions without re-reading the log every time
-- `filesystem` — if sources span outside the project directory
-- `obsidian` — if the user already keeps notes there
+Only recommend these MCPs if no skill covers the need. For each one listed below, the justification is in the parentheses — if that rationale doesn't apply to the project, skip it.
 
-**Technical project → prioritize:**
-- `github` — if the project is on GitHub; enables PR review, issue tracking, code search from within Claude
-- Relevant database MCP (`postgres`, `sqlite`) — if the project has a database
-- `puppeteer` — if building or testing a web UI
-- `code-scanner` skill (not MCP) — for security audits
+**Research project:**
+- `brave-search` / `tavily` / `exa` (live web search with a specific provider — WebSearch tool or a search skill covers this for most cases; only recommend if the user wants a specific provider or needs features WebSearch doesn't have)
+- `fetch` (one-off URL fetching — WebFetch tool covers this; only recommend if the project will be fetching many URLs programmatically)
+- `memory` (persistent knowledge graph — only if findings genuinely need cross-session recall beyond what `docs/research-log.md` provides)
+- `filesystem` (scoped file access outside the project directory — genuine need, no skill alternative)
+- `obsidian` (live Obsidian vault integration — genuine need if the user keeps notes there)
 
-**Both → consider:**
-- `fetch` — always useful for pulling documentation or references
+**Technical project:**
+- `github` (live PR review, issue tracking, code search — genuine need, no skill can do this without the API)
+- `postgres` / `sqlite` (live database queries during development — genuine need, no skill alternative)
+- `puppeteer` (browser automation for testing — genuine need, no skill alternative)
+
+**Both:**
+- Most cross-cutting needs (scanning code, simplifying, writing docs, reviewing) are better served by skills — see the skills matching table above.
 
 ### Finding more
 
