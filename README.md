@@ -74,10 +74,10 @@ The skill checks for Docker automatically and skips the Docker setup steps if it
 
 ---
 
-### For automatic GitHub repo creation and scoped tokens (steps T5/D5/R5)
+### For GitHub repo creation (steps T5/D5/R5)
 
 **GitHub CLI (`gh`)**
-Optional. If installed, the skill can create the GitHub repository and generate a fine-grained personal access token scoped to that repo only — no manual PAT setup needed. Without it, the skill gives manual instructions instead.
+Optional. If installed, the skill can create the GitHub repository and configure the remote automatically. Without it, the skill gives manual instructions instead.
 
 ```bash
 # Mac
@@ -96,10 +96,7 @@ After installing, authenticate:
 gh auth login
 ```
 
-To enable automatic token generation (requires one-time scope grant):
-```bash
-gh auth refresh -h github.com -s write:personal_access_tokens
-```
+**Note on tokens:** The skill does not attempt to generate a personal access token programmatically — it guides you through creating a fine-grained PAT manually at https://github.com/settings/personal-access-tokens/new. The `gh api` approach for PAT generation requires an extra auth scope that usually isn't granted and fails silently more often than it works.
 
 ---
 

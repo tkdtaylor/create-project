@@ -153,7 +153,7 @@ Then check if `gh` (GitHub CLI) is installed:
 command -v gh >/dev/null 2>&1 && echo "available" || echo "not found"
 ```
 
-If available, ask: *"Would you like to create a GitHub repository for this project? I can set up the remote and generate a scoped access token for the Docker container automatically."*
+If available, ask: *"Would you like to create a GitHub repository for this project?"*
 
 If yes:
 
@@ -164,25 +164,23 @@ If yes:
 gh repo create <project-name> --private --source=. --remote=origin --push
 ```
 
-3. Generate a fine-grained PAT scoped to this repository only, and save it to a temp file immediately — shell variables do not persist across tool calls:
-```bash
-REPO_OWNER=$(gh api user --jq '.login')
-GIT_TOKEN=$(gh api --method POST /user/personal-access-tokens \
-    --header "X-GitHub-Api-Version: 2022-11-28" \
-    -f "name=create-project-<project-name>" \
-    -f "token_type=fine_grained" \
-    -F "expiration_days=365" \
-    -f "repositories[]=<project-name>" \
-    -F "permissions[contents]=write" \
-    -F "permissions[metadata]=read" \
-    --jq '.token' 2>/dev/null || echo "")
-[ -n "$GIT_TOKEN" ] && echo "$GIT_TOKEN" > /tmp/.create-project-pat || true
-echo "TOKEN_SAVED=$([ -f /tmp/.create-project-pat ] && echo yes || echo no)"
-```
+3. **Tell the user to create a fine-grained access token themselves** — programmatic PAT creation via `gh api` requires a specific auth scope that usually isn't granted, and it silently fails more often than it works.
 
-4. If token was saved: T6 will read it from `/tmp/.create-project-pat`. Do not try to echo or use the token value again — it is already on disk.
+   Give them these exact instructions:
 
-   If saving failed (insufficient `gh` auth scope): tell the user to run `gh auth refresh -h github.com -s write:personal_access_tokens` and retry, or create a fine-grained PAT manually at https://github.com/settings/personal-access-tokens/new (Repository access: this repo only; Permissions: Contents read/write, Metadata read-only). T6 will prompt for it.
+   > To let the Docker container push commits, you'll need a fine-grained personal access token:
+   >
+   > 1. Open https://github.com/settings/personal-access-tokens/new
+   > 2. **Token name:** `create-project-<project-name>`
+   > 3. **Expiration:** 1 year (or whatever you prefer)
+   > 4. **Repository access:** *Only select repositories* → pick this repo
+   > 5. **Permissions** → *Repository permissions*:
+   >    - **Contents:** Read and write
+   >    - **Metadata:** Read-only (set automatically)
+   > 6. Click **Generate token** and copy it
+   > 7. In step T6 you'll be asked to paste it into `.env`
+
+   The token never gets written into the repo — T6 puts it in `.env` (which is gitignored) and the container entrypoint loads it into git's credential helper at runtime.
 
 ---
 
@@ -321,29 +319,28 @@ Append to `.gitignore` (create it if it does not exist):
 
 **7. Write `.env` with git credentials**
 
-Read host git identity and the PAT saved in T5:
+Read host git identity to pre-fill:
 ```bash
 HOST_GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
 HOST_GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
-GIT_TOKEN=$(cat /tmp/.create-project-pat 2>/dev/null || echo "")
-rm -f /tmp/.create-project-pat
 ```
 
-If `GIT_TOKEN` is non-empty (token was saved in T5):
-- Create `.env` at the project root:
-  ```
-  ANTHROPIC_API_KEY=
-  GIT_TOKEN=<GIT_TOKEN value>
-  GIT_REMOTE_URL=https://github.com/<owner>/<project-name>.git
-  GIT_USER_NAME=<HOST_GIT_NAME value, or blank if empty>
-  GIT_USER_EMAIL=<HOST_GIT_EMAIL value, or blank if empty>
-  ```
-- Tell the user to fill in `ANTHROPIC_API_KEY`.
+Create `.env` at the project root with placeholders:
+```
+ANTHROPIC_API_KEY=
+GIT_TOKEN=
+GIT_REMOTE_URL=https://github.com/<owner>/<project-name>.git
+GIT_USER_NAME=<HOST_GIT_NAME value, or blank if empty>
+GIT_USER_EMAIL=<HOST_GIT_EMAIL value, or blank if empty>
+```
 
-If no token was saved:
-- Ask: *"Does this project have a remote git repository? I can configure the container to authenticate using a fine-grained token scoped to this repo only."*
-- If yes: create `.env` with git identity pre-filled, leave `GIT_TOKEN` and `GIT_REMOTE_URL` blank, and tell the user to fill them in.
-- If no: copy `.env.example` to `.env` with git identity pre-filled, leave token and remote URL blank.
+If no GitHub repo was created in T5, also leave `GIT_REMOTE_URL` blank.
+
+Tell the user what to fill in:
+- `ANTHROPIC_API_KEY` — from https://console.anthropic.com/settings/keys
+- `GIT_TOKEN` — the fine-grained PAT from T5 (https://github.com/settings/personal-access-tokens/new — Contents: read/write, this repo only)
+- `GIT_REMOTE_URL` — if T5 wasn't run, the URL of the project's git remote
+- `GIT_USER_NAME` / `GIT_USER_EMAIL` — only if they weren't pre-filled from host git config
 
 The container entrypoint configures git from these values on every start — the token is never written to disk inside the container.
 
