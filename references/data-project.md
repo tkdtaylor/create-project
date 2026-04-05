@@ -110,7 +110,7 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute p
 The following templates have no placeholders — copy them as-is:
 - `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
 - `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
-- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD for code, experiment workflow for ML, commits after completion.
+- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD for code, experiment workflow for ML, commits after completion. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
 
 Fill in the tech stack table using what the user provided. If a layer wasn't mentioned, use `—`.
 

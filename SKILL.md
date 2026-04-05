@@ -172,19 +172,33 @@ To configure hooks: tell the user to use `/update-config` or point them to `.cla
 
 **Agents** are reusable instruction sets that let Claude take on a specific role or workflow for this project. They live in `.claude/agents/` and are invoked naturally in conversation: *"use the architect agent to review this design"*.
 
+#### Step 1 of 3d — Detect available models (always run, even if no new agents are created)
+
+The type-specific setup (T2/D2/R2) copied a `task-executor.md` agent with `model: inherit` and a `# model-tier: fast` comment. Before creating any additional agents, detect the models available in the current session and **update all existing agents in `.claude/agents/`** to use the best-matching model for their tier.
+
+1. **List models accessible in this session.** In Claude Code, check via the `/model` command output or the model config. In other tools (Cursor, Windsurf, etc.), the model is usually a UI setting — in that case leave everything on `inherit`.
+
+2. **Map tiers to concrete model identifiers** using the guidance in `references/tooling.md`:
+   - `fast` → fastest capable model (e.g. `haiku` or `sonnet` if haiku unavailable)
+   - `balanced` → middle-tier model (e.g. `sonnet`)
+   - `deep` → most capable model (e.g. `opus`)
+   - If you can only see one model or can't determine the options, use `inherit` for every tier.
+
+3. **Update every file in `.claude/agents/`** — read each file, find the `# model-tier:` comment, and set the `model:` field to the mapped value. **Preserve the `# model-tier:` comment so future users can see why the model was chosen and adjust it if they switch tools or gain access to different models.**
+
+4. **Report to the user** what mapping you applied, e.g. *"Agents configured: task-executor (tier: fast) → sonnet. Available models: sonnet, opus."*
+
+#### Step 2 of 3d — Add new agents
+
 Use the subtype guidance table in `references/tooling.md` to select 3–4 agents that fit this specific project — not a generic list. For a REST API project that's different from a CLI tool or data pipeline. Present each one in CLAUDE.md with a one-liner on what it does and when to invoke it.
 
 Then ask: *"Would you like me to create these agent files now? I can write `.claude/agents/<name>.md` for each so you can start using them immediately."*
 
-If yes:
-
-1. **Detect available models** — check what models are accessible in this session. Map them to tiers using the guidance in `references/tooling.md` (fast, balanced, deep). If only one model is available or you can't determine the options, default all agents to `inherit`.
-
-2. **Write each agent file** using the format in `references/tooling.md`. Set the `model` field based on the tier mapping. Add a `# model-tier:` comment so users can adjust later if they switch tools or gain access to different models. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
+If yes: write each agent file using the format in `references/tooling.md`, setting the `model:` field from the tier mapping you established in Step 1 and including the `# model-tier:` comment. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
 
 For **research projects**, always create source-evaluator and outline-builder at minimum. gap-analyst is worth adding if the project has a well-defined output (report, paper, analysis).
 
-If no agents are clearly warranted (e.g. a simple one-off script), say so and skip rather than padding.
+If no new agents are warranted (e.g. a simple one-off script), still run Step 1 to configure the task-executor's model, then skip creating additional agents.
 
 After completing 3a–3d, commit everything created or modified in this step:
 ```bash

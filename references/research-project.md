@@ -91,7 +91,7 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 The following templates have no placeholders — copy them as-is:
 - `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
 - `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
-- `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time.
+- `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
 
 **For `README.md` at the project root:** substitute `{{PROJECT_NAME}}` and `{{PROJECT_DESCRIPTION}}`. This README is the first thing someone sees on GitHub — the description should make the research goal and intended output clear.
 

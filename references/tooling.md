@@ -319,12 +319,30 @@ Agents should use the right model for the job — not the most expensive one for
 
 #### Configuring at project creation time
 
-When writing agent files in Step 3d, detect what models are available and map tiers to actual model identifiers. The approach depends on the tool:
+**Model detection must run during setup** — don't leave agents on `inherit` if better models are available. Step 3d of the main skill flow has a dedicated sub-step for this that runs even when no new agents are being created, so the pre-copied `task-executor.md` always gets its model field configured.
 
-- **Claude Code**: Check which models the session has access to. Use the `model` frontmatter field. Typical mapping: fast → `haiku` or `sonnet`, balanced → `sonnet`, deep → `opus`. If only one model is available, use `inherit` for all.
-- **Cursor / Windsurf / other tools**: Model selection is usually a UI setting, not per-agent config. Note the recommended tier in a comment in the agent file so the user can configure their tool accordingly.
+The approach depends on the tool:
 
-If you're unsure what models are available, default to `inherit` — it's always safe. The tier comment in the agent file still documents the intent for future adjustment.
+- **Claude Code**: Check which models the session has access to (via the `/model` command or the visible model list). Use the `model` frontmatter field. Typical mapping:
+  - `fast` → fastest capable model (`haiku` if available, else `sonnet`)
+  - `balanced` → middle-tier model (`sonnet`)
+  - `deep` → most capable model (`opus`)
+- **Cursor / Windsurf / other tools**: Model selection is usually a UI setting, not per-agent config. Leave the `model` field as `inherit` and rely on the `# model-tier:` comment to document the recommendation for the user to configure in their tool.
+
+**Always preserve the `# model-tier:` comment** — it documents *why* the model was chosen so the user (or a future setup pass) can adjust when they switch tools or gain access to new models.
+
+If you're unsure what models are available or can only see one, default to `inherit` — it's always safe, and the tier comment preserves the intent for future adjustment.
+
+#### Updating model assignments later
+
+Model availability changes over time (new models ship, subscriptions change, tools get swapped). To re-run the model mapping on an existing project:
+
+1. List the current files in `.claude/agents/`
+2. Read each file's `# model-tier:` comment
+3. Map the tier to the best currently-available model
+4. Update the `model:` field, keep the comment
+
+This can be done manually or scripted.
 
 #### Agent file format
 
