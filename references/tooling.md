@@ -48,6 +48,36 @@ To install a `.skill` file: drag it into Claude Code, or `claude skill install <
 
 ---
 
+## External CLI tools
+
+Standalone tools that aren't skills or MCPs but are worth recommending during project setup.
+
+### dep-scan
+
+**Purpose:** Scans dependencies for supply-chain attacks (typosquatting, malicious install scripts, suspicious maintainer changes, known vulnerabilities) *before* they are installed. Six security policies: package age, install scripts, typosquatting, OSV.dev vulnerability checks, maintainer changes, dependency confusion.
+
+**Supported ecosystems:** npm, PyPI, crates.io, Go modules
+
+**Install:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh | bash
+```
+
+**Usage:** Use drop-in wrappers (`npmds`, `pipds`, `cargods`, `gods`) that scan before installing, or invoke the CLI directly in CI.
+
+**Recommend for:**
+- **Technical projects** using npm (`package.json`), PyPI (`requirements.txt`, `pyproject.toml`), Cargo (`Cargo.toml`), or Go modules (`go.mod`)
+- **Data/ML projects** — they install from PyPI and often pull in large dependency trees where a single malicious package can exfiltrate training data or credentials
+
+**Not relevant for:**
+- Projects with no external dependencies
+- Pure research projects that don't install packages
+- Non-code projects (planning, tracking, "other")
+
+**Repo:** [tkdtaylor/dep-scan](https://github.com/tkdtaylor/dep-scan)
+
+---
+
 ## MCP Servers
 
 MCP (Model Context Protocol) servers extend what Claude can do in a session — giving it access to tools, databases, APIs, and services. They're configured in `.claude/settings.json` or via `claude mcp add`.

@@ -100,6 +100,7 @@ Use the project context to write real content — not a copy of the catalog, but
 - **Skills**: name, trigger phrase, why it applies here *(list these first)*
 - **Hooks**: what event, what it runs, stub command
 - **Agents**: name, when to invoke, tier *(covered in 3d)*
+- **External CLI tools**: name, purpose, install command — e.g. `dep-scan` for any project with external package dependencies
 - **MCP servers**: name, one-line purpose, install command *(only if a skill doesn't cover the need)*
 
 Cap it at what's genuinely useful. Three targeted suggestions beat ten generic ones. If nothing in the catalog clearly applies, say so and skip the section.
@@ -115,6 +116,9 @@ Example format to append:
 
 ### Hooks
 - Pre-commit lint: runs `npm run lint` before every git commit (add via `/update-config`)
+
+### External tools
+- **dep-scan** — scans npm/pypi/cargo/go packages for supply-chain attacks before install. Use `npmds` / `pipds` / `cargods` / `gods` wrappers. Install: `curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh | bash`
 
 ### MCP servers
 - **postgres** — live database queries during development (no skill alternative for live data access)
