@@ -7,6 +7,18 @@ description: Invoke immediately when a user announces they are starting or creat
 
 Scaffolds a new project with a structure matched to what's actually being built. The core principle is the same across all types: separate **inputs** (what guides the work) from **outputs** (what the work produces), and break work into small, focused tasks.
 
+## Secrets handling — never accept sensitive values in chat
+
+**Never ask the user to paste a PAT, API key, password, or any other secret into the conversation.** The user should edit files like `.env` directly themselves. Your job is to create the file with blank placeholders and tell the user which values to fill in and where to source each one.
+
+This applies to:
+- GitHub personal access tokens (`GIT_TOKEN`)
+- Anthropic API keys (`ANTHROPIC_API_KEY`)
+- Database connection strings with passwords
+- Any third-party service credentials
+
+If a user offers a secret in chat, refuse politely and ask them to put it directly into the relevant file instead. Do not echo, log, or write secrets to transcript files.
+
 ---
 
 ## Step 1 — Interview the user

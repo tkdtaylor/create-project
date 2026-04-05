@@ -172,9 +172,9 @@ gh repo create <project-name> --private --source=. --remote=origin --push
    >    - **Contents:** Read and write
    >    - **Metadata:** Read-only (set automatically)
    > 6. Click **Generate token** and copy it
-   > 7. In step R6 you'll be asked to paste it into `.env`
+   > 7. In step R6 you'll paste it directly into `.env` yourself — **do not share it in this chat**
 
-   The token never gets written into the repo — R6 puts it in `.env` (which is gitignored) and the container entrypoint loads it into git's credential helper at runtime.
+   **Do not ask the user to paste the token in the conversation.** They will edit `.env` themselves. The token never gets written into the repo — it sits in `.env` (which is gitignored) and the container entrypoint loads it into git's credential helper at runtime.
 
 ---
 
@@ -272,13 +272,13 @@ GIT_USER_EMAIL=<HOST_GIT_EMAIL value, or blank if empty>
 
 If no GitHub repo was created in R5, also leave `GIT_REMOTE_URL` blank.
 
-Tell the user what to fill in:
+Tell the user to open `.env` in their editor and fill in:
 - `ANTHROPIC_API_KEY` — from https://console.anthropic.com/settings/keys
 - `GIT_TOKEN` — the fine-grained PAT from R5 (https://github.com/settings/personal-access-tokens/new — Contents: read/write, this repo only)
 - `GIT_REMOTE_URL` — if R5 wasn't run, the URL of the project's git remote
 - `GIT_USER_NAME` / `GIT_USER_EMAIL` — only if they weren't pre-filled from host git config
 
-The container entrypoint configures git from these values on every start — the token is never written to disk inside the container.
+**Never ask the user to paste the token or API key into the chat.** They should open `.env` directly and type them in. The container entrypoint configures git from these values on every start — the token is never written to disk inside the container.
 
 **7. Add a Commands section to `CLAUDE.md`**
 
