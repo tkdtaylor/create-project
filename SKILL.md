@@ -96,12 +96,11 @@ Read `$CLAUDE_SKILL_DIR/references/tooling.md` before starting — it contains t
 
 When recommending tools in the steps below, apply this preference order:
 
-1. **Skills first** — they are lightweight (no background process, no auth setup, no per-session context cost) and invoke on-demand by task description. Prefer a skill whenever one exists that covers the need.
-2. **Hooks next** — for automated behaviors that should happen every time (pre-commit, post-edit, etc.)
+1. **Skills** — lightweight, on-demand, no background process. The default choice.
+2. **Hooks** — for automated behaviors that should happen every time (pre-commit, post-edit, etc.)
 3. **Agents** — for reusable role-based workflows within the project
-4. **MCP servers last** — only when a skill cannot do the job. MCPs are worth the overhead when you need live data access (databases, live APIs), authenticated external services, or real-time tool integration that skills cannot provide via prompts alone.
-
-Before recommending an MCP, ask: *"Is there a skill that already does this, or a task description that would trigger one?"* If yes, recommend the skill instead.
+4. **External CLI tools** — standalone tools invoked via Bash (e.g. `dep-scan`, `gh`, `psql`)
+5. **MCP servers — almost never.** Most things people install MCPs for are already covered by built-in tools (WebSearch, WebFetch) or CLI commands via Bash (`gh`, `psql`, `sqlite3`). The only MCP that consistently adds value is `puppeteer` for browser automation. Do not recommend GitHub, search, fetch, database, or memory MCPs — they are redundant.
 
 ### 3a — Enrich CLAUDE.md
 
@@ -113,7 +112,8 @@ Use the project context to write real content — not a copy of the catalog, but
 - **Hooks**: what event, what it runs, stub command
 - **Agents**: name, when to invoke, tier *(covered in 3d)*
 - **External CLI tools**: name, purpose, install command — e.g. `dep-scan` for any project with external package dependencies
-- **MCP servers**: name, one-line purpose, install command *(only if a skill doesn't cover the need)*
+
+Do not include an MCP section unless the project has a genuine need that no built-in tool or CLI covers (see 3c).
 
 Cap it at what's genuinely useful. Three targeted suggestions beat ten generic ones. If nothing in the catalog clearly applies, say so and skip the section.
 
@@ -131,9 +131,6 @@ Example format to append:
 
 ### External tools
 - **dep-scan** — scans npm/pypi/cargo/go packages for supply-chain attacks before install. Use `npmds` / `pipds` / `cargods` / `gods` wrappers. Install: `curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh | bash`
-
-### MCP servers
-- **postgres** — live database queries during development (no skill alternative for live data access)
 ```
 
 ### 3b — Installed skills *(recommend first)*
@@ -146,23 +143,17 @@ Read the `name` and `description` frontmatter from each skill's `SKILL.md`. Cros
 
 Then check for skills in the catalog that are *not* installed but would be useful. Suggest installing them before moving on to MCP recommendations — skills are the preferred tooling type.
 
-### 3c — MCP servers *(only where skills can't help)*
+### 3c — MCP servers *(rarely needed)*
 
-Before adding an MCP, verify that no skill covers the same need. MCPs are appropriate for:
-- Live data sources (databases, live APIs)
-- Authenticated external services (GitHub API, Slack, cloud providers)
-- Real-time tool integration that can't be expressed as a task description
+Most things MCPs do are already covered by built-in tools (WebSearch, WebFetch) or CLI commands via Bash (`gh`, `psql`, `sqlite3`). See the comparison table in `references/tooling.md` — the only MCP that consistently adds value is `puppeteer` for browser automation.
 
-Using the catalog in `references/tooling.md`, identify MCP servers that fit these criteria for the project. For each:
-- Name and what it unlocks
-- Why a skill can't do this job
-- Install command or link
+**Do not recommend an MCP if a built-in tool or CLI covers the need.** The GitHub MCP is not needed when `gh` is available. Search MCPs are not needed when WebSearch exists. Database MCPs are not needed when the CLI client is available via Bash.
 
-Then do a targeted web search to catch anything not in the catalog:
-- `Claude Code MCP [tech-stack or domain]`
-- `site:github.com modelcontextprotocol server [relevant-domain]`
+Only recommend an MCP when:
+- The user specifically asks for one
+- The capability genuinely has no built-in or CLI alternative (e.g. `puppeteer` for web UI testing)
 
-Surface anything relevant with source URL. Don't install — present options and let the user choose. If every MCP you were about to recommend is already covered by an existing skill, skip this section entirely.
+If the project is a web app that needs browser testing, recommend `puppeteer`. For everything else, skip this section.
 
 ### 3d — Hooks and agents
 

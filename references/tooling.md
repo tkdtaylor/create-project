@@ -9,16 +9,12 @@ When recommending tools, prefer them in this order:
 1. **Skills** — lightweight, on-demand, no background process. The default choice.
 2. **Hooks** — for automated behaviors that run on specific events.
 3. **Agents** — for reusable role-based workflows within the project.
-4. **MCP servers** — only when a skill can't do the job.
+4. **External CLI tools** — standalone tools invoked via Bash (e.g. `dep-scan`, `gh`, `psql`).
+5. **MCP servers — almost never.** See the redundancy table below.
 
-**Why skills first:** a skill adds zero cost when not in use — it's just a markdown file on disk that Claude loads when the user describes a matching task. An MCP server adds tools to every session (context overhead), often needs auth configuration, and runs as a background process. Skills are easier to install, easier to share, and don't affect cold-start performance.
+**Why skills first:** a skill adds zero cost when not in use — it's just a markdown file on disk that Claude loads when the user describes a matching task. An MCP server adds tools to every session (context overhead), often needs auth configuration, and runs as a background process.
 
-**When to prefer an MCP:** only when you need something a skill genuinely cannot provide via task descriptions alone:
-- Live data access (databases, streaming APIs, real-time metrics)
-- Authenticated external services where the auth must persist across calls
-- Tool integration that requires stateful connections
-
-If a skill already exists for the need, always recommend the skill.
+**Why MCPs are almost always redundant:** most things people install MCPs for are already covered by built-in tools or CLI commands that Claude can invoke via Bash. The GitHub MCP is redundant with `gh`. Search MCPs are redundant with WebSearch. Database MCPs are redundant with `psql`/`sqlite3`. See the full comparison table in the MCP Servers section below.
 
 ---
 
@@ -80,64 +76,35 @@ curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh 
 
 ## MCP Servers
 
-MCP (Model Context Protocol) servers extend what Claude can do in a session — giving it access to tools, databases, APIs, and services. They're configured in `.claude/settings.json` or via `claude mcp add`.
+Most things MCPs do can already be done with built-in tools or CLI commands via Bash. **Only recommend an MCP when there is genuinely no built-in or CLI alternative.**
 
-**Before recommending an MCP, check if a skill covers the need.** MCPs add context overhead to every session and require auth configuration. Only use them for things skills genuinely can't do: live data, authenticated services, or stateful integrations.
+| Common suggestion | Already covered by | Verdict |
+|---|---|---|
+| `github` MCP | `gh` CLI via Bash — already installed and authenticated | **Skip** — `gh pr view`, `gh issue list`, etc. are equivalent |
+| `brave-search` / `tavily` / `exa` | Built-in WebSearch tool | **Skip** |
+| `fetch` | Built-in WebFetch tool | **Skip** |
+| `memory` | `docs/research-log.md` + project docs structure | **Skip** |
+| `filesystem` | Bash `cat`/`ls` — Claude already has shell access | **Skip** |
+| `postgres` | `psql` CLI via Bash | **Skip** — the CLI is lighter and already available |
+| `sqlite` | `sqlite3` CLI via Bash | **Skip** |
+| `puppeteer` | No CLI equivalent for live browser automation | **Recommend** when testing web UIs |
 
-### Catalog
+### When to actually recommend an MCP
 
-#### Web & research
+An MCP is worth the overhead only when:
+- The capability genuinely has no built-in tool or CLI equivalent
+- The user specifically asks for one
+- The integration requires a persistent stateful connection that CLI calls can't replicate
 
-| Server | What it unlocks | Install |
-|--------|----------------|---------|
-| `brave-search` | Web search with Brave — good for research and fact-checking | `claude mcp add brave-search -e BRAVE_API_KEY=<key> npx @modelcontextprotocol/server-brave-search` |
-| `tavily` | Search API tuned for LLM use — returns clean, relevant results | `claude mcp add tavily npx tavily-mcp` (requires `TAVILY_API_KEY`) |
-| `exa` | Semantic web search — finds pages by meaning, not just keywords | `claude mcp add exa npx exa-mcp-server` (requires `EXA_API_KEY`) |
-| `fetch` | Fetch any URL and return clean markdown — no API key needed | `claude mcp add fetch npx @modelcontextprotocol/server-fetch` |
+The only MCP from the standard catalog that consistently meets this bar is **puppeteer** (browser automation for testing web UIs — no CLI equivalent):
 
-#### Memory & knowledge
+```bash
+claude mcp add puppeteer npx @modelcontextprotocol/server-puppeteer
+```
 
-| Server | What it unlocks | Install |
-|--------|----------------|---------|
-| `memory` | Persistent knowledge graph across sessions — store and recall entities and relationships | `claude mcp add memory npx @modelcontextprotocol/server-memory` |
+For everything else, prefer the built-in tool or CLI. If the user asks about a specific MCP, explain what built-in alternative already covers it and let them decide.
 
-#### Development
-
-| Server | What it unlocks | Install |
-|--------|----------------|---------|
-| `github` | Read/write GitHub repos, PRs, issues, code search — without leaving Claude | `claude mcp add github -e GITHUB_TOKEN=<token> npx @modelcontextprotocol/server-github` |
-| `postgres` | Query and inspect a Postgres database | `claude mcp add postgres npx @modelcontextprotocol/server-postgres <connection-string>` |
-| `sqlite` | Read and query SQLite files | `claude mcp add sqlite npx @modelcontextprotocol/server-sqlite --db-path <path>` |
-| `puppeteer` | Browser automation — useful for testing web UIs or scraping | `claude mcp add puppeteer npx @modelcontextprotocol/server-puppeteer` |
-
-#### Productivity & files
-
-| Server | What it unlocks | Install |
-|--------|----------------|---------|
-| `filesystem` | Scoped file access outside the current directory | `claude mcp add filesystem npx @modelcontextprotocol/server-filesystem <allowed-paths>` |
-| `obsidian` | Read and write an Obsidian vault — useful for research and note-heavy projects | See `mcp-obsidian` on npm |
-| `gdrive` | Read files from Google Drive | `claude mcp add gdrive npx @modelcontextprotocol/server-gdrive` |
-
-### Matching by project type
-
-Only recommend these MCPs if no skill covers the need. For each one listed below, the justification is in the parentheses — if that rationale doesn't apply to the project, skip it.
-
-**Research project:**
-- `brave-search` / `tavily` / `exa` (live web search with a specific provider — WebSearch tool or a search skill covers this for most cases; only recommend if the user wants a specific provider or needs features WebSearch doesn't have)
-- `fetch` (one-off URL fetching — WebFetch tool covers this; only recommend if the project will be fetching many URLs programmatically)
-- `memory` (persistent knowledge graph — only if findings genuinely need cross-session recall beyond what `docs/research-log.md` provides)
-- `filesystem` (scoped file access outside the project directory — genuine need, no skill alternative)
-- `obsidian` (live Obsidian vault integration — genuine need if the user keeps notes there)
-
-**Technical project:**
-- `github` (live PR review, issue tracking, code search — genuine need, no skill can do this without the API)
-- `postgres` / `sqlite` (live database queries during development — genuine need, no skill alternative)
-- `puppeteer` (browser automation for testing — genuine need, no skill alternative)
-
-**Both:**
-- Most cross-cutting needs (scanning code, simplifying, writing docs, reviewing) are better served by skills — see the skills matching table above.
-
-### Finding more
+### Finding MCPs if the user wants one
 
 ```
 site:github.com modelcontextprotocol server

@@ -16,7 +16,7 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
 7. **Technical / Data:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
 8. **Technical / Data:** adds a VS Code devcontainer config automatically so you can open the project inside the container
-9. Recommends skills, hooks, and agents suited to the project (MCPs only when skills can't cover the need); offers to create `.claude/agents/` files for the suggested agents with model tiers auto-mapped to the best available model
+9. Recommends skills, hooks, agents, and CLI tools suited to the project; offers to create `.claude/agents/` files with model tiers auto-mapped to the best available model
 10. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction — with a task-executor agent for working through tasks efficiently
 
 ## First-time setup
