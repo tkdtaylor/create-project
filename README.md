@@ -224,7 +224,8 @@ references/
   tech-project.md                # Step-by-step setup for technical projects (T1–T7)
   data-project.md                # Step-by-step setup for data / ML projects (D1–D7)
   research-project.md            # Step-by-step setup for research / other projects (R1–R7)
-  tooling.md                     # Skills, MCP servers, hooks, and agents catalog with project-type matching
+  adopt-existing.md              # Adopting an existing codebase (A1–A9)
+  tooling.md                     # Skills, hooks, agents, and CLI tools catalog with project-type matching
 evals/
   evals.json                     # Test cases and assertions for skill evaluation
 SKILL.md                         # Entry point — gathers info, routes to reference files
@@ -293,13 +294,20 @@ If your project was created before the `~/.claude/` writable mount fix, update y
 
 ## Adding to an existing codebase
 
-This skill is designed for new projects, but the hooks, agents, and conventions work in any codebase. To adopt them in an existing project without the full scaffold:
+The skill can adopt existing codebases — not just scaffold new ones. Open Claude Code in an existing project directory and say *"set up this project for Claude"*, *"add project structure"*, or *"onboard this repo"*.
 
-1. **Copy `.claude/`** — settings, scripts, and agents (same as the upgrade steps above)
-2. **Create a `CLAUDE.md`** at the project root — describe your project structure, commands, conventions, and paste in the boundaries / commit rules / plan mode sections from the template
-3. **Optionally adopt the task structure** — create `docs/tasks/active/`, `backlog/`, `completed/`, and `docs/tasks/test-specs/` if you want the plan restructuring hook to work (it detects `docs/tasks/` to activate)
+The skill will:
 
-You don't need to adopt the full directory structure. The hooks are the most portable piece — they work in any project with a `.claude/` directory. The plan restructuring hook simply won't fire if `docs/tasks/` doesn't exist.
+1. **Analyze the codebase** — detect the stack, read the directory structure, discover build/test/run commands, review git history and conventions
+2. **Confirm understanding** — present a summary and ask you to verify before writing anything
+3. **Generate `CLAUDE.md`** — a project context file based on the *actual* code, not generic templates. Includes real commands, real structure, real conventions discovered from the codebase
+4. **Generate `docs/architecture/overview.md`** — component map, data flow, key dependencies, entry points — all derived from reading the code
+5. **Create task structure** — `docs/tasks/active/`, `backlog/`, `completed/`, and test-spec tracking so plan mode and the task-executor work
+6. **Copy hooks and agents** — settings.json, hook scripts, and the task-executor agent
+7. **Configure model tiers** — detect available models and set the best one for each agent
+8. **Recommend tooling** — skills, hooks, and CLI tools suited to the project
+
+Existing source code is never moved, renamed, or restructured. The skill adds a documentation and tooling layer alongside what's already there.
 
 ## Updating the base Docker images
 

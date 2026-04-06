@@ -1,6 +1,6 @@
 ---
 name: create-project
-description: Invoke immediately when a user announces they are starting or creating something new — any phrasing like "start a project", "set up a project", "create a project", "I'm starting a new [X]", "set up a [X] project for me", or "scaffold a codebase". The domain doesn't matter — software builds (CLI, API, data pipeline, library), research investigations (competitive analysis, literature review), or non-technical work (planning, tracking, decision-making) all qualify. The key signal is the user declaring a fresh start, not asking for help with existing work. Scaffolds the full workspace: directories, task files, CLAUDE.md, git init, and tooling recommendations. Do not invoke when the user is modifying, debugging, adding features to, or writing config for an existing codebase.
+description: Invoke when a user announces they are starting or creating something new — "start a project", "set up a project", "create a project", "scaffold a codebase" — OR when they want to adopt the create-project workflow for an existing codebase — "set up this project for Claude", "add project structure", "generate docs for this codebase", "onboard this repo". For new projects, scaffolds the full workspace. For existing codebases, analyzes what's there and generates baseline docs (CLAUDE.md, architecture overview, task structure) so new work fits within a structured process.
 ---
 
 # Create Project
@@ -75,6 +75,20 @@ Determine the project type from the conversation — only ask explicitly if it i
 ---
 
 ## Step 2 — Set up project structure
+
+### Existing codebase?
+
+Before proceeding, check whether the current directory already has source code:
+
+```bash
+ls src/ lib/ app/ *.py *.ts *.js *.rs *.go package.json Cargo.toml go.mod pyproject.toml 2>/dev/null | head -5
+```
+
+If the directory already contains source code, a dependency manifest, or a git history with real commits, this is an **existing codebase adoption** — not a new project scaffold. Read and follow `$CLAUDE_SKILL_DIR/references/adopt-existing.md` instead of the type-specific setup below, then skip to Step 3.
+
+Also route to adopt-existing if the user explicitly says things like "set up this project for Claude", "add project structure to this repo", "generate docs for this codebase", or "onboard this repo".
+
+### New project
 
 Based on the project type, read the appropriate reference file and follow it completely before returning to Step 3:
 
