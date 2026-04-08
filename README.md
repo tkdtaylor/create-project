@@ -9,15 +9,16 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", or "start a data science project". The skill:
 
 1. Interviews you until the goal, scope, and success criteria are unambiguous — confirms a written summary before touching any files
-2. Creates a type-matched directory structure with template files
+2. Creates a type-matched directory structure with template files, including requirement-traceable task and test spec templates (`REQ-NNN` IDs flow from task → test spec → code)
 3. Generates a `CLAUDE.md` so every future session starts with full project context
 4. **Technical / Data:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, data pipeline skeleton, etc.)
-5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material
+5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material; ships output templates (decision brief, deep research report, learning plan) in `outputs/templates/`
 6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
 7. **Technical / Data:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
 8. **Technical / Data:** adds a VS Code devcontainer config automatically so you can open the project inside the container
-9. Recommends skills, hooks, agents, and CLI tools suited to the project; offers to create `.claude/agents/` files with model tiers auto-mapped to the best available model
-10. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction — with a task-executor agent for working through tasks efficiently
+9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
+10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
+11. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction
 
 ## First-time setup
 
@@ -120,7 +121,7 @@ code --install-extension ms-vscode-remote.remote-containers
 |------|----------|---------------|
 | **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/` with TDD scaffolding (test specs before tasks) |
 | **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/`, `models/`, `tests/`, `docs/` with dual TDD + experiment tracking |
-| **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/`, `docs/` |
+| **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/` (with decision brief, deep research, and learning plan templates), `docs/` |
 | **other** | Planning, tracking, organising — wedding planning, job search, project management | Research base structure with domain-specific top-level folders (e.g. `vendors/`, `budget/`, `timeline/`) chosen by the user |
 
 ## Docker architecture
@@ -312,7 +313,7 @@ The skill will:
 3. **Generate `CLAUDE.md`** — a project context file based on the *actual* code, not generic templates. Includes real commands, real structure, real conventions discovered from the codebase
 4. **Generate `docs/architecture/overview.md`** — component map, data flow, key dependencies, entry points — all derived from reading the code
 5. **Create task structure** — `docs/tasks/active/`, `backlog/`, `completed/`, and test-spec tracking so plan mode and the task-executor work
-6. **Copy hooks and agents** — settings.json, hook scripts, and the task-executor agent
+6. **Copy hooks and agents** — settings.json, hook scripts, and agent templates (task-executor, architect, code-reviewer, security-auditor for tech/data projects)
 7. **Configure model tiers** — detect available models and set the best one for each agent
 8. **Recommend tooling** — skills, hooks, and CLI tools suited to the project
 
@@ -335,3 +336,5 @@ The plan mode optimization (context-saving skeleton + ephemeral task executor) i
 The post-compact context recovery hook and protect-secrets hook are adapted from [claudeframework](https://github.com/dixus/claudeframework) by Holger Kreissl. The task-executor's self-review step before committing is also inspired by their pre-flight review pattern.
 
 The three-tier boundary system (Always / Ask First / Never) and anti-rationalization tables in the CLAUDE.md template are adapted from [agent-skills](https://github.com/addyosmani/agent-skills) by Addy Osmani.
+
+The structured code review perspectives (10 review dimensions with selective application), research output templates (decision brief, deep research report, learning plan), and the approach to auto-configuring code quality tooling (per-language linting, formatting, pre-commit hooks, coverage thresholds) are inspired by [claude-coding-commands](https://github.com/awood45/claude-coding-commands) by Alex Wood.
