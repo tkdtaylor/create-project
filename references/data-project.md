@@ -106,11 +106,17 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute p
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
+| `.claude/agents/architect.md` | `.claude/agents/architect.md` |
+| `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
+| `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 
 The following templates have no placeholders — copy them as-is:
 - `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
 - `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD for code, experiment workflow for ML, commits after completion. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
+- `.claude/agents/architect.md` — reviews proposed features, pipeline design, and data model changes. Drafts ADRs for non-obvious decisions. Ships with `model: inherit` and a `# model-tier: deep` comment.
+- `.claude/agents/code-reviewer.md` — reviews changed files using structured perspectives (correctness, data integrity, reproducibility, performance, testing, etc.). Selects 2–4 perspectives based on what changed. Ships with `model: inherit` and a `# model-tier: balanced` comment.
+- `.claude/agents/security-auditor.md` — reviews application code for data leakage, credential exposure, injection risks, and insecure defaults. Ships with `model: inherit` and a `# model-tier: deep` comment.
 
 Fill in the tech stack table using what the user provided. If a layer wasn't mentioned, use `—`.
 
@@ -412,6 +418,117 @@ The devcontainer template includes Python and Jupyter extensions by default.
 ```bash
 git add .devcontainer/
 git commit -m "chore: add VS Code devcontainer"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
+---
+
+## Step D8 — Code quality tooling
+
+Set up linting, formatting, and test coverage enforcement. Data/ML projects are Python-first, so configure accordingly.
+
+**1. Detect existing config**
+
+```bash
+ls ruff.toml pyproject.toml .flake8 .pre-commit-config.yaml Makefile 2>/dev/null || echo "none found"
+```
+
+If config files already exist, skip that tool — don't overwrite existing setup.
+
+**2. Configure Python tooling**
+
+**Linter + formatter:** ruff (covers both — replaces flake8, isort, black)
+
+Create `ruff.toml`:
+```toml
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"notebooks/*" = ["E402", "F401"]  # notebooks have different import patterns
+
+[format]
+quote-style = "double"
+```
+
+**Test coverage:** pytest-cov
+
+Add to `requirements.txt` (or `requirements-dev.txt`):
+```
+ruff
+pytest
+pytest-cov
+```
+
+Create or update `pyproject.toml` coverage section:
+```toml
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=80"
+testpaths = ["tests"]
+```
+
+**Pre-commit:** create `.pre-commit-config.yaml`:
+```yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+```
+
+Note: `nbstripout` strips notebook outputs before commits — prevents accidentally committing large outputs, credentials in cell outputs, or PII.
+
+**3. Create a Makefile (if one doesn't exist)**
+
+```makefile
+.PHONY: lint format test check notebook-clean
+
+lint:
+	ruff check src/ tests/
+
+format:
+	ruff format src/ tests/
+
+test:
+	pytest
+
+notebook-clean:
+	nbstripout notebooks/*.ipynb
+
+check: lint test
+	@echo "All checks passed."
+```
+
+If a `Makefile` already exists, add missing targets only.
+
+**4. Update CLAUDE.md commands**
+
+Fill in the TODO placeholders in the `## Commands` section of `CLAUDE.md`:
+- `make lint` or `ruff check src/ tests/`
+- `make format` or `ruff format src/ tests/`
+- `make test` or `pytest`
+
+**5. Install pre-commit hooks**
+
+```bash
+pip install pre-commit nbstripout && pre-commit install
+```
+
+**6. Commit**
+
+```bash
+git add Makefile .pre-commit-config.yaml ruff.toml pyproject.toml requirements*.txt 2>/dev/null
+git diff --cached --quiet || git commit -m "chore: add code quality tooling (lint, format, coverage)"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
 

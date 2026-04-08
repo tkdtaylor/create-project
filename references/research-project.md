@@ -31,6 +31,7 @@ project-root/
 ├── notes/                      # Working synthesis — Claude's scratchpad
 │   └── by-topic/               # Notes organized by research area or theme
 ├── outputs/                    # Final deliverables
+│   ├── templates/              # Output structure templates (decision brief, research report, etc.)
 │   ├── drafts/                 # Work in progress
 │   └── final/                  # Completed and approved pieces
 └── docs/                       # Project management
@@ -51,7 +52,7 @@ The key separation: `sources/` and `docs/` are the input side (what guides the w
 ```bash
 mkdir -p sources/local sources/web
 mkdir -p notes/by-topic
-mkdir -p outputs/drafts outputs/final
+mkdir -p outputs/templates outputs/drafts outputs/final
 mkdir -p docs/tasks/active docs/tasks/backlog docs/tasks/completed
 ```
 
@@ -60,7 +61,7 @@ Add `.gitkeep` so empty directories are tracked:
 ```bash
 touch sources/local/.gitkeep sources/web/.gitkeep
 touch notes/by-topic/.gitkeep
-touch outputs/drafts/.gitkeep outputs/final/.gitkeep
+touch outputs/templates/.gitkeep outputs/drafts/.gitkeep outputs/final/.gitkeep
 touch docs/tasks/backlog/.gitkeep docs/tasks/completed/.gitkeep
 ```
 
@@ -87,11 +88,17 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
+| `decision-brief-template.md` | `outputs/templates/decision-brief.md` |
+| `deep-research-template.md` | `outputs/templates/deep-research.md` |
+| `learning-plan-template.md` | `outputs/templates/learning-plan.md` |
 
 The following templates have no placeholders — copy them as-is:
 - `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
 - `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
+- `outputs/templates/decision-brief.md` — structured template for comparing options and making a recommendation. Includes comparison matrix, pros/cons, dissenting considerations, and open questions.
+- `outputs/templates/deep-research.md` — structured template for in-depth research reports. Includes methodology, findings by subtopic, cross-source analysis, and gap identification.
+- `outputs/templates/learning-plan.md` — three-phase learning syllabus (Apprentice → Journeyman → Master) with curated readings, projects, and writing prompts.
 
 **For `README.md` at the project root:** substitute `{{PROJECT_NAME}}` and `{{PROJECT_DESCRIPTION}}`. This README is the first thing someone sees on GitHub — the description should make the research goal and intended output clear.
 

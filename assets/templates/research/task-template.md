@@ -25,9 +25,18 @@ How to tackle this:
 - [ ] Web sources: (list domains, databases, or sites to check)
 - [ ] Synthesis: (how to combine and evaluate findings)
 
+## Requirements
+
+> Link research outputs to requirement IDs for traceability. Use the format `REQ-NNN` to connect this task's findings back to the project's goals.
+
+| Req ID | What this must answer | Priority |
+|--------|----------------------|----------|
+| REQ-001 | | must have |
+| | | |
+
 ## Done when
 
-> What does a complete answer look like? Define this before starting so you know when to stop.
+> What does a complete answer look like? Define this before starting so you know when to stop. Reference REQ IDs where possible.
 
 -
 

@@ -14,17 +14,28 @@
 - Related ADRs: `docs/architecture/decisions/`
 - Dependencies: none (or list task IDs this depends on)
 
+## Requirements
+
+> Link acceptance criteria to requirement IDs for traceability. Use the format `REQ-NNN` where NNN matches the feature or spec area. This lets you trace from requirement → task → test spec → code.
+
+| Req ID | Description | Priority |
+|--------|-------------|----------|
+| REQ-001 | | must have |
+| | | |
+
 ## Readiness gate
 
 Before writing any code, verify:
 
 - [ ] Test spec `{{TASK_ID}}-{{TASK_SLUG}}-test-spec.md` exists in `docs/tasks/test-specs/`
-- [ ] All acceptance criteria below are defined
+- [ ] All acceptance criteria below have a linked REQ ID
 - [ ] Any blocking tasks are complete
 
 ## Acceptance criteria
 
-- [ ]
+> Each criterion should reference its requirement: `[REQ-001]` description of what done looks like.
+
+- [ ] [REQ-001]
 - [ ]
 
 ## Out of scope

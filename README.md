@@ -198,6 +198,9 @@ assets/
           post-compact.py        # re-injects task context after context compaction
         agents/
           task-executor.md       # ephemeral agent for executing one task at a time
+          architect.md           # architecture review + ADR drafting (tier: deep)
+          code-reviewer.md       # structured multi-perspective code review (tier: balanced)
+          security-auditor.md    # OWASP Top 10 application security audit (tier: deep)
       docker/
         Dockerfile               # extends shared base with project runtime + uid fix
         docker-compose.yml       # builds project image, mounts volume + credentials
@@ -214,6 +217,9 @@ assets/
     research/                    # Per-project templates — research projects
       CLAUDE.md
       devcontainer.json
+      decision-brief-template.md # structured comparison + recommendation output template
+      deep-research-template.md  # in-depth research report output template
+      learning-plan-template.md  # three-phase learning syllabus output template
       .claude/                   # same hooks, research-adapted task-executor agent
       docker/
         docker-compose.yml
@@ -221,8 +227,8 @@ assets/
         requirements.txt         # pre-populated with requests, bs4, pdfminer, markdownify
       [outline, task, research-log templates...]
 references/
-  tech-project.md                # Step-by-step setup for technical projects (T1–T7)
-  data-project.md                # Step-by-step setup for data / ML projects (D1–D7)
+  tech-project.md                # Step-by-step setup for technical projects (T1–T8)
+  data-project.md                # Step-by-step setup for data / ML projects (D1–D8)
   research-project.md            # Step-by-step setup for research / other projects (R1–R7)
   adopt-existing.md              # Adopting an existing codebase (A1–A9)
   tooling.md                     # Skills, hooks, agents, and CLI tools catalog with project-type matching
@@ -257,6 +263,9 @@ The files below live in `assets/templates/<type>/` (where `<type>` is `tech`, `d
 | `.claude/scripts/protect-secrets.py` | Blocks writes to private keys and credential files |
 | `.claude/scripts/post-compact.py` | Re-injects task context after context compaction |
 | `.claude/agents/task-executor.md` | Ephemeral agent for executing one task at a time |
+| `.claude/agents/architect.md` | Architecture review + ADR drafting (tier: deep) |
+| `.claude/agents/code-reviewer.md` | Structured multi-perspective code review (tier: balanced) |
+| `.claude/agents/security-auditor.md` | OWASP Top 10 application security audit (tier: deep) |
 
 Quick copy for a tech project (run from your project root):
 
@@ -265,7 +274,7 @@ SKILL=~/.claude/skills/create-project/assets/templates/tech
 mkdir -p .claude/scripts .claude/agents
 cp "$SKILL/.claude/settings.json" .claude/settings.json
 cp "$SKILL/.claude/scripts/"*.py .claude/scripts/
-cp "$SKILL/.claude/agents/task-executor.md" .claude/agents/task-executor.md
+cp "$SKILL/.claude/agents/"*.md .claude/agents/
 ```
 
 Replace `tech` with `data` or `research` for other project types.

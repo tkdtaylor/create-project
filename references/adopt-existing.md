@@ -148,9 +148,11 @@ cp "$TEMPLATE_DIR/.claude/scripts/restructure-plan.py" .claude/scripts/restructu
 cp "$TEMPLATE_DIR/.claude/scripts/protect-secrets.py" .claude/scripts/protect-secrets.py
 cp "$TEMPLATE_DIR/.claude/scripts/post-compact.py" .claude/scripts/post-compact.py
 
-# Task executor agent
-cp "$TEMPLATE_DIR/.claude/agents/task-executor.md" .claude/agents/task-executor.md
+# Agents
+cp "$TEMPLATE_DIR/.claude/agents/"*.md .claude/agents/
 ```
+
+For **tech/data projects**, this copies: `task-executor.md`, `architect.md`, `code-reviewer.md`, and `security-auditor.md`. For **research projects**, this copies only `task-executor.md`.
 
 Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 

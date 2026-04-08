@@ -198,24 +198,25 @@ A custom agent is worth creating when:
 
 Always offer to **create the agent files** — not just list them in CLAUDE.md. Write each suggested agent to `.claude/agents/<name>.md` at the project root so the user can invoke them immediately. If the user declines, just document them in CLAUDE.md.
 
-### Technical project agents
+### Agents that ship with the scaffold
 
-Suggest these as role-based agents that inhabit a specific perspective on the codebase. Choose the subset that matches what this project will actually need — not all are relevant to every project type.
+The following agents are already created during project setup (Step T2/D2) from templates. Step 3d should detect available models and update their `model:` fields — don't recreate them, just configure them.
 
-**architect** *(tier: deep)*
-Reviews proposed features, data model changes, and service boundaries against `docs/architecture/overview.md`. Flags design inconsistencies, identifies unexpected coupling, and drafts ADRs when a non-obvious decision was made. Knows the system's current shape and asks "does this fit?" before "how do we build this?".
-Invoke: *"use the architect agent to review this design"* or *"draft an ADR for [decision]"*
-Best for: API design, schema changes, adding new services, any choice that will be hard to reverse.
+| Agent | Project types | Tier | Already shipped? |
+|-------|--------------|------|-----------------|
+| task-executor | tech, data, research | fast | Yes |
+| architect | tech, data | deep | Yes |
+| code-reviewer | tech, data | balanced | Yes |
+| security-auditor | tech, data | deep | Yes |
+
+### Additional technical project agents
+
+Beyond the agents that ship with the scaffold, suggest these additional agents when the project type warrants them. Choose the subset that matches what this project will actually need.
 
 **task-planner** *(tier: balanced)*
 Takes a feature description and produces a paired task file + test spec following the project's naming conventions. Asks clarifying questions about edge cases and acceptance criteria before writing anything — the output is a well-scoped task, not a vague to-do.
 Invoke: *"use the task-planner to break down [feature]"*
 Best for: features with unclear scope, anything that touches multiple layers, or when you're not sure where to start.
-
-**code-reviewer** *(tier: balanced)*
-Reviews changed files against the architecture docs, coding conventions, and the test spec for the current task. Flags drift from the agreed design, missing coverage, and common mistakes for this stack. Reads the task spec first so it understands what "done" means.
-Invoke: *"use the code-reviewer on these changes"*
-Best for: before committing a task, especially after a long implementation session.
 
 **qa** *(tier: balanced)*
 Reads the test spec for the current task, runs the test suite, and reports failures with context from the relevant source files. Identifies missing test cases based on the spec's acceptance criteria. Understands the difference between a test gap and a genuine bug.
@@ -232,23 +233,18 @@ Generates or updates README sections, API reference docs, inline docstrings, and
 Invoke: *"use the docs-writer to document [module or endpoint]"*
 Best for: libraries, public APIs, or any project where docs chronically lag behind the code.
 
-**security-auditor** *(tier: deep)*
-Reviews source code for OWASP Top 10 vulnerabilities, insecure defaults, secrets committed in code, and injection risks in user-facing paths. Works from source files — complements the `code-scanner` skill (which focuses on supply-chain attacks in dependencies rather than application code).
-Invoke: *"use the security-auditor on the auth module"* or *"run a security pass before we ship"*
-Best for: projects handling user input, authentication, payment data, or any externally-facing surface.
-
 ### Technical project subtype guidance
 
-Not every agent fits every project. Pick 3–4 that genuinely apply:
+The scaffold ships architect, code-reviewer, and security-auditor by default. Use this table to decide which **additional** agents to create:
 
-| Project subtype | Recommended agents |
-|----------------|--------------------|
-| REST / GraphQL API | architect, code-reviewer, security-auditor, docs-writer |
-| CLI tool | task-planner, qa, docs-writer |
-| Library / SDK | code-reviewer, docs-writer, dependency-auditor |
-| Data pipeline | architect, qa, dependency-auditor |
-| Web app (frontend-heavy) | architect, code-reviewer, qa, security-auditor |
-| Internal script / one-off | task-planner — others likely overkill |
+| Project subtype | Ships by default | Add these |
+|----------------|-----------------|-----------|
+| REST / GraphQL API | architect, code-reviewer, security-auditor | docs-writer |
+| CLI tool | architect, code-reviewer, security-auditor | task-planner, qa, docs-writer |
+| Library / SDK | architect, code-reviewer, security-auditor | docs-writer, dependency-auditor |
+| Data pipeline | architect, code-reviewer, security-auditor | qa, dependency-auditor |
+| Web app (frontend-heavy) | architect, code-reviewer, security-auditor | qa |
+| Internal script / one-off | architect, code-reviewer, security-auditor | task-planner — others likely overkill |
 
 ### Research project agents
 

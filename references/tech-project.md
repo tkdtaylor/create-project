@@ -78,6 +78,9 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
+| `.claude/agents/architect.md` | `.claude/agents/architect.md` |
+| `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
+| `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 
 The following templates have no placeholders — copy them as-is:
 - `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and three hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, and context recovery after compaction.
@@ -85,6 +88,9 @@ The following templates have no placeholders — copy them as-is:
 - `.claude/scripts/protect-secrets.py` — PreToolUse hook. Hard-blocks writes to private keys, credential files, and auth configs (`.pem`, `.key`, `service-account*.json`, `.npmrc`, etc.).
 - `.claude/scripts/post-compact.py` — PostCompact hook. Re-injects the active task, test spec, and plan status into the conversation after context compaction so Claude doesn't lose track of what it was doing.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD with self-review, commits after completion, and reports back without bloating the main conversation. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
+- `.claude/agents/architect.md` — reviews proposed features and design changes against the architecture docs. Drafts ADRs for non-obvious decisions. Ships with `model: inherit` and a `# model-tier: deep` comment.
+- `.claude/agents/code-reviewer.md` — reviews changed files using structured perspectives (correctness, security, performance, testing, API design, concurrency, etc.). Selects 2–4 perspectives based on what changed. Ships with `model: inherit` and a `# model-tier: balanced` comment.
+- `.claude/agents/security-auditor.md` — reviews application code for OWASP Top 10 vulnerabilities, insecure defaults, secrets in code, and injection risks. Ships with `model: inherit` and a `# model-tier: deep` comment.
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
 
@@ -427,6 +433,217 @@ The container starts (seeding the workspace volume on first open if needed) and 
 ```bash
 git add .devcontainer/
 git commit -m "chore: add VS Code devcontainer"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
+---
+
+## Step T8 — Code quality tooling
+
+Set up linting, formatting, and test coverage enforcement based on the project's tech stack. Auto-detect the language and configure the appropriate tools — don't ask the user to choose.
+
+**1. Detect language and existing config**
+
+Check what's already configured before adding anything:
+
+```bash
+# Check for existing configs
+ls .eslintrc* eslint.config* .prettierrc* prettier.config* ruff.toml pyproject.toml .golangci.yml rustfmt.toml .clippy.toml Makefile 2>/dev/null || echo "none found"
+```
+
+If config files already exist, skip that tool — don't overwrite existing setup.
+
+**2. Install and configure per language**
+
+Pick the toolset that matches the primary language. If the project is multi-language, configure the primary one and note the secondary.
+
+### Python
+
+**Linter + formatter:** ruff (covers both — replaces flake8, isort, black)
+
+Create `ruff.toml`:
+```toml
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[format]
+quote-style = "double"
+```
+
+**Test coverage:** pytest-cov
+
+Add to `requirements.txt` (or create `requirements-dev.txt`):
+```
+ruff
+pytest
+pytest-cov
+```
+
+Create or update `pyproject.toml` coverage section:
+```toml
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=80"
+```
+
+**Pre-commit:** create `.pre-commit-config.yaml`:
+```yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+```
+
+### Node / TypeScript
+
+**Linter:** eslint (v9+ flat config)
+
+Create `eslint.config.js` with sensible defaults for the framework detected.
+
+**Formatter:** prettier
+
+Create `.prettierrc`:
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 100
+}
+```
+
+**Test coverage:** configure in `package.json` or vitest/jest config:
+```json
+{
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}
+```
+
+**Pre-commit:** use husky + lint-staged:
+```bash
+npx husky init
+```
+
+Create `.husky/pre-commit`:
+```bash
+npx lint-staged
+```
+
+Add to `package.json`:
+```json
+{
+  "lint-staged": {
+    "*.{js,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml}": ["prettier --write"]
+  }
+}
+```
+
+### Go
+
+**Linter:** golangci-lint
+
+Create `.golangci.yml`:
+```yaml
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+run:
+  timeout: 5m
+```
+
+**Formatter:** gofmt (built-in — no config needed)
+
+**Test coverage:** built-in `go test -coverprofile`:
+```bash
+go test -coverprofile=coverage.out -covermode=atomic ./...
+go tool cover -func=coverage.out
+```
+
+No pre-commit framework needed — `go vet` and `gofmt` are fast enough to run inline.
+
+### Rust
+
+**Linter:** clippy (built-in)
+
+Create `clippy.toml` if custom config needed, otherwise defaults are good.
+
+**Formatter:** rustfmt (built-in)
+
+Create `rustfmt.toml`:
+```toml
+edition = "2021"
+max_width = 100
+```
+
+**Test coverage:** cargo-tarpaulin (add to CI, not local dev)
+
+No pre-commit framework needed — `cargo clippy` and `cargo fmt` are standard.
+
+**3. Create a Makefile (if one doesn't exist)**
+
+Add a `Makefile` with standard targets so commands are discoverable and consistent:
+
+```makefile
+.PHONY: lint format test check
+
+lint:
+	# TODO: fill in (e.g. ruff check src/, npx eslint src/, golangci-lint run)
+
+format:
+	# TODO: fill in (e.g. ruff format src/, npx prettier --write src/, gofmt -w .)
+
+test:
+	# TODO: fill in (e.g. pytest, npm test, go test ./..., cargo test)
+
+check: lint test
+	@echo "All checks passed."
+```
+
+Fill in the actual commands based on the detected stack. If a `Makefile` already exists, add missing targets only.
+
+**4. Update CLAUDE.md commands**
+
+Fill in the TODO placeholders in the `## Commands` section of `CLAUDE.md` with the actual lint, format, and test commands configured above.
+
+**5. Install pre-commit hooks (if framework was configured)**
+
+For Python projects with `.pre-commit-config.yaml`:
+```bash
+pip install pre-commit && pre-commit install
+```
+
+For Node projects with husky:
+```bash
+npm install --save-dev husky lint-staged && npx husky init
+```
+
+**6. Commit**
+
+```bash
+git add Makefile .pre-commit-config.yaml ruff.toml pyproject.toml eslint.config.* .prettierrc* .husky/ .golangci.yml rustfmt.toml 2>/dev/null
+git add requirements*.txt package.json 2>/dev/null
+git diff --cached --quiet || git commit -m "chore: add code quality tooling (lint, format, coverage)"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
 

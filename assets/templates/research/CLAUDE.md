@@ -11,6 +11,7 @@ sources/       <- input materials (never edited — treat as read-only)
 notes/         <- working synthesis (scratchpad — can be messy)
   by-topic/      notes organized by research area
 outputs/       <- final deliverables
+  templates/     output structure templates (decision brief, research report, learning plan)
   drafts/        work in progress
   final/         completed and approved pieces
 docs/          <- project management
@@ -24,6 +25,16 @@ The key distinction: `sources/` and `docs/` are the input side, `notes/` and `ou
 ## Research approach
 
 > TODO: fill in specifics — e.g. primary domains to search, databases or journals to prioritize, geographic or time scope, intended audience for the output.
+
+## Output templates
+
+When starting a new output, copy the matching template from `outputs/templates/` to `outputs/drafts/` and fill it in:
+
+- **Decision brief** (`outputs/templates/decision-brief.md`) — comparing options with a structured recommendation
+- **Deep research report** (`outputs/templates/deep-research.md`) — in-depth investigation with methodology, findings, and analysis
+- **Learning plan** (`outputs/templates/learning-plan.md`) — three-phase syllabus (Apprentice → Journeyman → Master)
+
+If the output doesn't match any template, create a free-form document in `outputs/drafts/` — templates are a starting point, not a constraint.
 
 ## Conventions
 

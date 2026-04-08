@@ -3,6 +3,15 @@
 **Linked task:** [`docs/tasks/active/{{TASK_ID}}-{{TASK_SLUG}}.md`](../active/{{TASK_ID}}-{{TASK_SLUG}}.md)
 **Written:** {{DATE}}
 
+## Requirements coverage
+
+> Each test case should trace back to a requirement from the task file. This ensures every requirement has at least one test.
+
+| Req ID | Test cases | Covered? |
+|--------|-----------|----------|
+| REQ-001 | TC-001 | ⏳ |
+| | | |
+
 ## Pre-implementation checklist
 
 Complete this before writing any code:
@@ -10,6 +19,7 @@ Complete this before writing any code:
 - [ ] All test cases below are defined
 - [ ] Expected inputs and outputs are specified for each case
 - [ ] Edge cases and error paths are covered
+- [ ] Every REQ-ID from the task has at least one test case
 - [ ] Success criteria are unambiguous
 
 ---
@@ -18,23 +28,26 @@ Complete this before writing any code:
 
 ### TC-001: [Happy path — describe the normal success case]
 
+- **Requirement:** REQ-001
 - **Input:**
 - **Expected output:**
 - **Edge cases:**
 
 ### TC-002: [Error case — describe what happens when something goes wrong]
 
+- **Requirement:** REQ-001
 - **Input:**
 - **Expected output:**
 - **Edge cases:**
 
 ### TC-003: [Boundary case — describe an edge or limit]
 
+- **Requirement:** REQ-001
 - **Input:**
 - **Expected output:**
 - **Edge cases:**
 
-> Add or remove test cases as needed. Each case should be independently verifiable.
+> Add or remove test cases as needed. Each case should be independently verifiable and trace to a requirement.
 
 ---
 
