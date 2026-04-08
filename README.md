@@ -117,10 +117,10 @@ gh auth login
 
 ---
 
-### For VS Code IDE integration (steps T7/D7/R7)
+### For VS Code IDE integration (steps T7/D7/R7 — Docker Engine only)
 
 **VS Code Dev Containers extension**
-Optional. Lets you open the project directly inside the Docker container — your editor, terminal, and Claude Code all run in the isolated workspace.
+Optional. Only applies when using the Docker Engine path — skipped when Docker Sandbox (`sbx`) is configured. Lets you open the project directly inside the Docker container — your editor, terminal, and Claude Code all run in the isolated workspace.
 
 Install from VS Code Extensions panel: search **Dev Containers** (publisher: Microsoft)
 or:
@@ -173,7 +173,7 @@ Used on Linux, in CI, or when `sbx` is not installed. Provides container-level i
 
 The container runs as a non-root `developer` user. The entrypoint performs privileged init steps as root then drops to `developer` via `gosu` before starting the shell. This means Claude Code cannot install system packages, modify OS config, or escalate privileges.
 
-### Shared base images
+#### Shared base images
 
 Built once per machine, reused across all projects of that type:
 
@@ -184,7 +184,7 @@ Built once per machine, reused across all projects of that type:
 
 The skill stores a `sha256` hash of each Dockerfile as a Docker label and rebuilds automatically when the content changes. To update (e.g. pin a Claude Code version), edit `assets/base/tech.Dockerfile` — the next project setup detects the hash change and rebuilds.
 
-### Per-project (created in seconds)
+#### Per-project (created in seconds)
 
 - Named Docker volume (`<project-name>-workspace`) — the container's isolated, persistent workspace
 - `docker/Dockerfile` extending the shared base with the project's runtime (Rust, Go, etc.) and a uid/gid fix so bind-mounted host files are accessible
@@ -192,7 +192,7 @@ The skill stores a `sha256` hash of each Dockerfile as a Docker label and rebuil
 - `.env` with API keys and git credentials (gitignored) — `GIT_USER_NAME` and `GIT_USER_EMAIL` pre-filled from host git config if set
 - `.devcontainer/devcontainer.json` for VS Code — created automatically
 
-### Entrypoint behaviour (runs on every `docker compose run`)
+#### Entrypoint behaviour (runs on every `docker compose run`)
 
 1. Volume empty → copy project files from `/host` into volume + `chown` to `developer`
 2. `requirements.txt` present + `.venv` missing or hash changed → create/update venv + `pip install`
@@ -201,7 +201,7 @@ The skill stores a `sha256` hash of each Dockerfile as a Docker label and rebuil
 5. Configure git identity and credential helper from env vars (`GIT_USER_NAME`, `GIT_USER_EMAIL`, `GIT_TOKEN`) — token is never written to disk
 6. Drop privileges → `exec gosu developer "$@"`
 
-### VS Code workflow
+#### VS Code workflow
 
 ```
 open project folder in VS Code
