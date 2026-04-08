@@ -211,22 +211,148 @@ gh repo create <project-name> --private --source=. --remote=origin --push
    >    - **Contents:** Read and write
    >    - **Metadata:** Read-only (set automatically)
    > 6. Click **Generate token** and copy it
-   > 7. In step D6 you'll paste it directly into `.env` yourself — **do not share it in this chat**
+   > 7. You'll configure it in step D6 — **do not share it in this chat**
 
-   **Do not ask the user to paste the token in the conversation.** They will edit `.env` themselves. The token never gets written into the repo — it sits in `.env` (which is gitignored) and the container entrypoint loads it into git's credential helper at runtime.
+   **Do not ask the user to paste the token in the conversation.** In step D6, they'll either store it via `sbx secret set -g github` (sandbox path) or paste it into `.env` (Docker path). The token never gets written into the repo.
 
 ---
 
-## Step D6 — Docker setup
+## Step D6 — Sandbox or Docker setup
 
-First check whether Docker is installed:
+Detect what's available — prefer Docker Sandbox (`sbx`) when present:
+
 ```bash
-command -v docker >/dev/null 2>&1 && echo "available" || echo "not found"
+if command -v sbx >/dev/null 2>&1; then
+    echo "ISOLATION=sbx"
+elif command -v docker >/dev/null 2>&1; then
+    echo "ISOLATION=docker"
+else
+    echo "ISOLATION=none"
+fi
 ```
 
-If not found: tell the user Docker was not detected and skip this step entirely.
+If `ISOLATION=none`: tell the user neither sbx nor Docker was detected and skip this step entirely.
 
-If available, tell the user: *"Setting up the Docker environment — this is how you'll run autonomous Claude Code sessions on this project. The base image (Claude Code, git, Python) is built once and shared across all your projects; each project gets its own isolated workspace volume and a project-specific image."* Then proceed. Do not ask — Docker is the standard setup.
+If `ISOLATION=sbx`: proceed with **Option A** below.
+If `ISOLATION=docker`: skip to **Option B** below.
+
+---
+
+### Option A — Docker Sandbox (`sbx`)
+
+Docker Sandbox runs Claude Code inside a microVM with its own kernel — stronger isolation than a container, with built-in network policies and credential management. No base images to build, no Dockerfiles to write, no volumes to manage.
+
+Tell the user: *"Docker Sandbox (`sbx`) detected — setting up a sandboxed environment. This runs Claude Code in an isolated microVM with network controls and credential injection. No Docker images or compose files needed."*
+
+**A1. Check login status**
+
+```bash
+sbx ls >/dev/null 2>&1 && echo "logged in" || echo "needs login"
+```
+
+If not logged in, tell the user:
+```bash
+sbx login
+```
+
+This opens a browser for Docker OAuth. During first login, `sbx` prompts for a default network policy — recommend **Balanced** (default deny with common dev sites allowed).
+
+**A2. Configure credentials**
+
+Tell the user to set their Anthropic API key and (if a GitHub repo was created in D5) their GitHub token:
+
+```bash
+sbx secret set -g anthropic
+sbx secret set -g github
+```
+
+Each command prompts for the secret interactively — the value is stored in the OS keychain and injected via proxy at runtime. **Credentials are never stored inside the sandbox.** If they already ran these for a previous project, they can skip — global secrets apply to all sandboxes.
+
+**Do not ask the user to paste credentials into the chat.** They run the commands themselves.
+
+**A3. Custom template**
+
+The default `sbx` template includes Claude Code, Git, Python, Node.js, Go, and Java — everything a data/ML project needs. **Skip this step** unless the project requires unusual system libraries (e.g. GPU drivers, spatial databases).
+
+If a custom template is needed, create `docker/sandbox.Dockerfile`:
+```dockerfile
+FROM docker/sandbox-templates:claude-code
+USER root
+RUN apt-get update && apt-get install -y <packages>
+USER agent
+```
+
+Build and push:
+```bash
+docker build -t <registry>/<project-name>-sandbox:latest -f docker/sandbox.Dockerfile --push .
+```
+
+**A4. Update `.gitignore`**
+
+Append to `.gitignore` (create if it does not exist):
+```
+# Docker Sandbox worktrees
+.sbx/
+
+# Secrets
+.env
+
+# Python virtual environment
+.venv/
+
+# Model artifacts (too large for git)
+models/*.pkl
+models/*.pt
+models/*.h5
+models/*.onnx
+models/*.joblib
+
+# Data files (track with DVC or manage separately)
+data/raw/*
+data/processed/*
+data/external/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Experiment results that are too large
+experiments/results/**/model_*
+```
+
+**A5. Append sandbox commands to `CLAUDE.md`**
+
+Add the following to the `## Commands` section of `CLAUDE.md`:
+
+```bash
+# Sandbox (run from host)
+sbx run claude .                              # start or reconnect
+sbx run claude --name <project-name>          # named sandbox
+sbx run claude --branch <feature-name> .      # work on a branch (auto-worktree)
+sbx run claude . -- "<prompt>"                # start with a prompt
+sbx exec -it <project-name> bash              # shell into running sandbox
+sbx stop <project-name>                       # stop (preserves state)
+sbx rm <project-name>                         # remove (destroys sandbox state)
+```
+
+**A6. Commit**
+
+```bash
+git add .gitignore CLAUDE.md
+test -f docker/sandbox.Dockerfile && git add docker/sandbox.Dockerfile || true
+git diff --cached --quiet || git commit -m "chore: configure Docker Sandbox environment"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
+After completing Option A, **skip Step D7** (devcontainer) — the sandbox is the dev environment. Continue to Step D8.
+
+---
+
+### Option B — Docker (fallback)
+
+Use this path when `sbx` is not available (Linux hosts, CI environments, or user preference).
 
 **0. Detect docker compose**
 
@@ -404,7 +530,7 @@ git remote get-url origin >/dev/null 2>&1 && git push || true
 
 ## Step D7 — VS Code devcontainer
 
-Only run this step if Docker was configured in Step D6.
+Only run this step if **Option B (Docker)** was used in Step D6. Skip entirely if `sbx` was configured — the sandbox is the dev environment.
 
 Create `.devcontainer/devcontainer.json` so VS Code can open the project directly inside the Docker workspace.
 

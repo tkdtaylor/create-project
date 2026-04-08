@@ -14,8 +14,8 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 4. **Technical / Data:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, data pipeline skeleton, etc.)
 5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material; ships output templates (decision brief, deep research report, learning plan) in `outputs/templates/`
 6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
-7. **Technical / Data:** sets up Docker automatically — shared base image + project-specific image (with the right runtime installed) + per-project named volume
-8. **Technical / Data:** adds a VS Code devcontainer config automatically so you can open the project inside the container
+7. **Technical / Data:** sets up an isolated workspace automatically — Docker Sandbox (`sbx`) when available (microVM with network policies and credential proxy), falling back to Docker Engine (shared base image + project-specific image + per-project named volume) on Linux or CI
+8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
 10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
 11. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction
@@ -58,10 +58,26 @@ npm install -g @anthropic-ai/claude-code
 
 ---
 
-### For Docker workspaces (steps T6/D6/R6)
+### For isolated workspaces (steps T6/D6/R6)
 
-**Docker Engine**
-The skill checks for Docker automatically and skips the Docker setup steps if it's not found. Docker Compose is optional — the skill detects whether `docker compose` (v2 plugin) or `docker-compose` (v1 standalone) is available and writes commands accordingly. If neither is installed, it falls back to plain `docker run` commands.
+The skill checks for isolation tools in this order: **Docker Sandbox (`sbx`)** first, then **Docker Engine** as fallback. If neither is found, the isolation step is skipped.
+
+**Docker Sandbox (`sbx`)** *(recommended for macOS / Windows)*
+Runs Claude Code in a microVM with its own kernel — stronger isolation than containers, with built-in network policies and credential management via OS keychain. No Dockerfiles, no volumes, no compose files.
+
+```bash
+# Mac (Apple Silicon)
+brew install docker/tap/sbx
+sbx login
+
+# Windows 11
+winget install -h Docker.sbx
+sbx login
+```
+→ https://docs.docker.com/ai/sandboxes/
+
+**Docker Engine** *(fallback — required for Linux, CI, or when sbx is not available)*
+Docker Compose is optional — the skill detects whether `docker compose` (v2 plugin) or `docker-compose` (v1 standalone) is available and writes commands accordingly. If neither is installed, it falls back to plain `docker run` commands.
 
 - **Mac / Windows:** Install Docker Desktop → https://www.docker.com/products/docker-desktop
 - **Linux:** Install Docker Engine (Compose plugin optional but recommended):
@@ -124,11 +140,28 @@ code --install-extension ms-vscode-remote.remote-containers
 | **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/` (with decision brief, deep research, and learning plan templates), `docs/` |
 | **other** | Planning, tracking, organising — wedding planning, job search, project management | Research base structure with domain-specific top-level folders (e.g. `vendors/`, `budget/`, `timeline/`) chosen by the user |
 
-## Docker architecture
+## Isolation architecture
 
-The Docker setup gives Claude (or any tool) a fully isolated, persistent workspace without any access to the host filesystem beyond the project root — and even that is read-only after the first-run seed.
+The skill supports two isolation backends. It detects what's available and picks the stronger option automatically.
 
-### Security model
+### Docker Sandbox (`sbx`) — preferred
+
+Available on macOS (Apple Silicon) and Windows 11. Each sandbox is a **microVM** with its own Linux kernel — not just namespace isolation. The agent runs with `--dangerously-skip-permissions` by default because the blast radius is contained within a disposable VM.
+
+| Aspect | How it works |
+|--------|-------------|
+| **Isolation** | Dedicated kernel, filesystem, and Docker daemon per sandbox |
+| **Network** | Configurable allow/deny lists per domain (balanced policy recommended) |
+| **Credentials** | Stored in OS keychain, injected via proxy — never inside the sandbox |
+| **Workspace** | Host directory mounted into the VM; changes persist on host |
+| **Branches** | Built-in `--branch` mode creates Git worktrees under `.sbx/` |
+| **Setup** | Zero config — `sbx run claude .` and go |
+
+### Docker Engine — fallback
+
+Used on Linux, in CI, or when `sbx` is not installed. Provides container-level isolation with a custom Docker setup.
+
+#### Security model
 
 | | Container sees | Can write |
 |---|---|---|

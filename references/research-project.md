@@ -182,22 +182,115 @@ gh repo create <project-name> --private --source=. --remote=origin --push
    >    - **Contents:** Read and write
    >    - **Metadata:** Read-only (set automatically)
    > 6. Click **Generate token** and copy it
-   > 7. In step R6 you'll paste it directly into `.env` yourself — **do not share it in this chat**
+   > 7. You'll configure it in step R6 — **do not share it in this chat**
 
-   **Do not ask the user to paste the token in the conversation.** They will edit `.env` themselves. The token never gets written into the repo — it sits in `.env` (which is gitignored) and the container entrypoint loads it into git's credential helper at runtime.
+   **Do not ask the user to paste the token in the conversation.** In step R6, they'll either store it via `sbx secret set -g github` (sandbox path) or paste it into `.env` (Docker path). The token never gets written into the repo.
 
 ---
 
-## Step R6 — Docker setup
+## Step R6 — Sandbox or Docker setup
 
-First check whether Docker is installed:
+Detect what's available — prefer Docker Sandbox (`sbx`) when present:
+
 ```bash
-command -v docker >/dev/null 2>&1 && echo "available" || echo "not found"
+if command -v sbx >/dev/null 2>&1; then
+    echo "ISOLATION=sbx"
+elif command -v docker >/dev/null 2>&1; then
+    echo "ISOLATION=docker"
+else
+    echo "ISOLATION=none"
+fi
 ```
 
-If not found: tell the user Docker was not detected and skip this step entirely.
+If `ISOLATION=none`: tell the user neither sbx nor Docker was detected and skip this step entirely.
 
-If available, ask: *"Would you like to set up a Docker research environment? This uses a shared base image (Claude Code, pandoc, PDF tools, Python research libraries) that is built once and reused across all your research projects. A new workspace volume is created for this project — no per-project image build needed."*
+If `ISOLATION=sbx`: proceed with **Option A** below.
+If `ISOLATION=docker`: skip to **Option B** below.
+
+---
+
+### Option A — Docker Sandbox (`sbx`)
+
+Docker Sandbox runs Claude Code inside a microVM with its own kernel — stronger isolation than a container, with built-in network policies and credential management.
+
+Ask: *"Docker Sandbox (`sbx`) detected — would you like to set up a sandboxed research environment? This runs Claude Code in an isolated microVM with network controls and credential injection. No Docker images or compose files needed."*
+
+If yes:
+
+**A1. Check login status**
+
+```bash
+sbx ls >/dev/null 2>&1 && echo "logged in" || echo "needs login"
+```
+
+If not logged in, tell the user:
+```bash
+sbx login
+```
+
+Recommend **Balanced** network policy during first login.
+
+**A2. Configure credentials**
+
+Tell the user to set their Anthropic API key and (if a GitHub repo was created in R5) their GitHub token:
+
+```bash
+sbx secret set -g anthropic
+sbx secret set -g github
+```
+
+**Do not ask the user to paste credentials into the chat.** They run the commands themselves. If they already ran these for a previous project, they can skip — global secrets apply to all sandboxes.
+
+**A3. Update `.gitignore`**
+
+Append to `.gitignore` (create if it does not exist):
+```
+# Docker Sandbox worktrees
+.sbx/
+
+# Secrets
+.env
+
+# Python virtual environment
+.venv/
+```
+
+**A4. Add a Commands section to `CLAUDE.md`**
+
+The research `CLAUDE.md` template has no `## Commands` section. Create one:
+
+```markdown
+## Commands
+
+```bash
+# Sandbox (run from host)
+sbx run claude .                              # start or reconnect
+sbx run claude --name <project-name>          # named sandbox
+sbx run claude --branch <feature-name> .      # work on a branch (auto-worktree)
+sbx run claude . -- "<prompt>"                # start with a prompt
+sbx exec -it <project-name> bash              # shell into running sandbox
+sbx stop <project-name>                       # stop (preserves state)
+sbx rm <project-name>                         # remove (destroys sandbox state)
+```
+```
+
+**A5. Commit**
+
+```bash
+git add .gitignore CLAUDE.md
+git diff --cached --quiet || git commit -m "chore: configure Docker Sandbox environment"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
+After completing Option A, **skip Step R7** (devcontainer). Continue to the "Working with sources" section.
+
+---
+
+### Option B — Docker (fallback)
+
+Use this path when `sbx` is not available (Linux hosts, CI environments, or user preference).
+
+Ask: *"Would you like to set up a Docker research environment? This uses a shared base image (Claude Code, pandoc, PDF tools, Python research libraries) that is built once and reused across all your research projects. A new workspace volume is created for this project — no per-project image build needed."*
 
 If yes:
 
@@ -324,7 +417,7 @@ docker compose -f docker/docker-compose.yml run --rm research echo "Workspace in
 
 ## Step R7 — VS Code devcontainer
 
-Only run this step if Docker was configured in Step R6.
+Only run this step if **Option B (Docker)** was used in Step R6. Skip entirely if `sbx` was configured — the sandbox is the dev environment.
 
 Ask: *"Would you like to add a devcontainer.json for VS Code? This lets you open the project directly inside the Docker workspace via the Dev Containers extension — your editor, terminal, and Claude Code all run in the isolated container."*
 
