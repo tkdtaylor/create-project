@@ -13,6 +13,11 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(__file__))
+from _hook_utils import check_gate
+
+check_gate(__file__, "standard")
+
 
 def main():
     # Read stdin (may be empty for PostCompact)
