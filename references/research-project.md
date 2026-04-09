@@ -69,7 +69,9 @@ touch docs/tasks/backlog/.gitkeep docs/tasks/completed/.gitkeep
 
 ## Step R2 — Populate template files
 
-Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitute placeholders, and write the output.
+Templates come from two directories:
+- **`$CLAUDE_SKILL_DIR/assets/templates/common/`** — hook scripts shared by all project types
+- **`$CLAUDE_SKILL_DIR/assets/templates/research/`** — research-specific templates, settings, and agents
 
 | Placeholder | Value |
 |-------------|-------|
@@ -77,30 +79,42 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 | `{{PROJECT_DESCRIPTION}}` | Description |
 | `{{DATE}}` | Today's date (YYYY-MM-DD) |
 
+**From `research/`** (substitute placeholders where marked):
+
 | Template | Output path |
 |----------|-------------|
-| `README.md` | `README.md` (project root — GitHub landing page) |
+| `README.md` | `README.md` (project root) |
 | `research-log.md` | `docs/research-log.md` |
 | `outline.md` | `docs/outline.md` |
 | `progress-tracker.md` | `docs/tasks/progress-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
-| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
-| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
-| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
-| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
-| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `decision-brief-template.md` | `outputs/templates/decision-brief.md` |
 | `deep-research-template.md` | `outputs/templates/deep-research.md` |
 | `learning-plan-template.md` | `outputs/templates/learning-plan.md` |
 
-The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
-- `.claude/settings.json` — pre-configures Claude Code permissions and five hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders on Stop.
-- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders.
-- `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
-- `outputs/templates/decision-brief.md` — structured template for comparing options and making a recommendation. Includes comparison matrix, pros/cons, dissenting considerations, and open questions.
-- `outputs/templates/deep-research.md` — structured template for in-depth research reports. Includes methodology, findings by subtopic, cross-source analysis, and gap identification.
-- `outputs/templates/learning-plan.md` — three-phase learning syllabus (Apprentice → Journeyman → Master) with curated readings, projects, and writing prompts.
+**From `common/`** (copy as-is, no placeholders):
+
+| Template | Output path |
+|----------|-------------|
+| `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
+| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
+| `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
+| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
+| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
+| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
+| `.claude/scripts/strategic-compact.py` | `.claude/scripts/strategic-compact.py` |
+| `.claude/scripts/desktop-notify.py` | `.claude/scripts/desktop-notify.py` |
+
+All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync. Research projects use eight hooks (no config-protection, edit-tracker, or batch-format-typecheck). See `references/tech-project.md` Step T2 for the full hook profile table.
+
+**Agent:** `task-executor` (fast) — ephemeral single-task executor for research. Ships with `model: inherit` and `# model-tier: fast` — Step 3d updates it.
+
+**Output templates** (copy as-is):
+- `decision-brief.md` — structured option comparison with matrix, pros/cons, recommendation
+- `deep-research.md` — in-depth report with methodology, findings, cross-source analysis
+- `learning-plan.md` — three-phase syllabus (Apprentice → Journeyman → Master)
 
 **For `README.md` at the project root:** substitute `{{PROJECT_NAME}}` and `{{PROJECT_DESCRIPTION}}`. This README is the first thing someone sees on GitHub — the description should make the research goal and intended output clear.
 

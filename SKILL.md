@@ -122,11 +122,13 @@ When recommending tools in the steps below, apply this preference order:
 2. **Hooks** — for automated behaviors that should happen every time (pre-commit, post-edit, etc.)
 3. **Agents** — for reusable role-based workflows within the project
 4. **External CLI tools** — standalone tools invoked via Bash (e.g. `dep-scan`, `gh`, `psql`)
-5. **MCP servers — almost never.** Most things people install MCPs for are already covered by built-in tools (WebSearch, WebFetch) or CLI commands via Bash (`gh`, `psql`, `sqlite3`). The only MCP that consistently adds value is `puppeteer` for browser automation. Do not recommend GitHub, search, fetch, database, or memory MCPs — they are redundant.
+5. **MCP servers — almost never.** Most things people install MCPs for are already covered by built-in tools (WebSearch, WebFetch) or CLI commands via Bash (`gh`, `psql`, `sqlite3`). Only a handful of MCPs add genuine capability: `puppeteer`/`playwright` for browser automation, `context7` for live framework docs, `sequential-thinking` for complex decisions, and `supabase` for Supabase projects. Do not recommend GitHub, search, fetch, database, or memory MCPs — they are redundant.
 
 ### 3a — Enrich CLAUDE.md
 
 Read the `CLAUDE.md` at the project root. Append a `## Recommended tooling` section. This section stays in CLAUDE.md so future sessions know what tools are available without being told again.
+
+**Framework-specific conventions:** Before writing the tooling section, check `$CLAUDE_SKILL_DIR/references/framework-snippets.md` for framework-specific rules that match the project's tech stack (e.g. Next.js, Supabase, Go, FastAPI). Append matching snippets to the CLAUDE.md's **Conventions** section. These encode hard-won rules that prevent common agent mistakes — they're not generic best practices but specific footguns.
 
 Use the project context to write real content — not a copy of the catalog, but a curated short list with a sentence on why each tool is relevant *to this specific project*. Follow the tool preference order above. Include:
 
@@ -224,9 +226,18 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | File | All types? |
 |------|-----------|
 | `.claude/settings.json` | Yes |
+| `.claude/scripts/_hook_utils.py` | Yes |
 | `.claude/scripts/restructure-plan.py` | Yes |
 | `.claude/scripts/protect-secrets.py` | Yes |
+| `.claude/scripts/block-no-verify.py` | Yes |
 | `.claude/scripts/post-compact.py` | Yes |
+| `.claude/scripts/pre-compact.py` | Yes |
+| `.claude/scripts/periodic-checkpoint.py` | Yes |
+| `.claude/scripts/strategic-compact.py` | Yes |
+| `.claude/scripts/desktop-notify.py` | Yes |
+| `.claude/scripts/config-protection.py` | tech, data |
+| `.claude/scripts/edit-tracker.py` | tech, data |
+| `.claude/scripts/batch-format-typecheck.py` | tech, data |
 | `.claude/agents/task-executor.md` | Yes |
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |
@@ -241,7 +252,8 @@ For each managed file that exists in the project:
 sha256sum "$file" | cut -d' ' -f1
 
 # Compute template hash (the source template in the skill directory)
-sha256sum "$CLAUDE_SKILL_DIR/assets/templates/<type>/$relative_path" | cut -d' ' -f1
+# Universal scripts come from assets/templates/common/; type-specific files from assets/templates/<type>/
+sha256sum "$CLAUDE_SKILL_DIR/assets/templates/<common|type>/$relative_path" | cut -d' ' -f1
 ```
 
 Write `.claude/skill-manifest.json`:
@@ -258,7 +270,7 @@ Write `.claude/skill-manifest.json`:
         "template_hash": "<sha256>"
       },
       ".claude/scripts/protect-secrets.py": {
-        "template": "assets/templates/<type>/.claude/scripts/protect-secrets.py",
+        "template": "assets/templates/common/.claude/scripts/protect-secrets.py",
         "installed_hash": "<sha256>",
         "template_hash": "<sha256>"
       }

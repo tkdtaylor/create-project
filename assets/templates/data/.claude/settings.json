@@ -20,6 +20,21 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/protect-secrets.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/config-protection.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/block-no-verify.py",
+            "timeout": 5
           }
         ]
       }
@@ -32,6 +47,16 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/restructure-plan.py",
             "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/edit-tracker.py",
+            "timeout": 5
           }
         ]
       }
@@ -64,6 +89,21 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/periodic-checkpoint.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/strategic-compact.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/batch-format-typecheck.py",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}\"/.claude/scripts/desktop-notify.py",
             "timeout": 10
           }
         ]

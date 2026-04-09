@@ -36,6 +36,19 @@ Skills are instruction sets that extend Claude's behavior for specific workflows
 | Project with recurring checks or polling | `loop` | Runs a prompt or command on a configurable interval — useful for build status, test-watch, or research progress checks |
 | Project needing scheduled automation | `schedule` | Creates cron-style scheduled Claude agents — useful for daily report generation, automated syncs, or timed reminders |
 
+### Additional skills worth evaluating
+
+These workflow skills from [everything-claude-code](https://github.com/affaan-m/everything-claude-code) cover common patterns. Recommend when the project signal matches:
+
+| Project signal | Skill | What it does |
+|----------------|-------|-------------|
+| Any project starting implementation | `search-first` | Research-before-coding: search npm/PyPI/GitHub before writing custom code. Decision matrix: Adopt / Extend / Compose / Build |
+| Long autonomous sessions | `autonomous-loops` | Patterns for `claude -p` pipelines, continuous PR loops, de-sloppify cleanup |
+| Complex verification needs | `verification-loop` | 6-phase chain: Build → Type Check → Lint → Test → Security Scan → Diff Review |
+| Subagents losing context | `iterative-retrieval` | Dispatch → Evaluate → Refine → Loop (max 3 cycles) for subagent refinement |
+
+**Language/framework pattern skills** (same source — install per-project as needed): `coding-standards` (TS/React), `python-patterns`, `golang-patterns`, `rust-patterns`, `springboot-patterns`, `swift-patterns`, `laravel-patterns`, `docker-patterns`, `api-design`, `codebase-onboarding`, `eval-harness`.
+
 ### How to find more
 
 Web search: `Claude Code skill [domain]` or `site:github.com .skill [domain]`
@@ -78,6 +91,8 @@ curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh 
 
 Most things MCPs do can already be done with built-in tools or CLI commands via Bash. **Only recommend an MCP when there is genuinely no built-in or CLI alternative.**
 
+### Redundancy table
+
 | Common suggestion | Already covered by | Verdict |
 |---|---|---|
 | `github` MCP | `gh` CLI via Bash — already installed and authenticated | **Skip** — `gh pr view`, `gh issue list`, etc. are equivalent |
@@ -87,7 +102,29 @@ Most things MCPs do can already be done with built-in tools or CLI commands via 
 | `filesystem` | Bash `cat`/`ls` — Claude already has shell access | **Skip** |
 | `postgres` | `psql` CLI via Bash | **Skip** — the CLI is lighter and already available |
 | `sqlite` | `sqlite3` CLI via Bash | **Skip** |
-| `puppeteer` | No CLI equivalent for live browser automation | **Recommend** when testing web UIs |
+
+### MCPs that add genuine capability
+
+These MCPs provide functionality that built-in tools and CLI commands cannot replicate. Recommend only when the project actually needs the capability.
+
+| MCP | Install | When to recommend | Why it's not redundant |
+|-----|---------|-------------------|----------------------|
+| `puppeteer` | `claude mcp add puppeteer npx @modelcontextprotocol/server-puppeteer` | Web UI projects that need browser-based testing | No CLI equivalent for live browser automation and screenshots |
+| `playwright` | `claude mcp add playwright npx @playwright/mcp@latest --extension` | Web UI projects with complex interaction testing (preferred over puppeteer for new projects) | Full browser automation with Chromium/Firefox/WebKit, visual regression testing, network interception. More capable than puppeteer. |
+| `context7` | `claude mcp add context7 npx @upstash/context7-mcp@latest` | Projects using frameworks with fast-moving APIs (Next.js, Supabase, SvelteKit, etc.) | Fetches live, version-pinned documentation — prevents the agent from hallucinating deprecated APIs. Built-in WebSearch returns blog posts and Stack Overflow, not authoritative docs. |
+| `sequential-thinking` | `claude mcp add sequential-thinking npx @modelcontextprotocol/server-sequential-thinking` | Complex architectural decisions, multi-constraint optimization | Provides a structured scratchpad for chain-of-thought reasoning that persists across tool calls. Useful for design decisions where the agent needs to weigh many factors. |
+| `supabase` | `claude mcp add supabase npx supabase@latest -- mcp` | Supabase projects (database management, edge functions, auth) | Direct Supabase Management API access — schema introspection, migration management, and edge function deployment that the generic `psql` CLI doesn't cover. |
+
+### MCPs for specialized workflows
+
+These are niche but high-value when the project matches. Don't recommend proactively — suggest only if the user's workflow clearly benefits.
+
+| MCP | Install | When to recommend | What it does |
+|-----|---------|-------------------|-------------|
+| `firecrawl` | `claude mcp add firecrawl npx firecrawl-mcp` | Research projects that need structured web scraping | Crawls and extracts structured data from websites. WebFetch gets a single page; Firecrawl navigates, extracts, and structures content across multiple pages. |
+| `cloudflare` | See [Cloudflare MCP docs](https://developers.cloudflare.com/mcp/) | Projects deploying to Cloudflare (Workers, Pages, R2, D1) | Manages Cloudflare resources directly — deploy Workers, query D1, manage R2 buckets. CLI alternative exists (`wrangler`) but the MCP provides tighter integration. |
+| `fal-ai` | `claude mcp add fal-ai npx @fal-ai/mcp-server` | Projects generating images, video, or audio | Access to fal.ai model inference — image generation, style transfer, video synthesis. No CLI equivalent. |
+| `clickhouse` | `claude mcp add clickhouse npx @clickhouse/mcp-server` | Analytics projects with ClickHouse databases | Optimized ClickHouse integration with query execution, schema inspection, and cluster management. More capable than raw `clickhouse-client`. |
 
 ### When to actually recommend an MCP
 
@@ -96,11 +133,7 @@ An MCP is worth the overhead only when:
 - The user specifically asks for one
 - The integration requires a persistent stateful connection that CLI calls can't replicate
 
-The only MCP from the standard catalog that consistently meets this bar is **puppeteer** (browser automation for testing web UIs — no CLI equivalent):
-
-```bash
-claude mcp add puppeteer npx @modelcontextprotocol/server-puppeteer
-```
+**Keep the total under 10 MCPs per project** — each one adds tools to the context window and increases token overhead per turn.
 
 For everything else, prefer the built-in tool or CLI. If the user asks about a specific MCP, explain what built-in alternative already covers it and let them decide.
 
@@ -124,10 +157,48 @@ Hooks are shell commands that Claude Code runs automatically at specific points 
 |-------|-----------|
 | `PreToolUse` | Before Claude calls any tool |
 | `PostToolUse` | After a tool call completes |
+| `PreCompact` | Before context compaction |
+| `PostCompact` | After context compaction |
 | `Stop` | When Claude finishes a response turn |
 | `Notification` | When Claude sends a notification |
 
-### Patterns by project type
+### Hooks that ship with the scaffold
+
+The following hooks are pre-configured in every scaffolded project. All hooks support profile gating via `CLAUDE_HOOK_PROFILE` (minimal/standard/strict) and `CLAUDE_DISABLED_HOOKS` environment variables.
+
+| Hook | Event | Matcher | Profile | What it does |
+|------|-------|---------|---------|-------------|
+| `protect-secrets` | PreToolUse | Write\|Edit | minimal | Blocks writes to private keys, SSH keys, service accounts, auth token files |
+| `block-no-verify` | PreToolUse | Bash | minimal | Blocks `--no-verify` and `--no-gpg-sign` flags on git commands |
+| `config-protection` | PreToolUse | Write\|Edit | minimal | Blocks modifications to linter/formatter config files (tech/data only) |
+| `restructure-plan` | PostToolUse | ExitPlanMode | standard | Splits plan steps into task files, creates test spec stubs, backs up plan |
+| `edit-tracker` | PostToolUse | Edit\|Write | strict | Accumulates edited file paths for batch processing at Stop (tech/data only) |
+| `pre-compact` | PreCompact | — | standard | Blocks compaction if uncommitted changes exist |
+| `post-compact` | PostCompact | — | standard | Re-injects active task, spec, and branch context after compaction |
+| `periodic-checkpoint` | Stop | — | standard | Reminds agent to commit every 15 turns if uncommitted changes exist |
+| `strategic-compact` | Stop | — | standard | Suggests `/compact` after ~25 turns to prevent bad auto-compaction timing |
+| `batch-format-typecheck` | Stop | — | strict | Batch-runs format+typecheck on all files edited this turn (tech/data only) |
+| `desktop-notify` | Stop | — | strict | Sends OS desktop notification when Claude finishes responding |
+
+### Hook profiles
+
+Users can control hook intensity at runtime without editing `settings.json`:
+
+```bash
+# Only critical safety hooks
+export CLAUDE_HOOK_PROFILE=minimal
+
+# Safety + workflow hooks (default)
+export CLAUDE_HOOK_PROFILE=standard
+
+# Everything including formatting and notifications
+export CLAUDE_HOOK_PROFILE=strict
+
+# Disable specific hooks regardless of profile
+export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck
+```
+
+### Custom hook patterns by project type
 
 **Technical projects:**
 
@@ -150,18 +221,6 @@ Hooks are shell commands that Claude Code runs automatically at specific points 
     "PostToolUse": [{
       "matcher": "Edit",
       "hooks": [{"type": "command", "command": "npm test --silent 2>&1 | tail -10"}]
-    }]
-  }
-}
-```
-
-```json
-// Warn before any Bash command (review before execute)
-{
-  "hooks": {
-    "PreToolUse": [{
-      "matcher": "Bash",
-      "hooks": [{"type": "command", "command": "echo 'Review the command above before approving'"}]
     }]
   }
 }
@@ -233,6 +292,56 @@ Generates or updates README sections, API reference docs, inline docstrings, and
 Invoke: *"use the docs-writer to document [module or endpoint]"*
 Best for: libraries, public APIs, or any project where docs chronically lag behind the code.
 
+### Language-specific code reviewers
+
+For projects with a dominant language, a language-specific reviewer catches framework idiom violations that the generic code-reviewer misses. These are optional — only suggest when the project is clearly single-language or has a primary language.
+
+**typescript-reviewer** *(tier: balanced)*
+Reviews TypeScript code for strict-mode compliance, `any` escape hatches, improper type assertions, React hook dependency arrays, and Next.js-specific patterns (server vs client components, data fetching). Reports issues as critical/warning/suggestion with confidence filtering (only reports >80% confident findings).
+
+**python-reviewer** *(tier: balanced)*
+Reviews Python code for type hint coverage, Pythonic idioms (prefer list comprehensions over map/filter, use context managers), Django/FastAPI-specific patterns, and data science conventions (reproducibility, data leakage in ML pipelines).
+
+**go-reviewer** *(tier: balanced)*
+Reviews Go code for error handling patterns (wrapped errors, sentinel errors), goroutine lifecycle management, interface design (accept interfaces return structs), and idiomatic Go (early returns, table-driven tests, no init functions).
+
+**rust-reviewer** *(tier: balanced)*
+Reviews Rust code for ownership patterns, unnecessary cloning, proper error handling (Result/Option usage, no unwrap in non-test code), and idiomatic Rust (iterators over manual loops, derive macros).
+
+To create one, use this template and fill in language-specific review criteria:
+
+```markdown
+---
+name: <language>-reviewer
+description: Reviews <language> code for idiomatic patterns, framework conventions, and common pitfalls
+model: <set during project setup>
+# model-tier: balanced
+---
+
+# Role
+
+<Language> code reviewer with deep knowledge of <language> idioms, <framework> conventions, and common pitfalls.
+
+# Instructions
+
+1. Read the files being reviewed
+2. Apply these review perspectives (report only findings you are >80% confident about):
+   - **Correctness**: logic errors, off-by-one, race conditions
+   - **Idioms**: language-specific patterns and conventions
+   - **Framework**: <framework>-specific best practices
+   - **Performance**: <language>-specific performance patterns
+   - **Security**: input validation, injection, auth patterns
+
+# Output format
+
+Report findings as:
+- **CRITICAL** — must fix before merging
+- **WARNING** — should fix, creates tech debt
+- **SUGGESTION** — optional improvement
+
+For each finding: file, line range, category, description, suggested fix.
+```
+
 ### Technical project subtype guidance
 
 The scaffold ships architect, code-reviewer, and security-auditor by default. Use this table to decide which **additional** agents to create:
@@ -245,6 +354,8 @@ The scaffold ships architect, code-reviewer, and security-auditor by default. Us
 | Data pipeline | architect, code-reviewer, security-auditor | qa, dependency-auditor |
 | Web app (frontend-heavy) | architect, code-reviewer, security-auditor | qa |
 | Internal script / one-off | architect, code-reviewer, security-auditor | task-planner — others likely overkill |
+
+Additionally, if the project has a clear primary language, offer to create a language-specific reviewer from the templates above.
 
 ### Research project agents
 

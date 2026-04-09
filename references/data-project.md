@@ -84,7 +84,10 @@ touch src/__init__.py src/data/__init__.py src/features/__init__.py src/models/_
 
 ## Step D2 — Populate template files
 
-Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute placeholders, and write the output.
+Templates come from three directories:
+- **`$CLAUDE_SKILL_DIR/assets/templates/common/`** — hook scripts shared by all project types
+- **`$CLAUDE_SKILL_DIR/assets/templates/tech/`** — tech-only hook scripts (config-protection, edit-tracker, batch-format-typecheck) — also used by data projects
+- **`$CLAUDE_SKILL_DIR/assets/templates/data/`** — data-specific templates, settings, and agents
 
 | Placeholder | Value |
 |-------------|-------|
@@ -93,9 +96,11 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute p
 | `{{TECH_STACK}}` | Tech stack |
 | `{{DATE}}` | Today's date (YYYY-MM-DD) |
 
+**From `data/`** (substitute placeholders where marked):
+
 | Template | Output path |
 |----------|-------------|
-| `README.md` | `README.md` (project root — GitHub landing page) |
+| `README.md` | `README.md` (project root) |
 | `architecture-overview.md` | `docs/architecture/overview.md` |
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
@@ -103,23 +108,40 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute p
 | `experiment-tracker.md` | `docs/tasks/experiment-tracker.md` |
 | `experiments/EXPERIMENT-TEMPLATE.md` | `experiments/EXPERIMENT-TEMPLATE.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
-| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
-| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
-| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
-| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
-| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 
-The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
-- `.claude/settings.json` — pre-configures Claude Code permissions and five hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders on Stop.
-- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders.
-- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD for code, experiment workflow for ML, commits after completion. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
-- `.claude/agents/architect.md` — reviews proposed features, pipeline design, and data model changes. Drafts ADRs for non-obvious decisions. Ships with `model: inherit` and a `# model-tier: deep` comment.
-- `.claude/agents/code-reviewer.md` — reviews changed files using structured perspectives (correctness, data integrity, reproducibility, performance, testing, etc.). Selects 2–4 perspectives based on what changed. Ships with `model: inherit` and a `# model-tier: balanced` comment.
-- `.claude/agents/security-auditor.md` — reviews application code for data leakage, credential exposure, injection risks, and insecure defaults. Ships with `model: inherit` and a `# model-tier: deep` comment.
+**From `tech/`** (tech-only hooks, also used by data projects):
+
+| Template | Output path |
+|----------|-------------|
+| `.claude/scripts/config-protection.py` | `.claude/scripts/config-protection.py` |
+| `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
+| `.claude/scripts/batch-format-typecheck.py` | `.claude/scripts/batch-format-typecheck.py` |
+
+**From `common/`** (copy as-is, no placeholders):
+
+| Template | Output path |
+|----------|-------------|
+| `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
+| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
+| `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
+| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
+| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
+| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
+| `.claude/scripts/strategic-compact.py` | `.claude/scripts/strategic-compact.py` |
+| `.claude/scripts/desktop-notify.py` | `.claude/scripts/desktop-notify.py` |
+
+All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync. Hook profiles are identical to technical projects — see `references/tech-project.md` Step T2 for the full profile table.
+
+**Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
+- `task-executor` (fast) — ephemeral single-task executor with TDD + experiment workflow
+- `architect` (deep) — pipeline design review and ADR drafting
+- `code-reviewer` (balanced) — structured review with data integrity and reproducibility perspectives
+- `security-auditor` (deep) — data leakage, credential exposure, injection risks
 
 Fill in the tech stack table using what the user provided. If a layer wasn't mentioned, use `—`.
 

@@ -57,7 +57,9 @@ touch docs/tasks/backlog/.gitkeep docs/tasks/completed/.gitkeep
 
 ## Step T2 — Populate template files
 
-Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute placeholders, and write the output.
+Templates come from two directories:
+- **`$CLAUDE_SKILL_DIR/assets/templates/common/`** — hook scripts shared by all project types
+- **`$CLAUDE_SKILL_DIR/assets/templates/tech/`** — tech-specific templates, settings, agents, and tech-only hooks
 
 | Placeholder | Value |
 |-------------|-------|
@@ -66,35 +68,53 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 | `{{TECH_STACK}}` | Tech stack |
 | `{{DATE}}` | Today's date (YYYY-MM-DD) |
 
+**From `tech/`** (substitute placeholders where marked):
+
 | Template | Output path |
 |----------|-------------|
-| `README.md` | `README.md` (project root — GitHub landing page) |
+| `README.md` | `README.md` (project root) |
 | `architecture-overview.md` | `docs/architecture/overview.md` |
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
-| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
-| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
-| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
-| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
-| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
+| `.claude/scripts/config-protection.py` | `.claude/scripts/config-protection.py` |
+| `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
+| `.claude/scripts/batch-format-typecheck.py` | `.claude/scripts/batch-format-typecheck.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 
-The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
-- `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and five hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders on Stop.
-- `.claude/scripts/restructure-plan.py` — PostToolUse hook. Splits plan steps into `docs/tasks/backlog/` task files, creates test spec stubs, updates the coverage tracker, and replaces the plan with a lightweight skeleton.
-- `.claude/scripts/protect-secrets.py` — PreToolUse hook. Hard-blocks writes to private keys, credential files, and auth configs (`.pem`, `.key`, `service-account*.json`, `.npmrc`, etc.).
-- `.claude/scripts/pre-compact.py` — PreCompact hook. Blocks context compaction if there are uncommitted changes, instructing the agent to commit and checkpoint progress first. Complements post-compact.py as a belt-and-suspenders approach.
-- `.claude/scripts/post-compact.py` — PostCompact hook. Re-injects the active task, test spec, and plan status into the conversation after context compaction so Claude doesn't lose track of what it was doing.
-- `.claude/scripts/periodic-checkpoint.py` — Stop hook. Counts agent response turns and blocks every 15 turns (configurable via `CLAUDE_CHECKPOINT_INTERVAL`) if there are uncommitted changes, forcing the agent to save progress. Prevents long sessions from losing work.
-- `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD with self-review, commits after completion, and reports back without bloating the main conversation. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
-- `.claude/agents/architect.md` — reviews proposed features and design changes against the architecture docs. Drafts ADRs for non-obvious decisions. Ships with `model: inherit` and a `# model-tier: deep` comment.
-- `.claude/agents/code-reviewer.md` — reviews changed files using structured perspectives (correctness, security, performance, testing, API design, concurrency, etc.). Selects 2–4 perspectives based on what changed. Ships with `model: inherit` and a `# model-tier: balanced` comment.
-- `.claude/agents/security-auditor.md` — reviews application code for OWASP Top 10 vulnerabilities, insecure defaults, secrets in code, and injection risks. Ships with `model: inherit` and a `# model-tier: deep` comment.
+**From `common/`** (copy as-is, no placeholders):
+
+| Template | Output path |
+|----------|-------------|
+| `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
+| `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
+| `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
+| `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
+| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
+| `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
+| `.claude/scripts/strategic-compact.py` | `.claude/scripts/strategic-compact.py` |
+| `.claude/scripts/desktop-notify.py` | `.claude/scripts/desktop-notify.py` |
+
+All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync.
+
+**Settings and hooks:** `.claude/settings.json` pre-configures permissions and eleven hooks across five lifecycle events, all gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict) and `CLAUDE_DISABLED_HOOKS` env vars:
+
+| Profile | Hooks |
+|---------|-------|
+| **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits) |
+| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns) |
+| **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `desktop-notify` (OS notification on completion) |
+
+**Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
+- `task-executor` (fast) — ephemeral single-task executor with TDD and self-review
+- `architect` (deep) — design review and ADR drafting
+- `code-reviewer` (balanced) — structured multi-perspective code review
+- `security-auditor` (deep) — OWASP Top 10 audit
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
 

@@ -128,6 +128,17 @@ Use the **task-executor** agent to work through tasks one at a time. Each agent 
 use task-executor — task: docs/tasks/backlog/NNN-name.md, spec: docs/tasks/test-specs/NNN-name-test-spec.md
 ```
 
+## Hook profiles
+
+Hooks run automatically and are gated by profile level. Control via environment variables:
+
+```bash
+export CLAUDE_HOOK_PROFILE=minimal    # Safety hooks only (secret protection, block-no-verify, config-protection)
+export CLAUDE_HOOK_PROFILE=standard   # + workflow hooks (plan restructuring, compaction, checkpoints) — default
+export CLAUDE_HOOK_PROFILE=strict     # + formatting, notifications (batch-format-typecheck, desktop-notify)
+export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable specific hooks
+```
+
 ## Boundaries
 
 ### Always
