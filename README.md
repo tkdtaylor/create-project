@@ -6,7 +6,7 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 
 ## What it does
 
-Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", or "start a data science project". The skill:
+Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", "start a data science project", "sync my skills", or "update my skills". The skill:
 
 1. Interviews you until the goal, scope, and success criteria are unambiguous — confirms a written summary before touching any files
 2. Creates a type-matched directory structure with template files, including requirement-traceable task and test spec templates (`REQ-NNN` IDs flow from task → test spec → code)
@@ -19,6 +19,8 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
 10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
 11. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction
+12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
+13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — with three-way merge to preserve local customizations
 
 ## First-time setup
 
@@ -265,6 +267,7 @@ references/
   data-project.md                # Step-by-step setup for data / ML projects (D1–D8)
   research-project.md            # Step-by-step setup for research / other projects (R1–R7)
   adopt-existing.md              # Adopting an existing codebase (A1–A9)
+  sync-skills.md                 # Syncing skills and project artifacts (S1–S5)
   tooling.md                     # Skills, hooks, agents, and CLI tools catalog with project-type matching
 evals/
   evals.json                     # Test cases and assertions for skill evaluation
@@ -274,7 +277,15 @@ README.md                        # This file
 
 ## Installing / updating
 
-The skill is developed here and installed to `~/.claude/skills/create-project/`. To sync after changes:
+The skill is developed here and installed to `~/.claude/skills/create-project/`.
+
+**Option A — Clone (recommended).** Cloning preserves the `.git` directory, which lets the sync flow (`"sync my skills"`) automatically pull upstream updates via `git pull`:
+
+```bash
+git clone https://github.com/tkdtaylor/create-project-skill.git ~/.claude/skills/create-project
+```
+
+**Option B — Copy.** Works, but the sync flow won't be able to auto-update the global install (it will prompt you to reinstall manually):
 
 ```bash
 rm -rf ~/.claude/skills/create-project && cp -r /path/to/create-project-skill ~/.claude/skills/create-project
@@ -282,13 +293,38 @@ rm -rf ~/.claude/skills/create-project && cp -r /path/to/create-project-skill ~/
 
 The installed directory name must match the `name:` field in `SKILL.md` (`create-project`).
 
-## Upgrading existing projects
+## Syncing skills and upgrading existing projects
 
-Projects created with an older version of this skill won't automatically get new features (hooks, agents, boundaries, etc.). You can retrofit them by copying the relevant files from the current templates into your project.
+Projects created with an older version of this skill won't automatically get new features (hooks, agents, boundaries, etc.). The skill includes a **sync flow** that checks for upstream changes and merges them into your project while preserving local customizations.
 
-### What to copy
+### Automatic sync (recommended)
 
-The files below live in `assets/templates/<type>/` (where `<type>` is `tech`, `data`, or `research`). Copy them into the matching paths in your existing project:
+Open Claude Code in your project and say:
+
+- *"sync my skills"*
+- *"update my skills"*
+- *"make sure my skills are up to date"*
+
+The sync flow does two things:
+
+1. **Updates globally installed skills** — for each skill in `~/.claude/skills/` that is a git repo, fetches and fast-forward pulls upstream changes
+2. **Syncs project artifacts** — compares your project's managed files (hooks, agents, settings) against the latest templates using `.claude/skill-manifest.json`, then:
+   - **Auto-updates** files you haven't modified locally
+   - **Preserves** your local customizations when the template hasn't changed
+   - **Shows conflicts** when both sides changed, letting you choose how to merge
+   - **Offers new files** added to the skill since your project was set up
+
+Agent files get special handling: when an updated template is applied, the `model:` field from your project is preserved so your model tier configuration isn't lost.
+
+### Manifest tracking
+
+Projects set up with the current version of the skill include `.claude/skill-manifest.json`, which records sha256 hashes of each managed file at install time. This enables precise three-way change detection during sync.
+
+Projects set up before manifest tracking was added still work — the sync generates a baseline manifest on first run by hashing current files, then tracks changes from that point forward.
+
+### Manual upgrade (alternative)
+
+If you prefer to update files manually, the managed files live in `assets/templates/<type>/` (where `<type>` is `tech`, `data`, or `research`):
 
 | File | What it adds |
 |------|-------------|
@@ -315,8 +351,8 @@ Replace `tech` with `data` or `research` for other project types.
 
 ### Updating CLAUDE.md
 
-The templates now include commit rules, three-tier boundaries (Always / Ask First / Never), anti-rationalization tables, and a plan mode section. You can either:
-- Manually add these sections to your existing `CLAUDE.md` (look at the current template for the format)
+`CLAUDE.md` is not a managed file (it has project-specific content), so the sync flow does not touch it. If the templates have added new sections (commit rules, three-tier boundaries, anti-rationalization tables, plan mode), you can either:
+- Manually add the missing sections to your existing `CLAUDE.md` (look at the current template in `assets/templates/<type>/CLAUDE.md` for the format)
 - Or regenerate `CLAUDE.md` from the template and merge with your project-specific content
 
 ### Updating Docker mounts
@@ -349,6 +385,7 @@ The skill will:
 6. **Copy hooks and agents** — settings.json, hook scripts, and agent templates (task-executor, architect, code-reviewer, security-auditor for tech/data projects)
 7. **Configure model tiers** — detect available models and set the best one for each agent
 8. **Recommend tooling** — skills, hooks, and CLI tools suited to the project
+9. **Write skill manifest** — records which files came from templates in `.claude/skill-manifest.json`, enabling future syncs
 
 Existing source code is never moved, renamed, or restructured. The skill adds a documentation and tooling layer alongside what's already there.
 

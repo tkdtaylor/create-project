@@ -158,6 +158,8 @@ Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 
 If `.claude/settings.json` already exists, **merge** — preserve existing permissions and hooks, add the new ones.
 
+These copied files are tracked in `.claude/skill-manifest.json` (written in Step 3e of the main skill flow) so they can be synced when the skill is updated later. The manifest is written after A8 completes (which runs Step 3, including 3e).
+
 ---
 
 ## Step A7 — Detect models and configure agents
@@ -184,6 +186,8 @@ git add CLAUDE.md docs/ .claude/
 git diff --cached --quiet || git commit -m "chore: add project docs, task structure, and Claude Code tooling"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
+
+Note: `.claude/skill-manifest.json` is committed here as part of `.claude/` — it was written during Step 3e (called via A8).
 
 ---
 

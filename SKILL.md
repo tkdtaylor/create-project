@@ -1,6 +1,6 @@
 ---
 name: create-project
-description: Invoke when a user announces they are starting or creating something new — "start a project", "set up a project", "create a project", "scaffold a codebase" — OR when they want to adopt the create-project workflow for an existing codebase — "set up this project for Claude", "add project structure", "generate docs for this codebase", "onboard this repo". For new projects, scaffolds the full workspace. For existing codebases, analyzes what's there and generates baseline docs (CLAUDE.md, architecture overview, task structure) so new work fits within a structured process.
+description: Invoke when a user announces they are starting or creating something new — "start a project", "set up a project", "create a project", "scaffold a codebase" — OR when they want to adopt the create-project workflow for an existing codebase — "set up this project for Claude", "add project structure", "generate docs for this codebase", "onboard this repo" — OR when they want to sync or update skills — "sync my skills", "update my skills", "make sure my skills are up to date", "pull latest skill changes", "update project hooks", "update project agents". For new projects, scaffolds the full workspace. For existing codebases, analyzes what's there and generates baseline docs. For skill sync, checks globally installed skills for upstream updates and syncs managed project artifacts (hooks, agents, settings) from updated templates.
 ---
 
 # Create Project
@@ -18,6 +18,14 @@ This applies to:
 - Any third-party service credentials
 
 If a user offers a secret in chat, refuse politely and ask them to put it directly into the relevant file instead. Do not echo, log, or write secrets to transcript files.
+
+---
+
+## Skill sync?
+
+Before starting the interview, check if the user is asking for a skill sync or update rather than a new project or adoption. Trigger phrases: "sync my skills", "update my skills", "make sure my skills are up to date", "pull latest skill changes", "update project hooks", "update project agents", "check for skill updates".
+
+If this is a sync request: read and follow `$CLAUDE_SKILL_DIR/references/sync-skills.md`. **Do not run Steps 1–3.**
 
 ---
 
@@ -205,9 +213,65 @@ For **research projects**, always create source-evaluator and outline-builder at
 
 If no new agents are warranted (e.g. a simple one-off script), still run Step 1 to configure the task-executor's model, then skip creating additional agents.
 
-After completing 3a–3d, commit everything created or modified in this step:
+### 3e — Write skill manifest
+
+After all tooling configuration is complete (including model tier updates from 3d), write `.claude/skill-manifest.json` so future syncs can track which files came from this skill and detect changes on both sides.
+
+The manifest records a sha256 hash of each managed file as installed and the template it came from. This enables the sync procedure (`$CLAUDE_SKILL_DIR/references/sync-skills.md`) to detect upstream template changes, local user modifications, and conflicts.
+
+**Managed files** — these are files copied verbatim from skill templates (not files with placeholder substitution like CLAUDE.md or README.md):
+
+| File | All types? |
+|------|-----------|
+| `.claude/settings.json` | Yes |
+| `.claude/scripts/restructure-plan.py` | Yes |
+| `.claude/scripts/protect-secrets.py` | Yes |
+| `.claude/scripts/post-compact.py` | Yes |
+| `.claude/agents/task-executor.md` | Yes |
+| `.claude/agents/architect.md` | tech, data |
+| `.claude/agents/code-reviewer.md` | tech, data |
+| `.claude/agents/security-auditor.md` | tech, data |
+
+Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill.
+
+For each managed file that exists in the project:
+
 ```bash
-git add CLAUDE.md
+# Compute installed hash (the file as it exists now, after model tier updates)
+sha256sum "$file" | cut -d' ' -f1
+
+# Compute template hash (the source template in the skill directory)
+sha256sum "$CLAUDE_SKILL_DIR/assets/templates/<type>/$relative_path" | cut -d' ' -f1
+```
+
+Write `.claude/skill-manifest.json`:
+
+```json
+{
+  "create-project": {
+    "project_type": "<type>",
+    "setup_date": "<today YYYY-MM-DD>",
+    "files": {
+      ".claude/settings.json": {
+        "template": "assets/templates/<type>/.claude/settings.json",
+        "installed_hash": "<sha256>",
+        "template_hash": "<sha256>"
+      },
+      ".claude/scripts/protect-secrets.py": {
+        "template": "assets/templates/<type>/.claude/scripts/protect-secrets.py",
+        "installed_hash": "<sha256>",
+        "template_hash": "<sha256>"
+      }
+    }
+  }
+}
+```
+
+Note: `installed_hash` and `template_hash` will differ for agent files because Step 3d updates the `model:` field after copying the template. This is expected — it's how the sync process knows the model field was intentionally changed during setup.
+
+After completing 3a–3e, commit everything created or modified in this step:
+```bash
+git add CLAUDE.md .claude/skill-manifest.json
 test -d .claude/agents/ && git add .claude/agents/ || true
 git diff --cached --quiet || git commit -m "chore: add project agents and tooling recommendations"
 git remote get-url origin >/dev/null 2>&1 && git push || true

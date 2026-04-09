@@ -92,7 +92,7 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 | `deep-research-template.md` | `outputs/templates/deep-research.md` |
 | `learning-plan-template.md` | `outputs/templates/learning-plan.md` |
 
-The following templates have no placeholders — copy them as-is:
+The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
 - `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
 - `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
