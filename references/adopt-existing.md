@@ -137,22 +137,27 @@ cp "$CLAUDE_SKILL_DIR/assets/templates/data/experiment-tracker.md" docs/tasks/ex
 ## Step A6 — Copy hooks and agents
 
 ```bash
+COMMON_DIR="$CLAUDE_SKILL_DIR/assets/templates/common"
 TEMPLATE_DIR="$CLAUDE_SKILL_DIR/assets/templates/<type>"
 mkdir -p .claude/scripts .claude/agents
 
-# Settings + hooks
+# Settings (type-specific — includes hook config)
 cp "$TEMPLATE_DIR/.claude/settings.json" .claude/settings.json
 
-# Hook scripts
-cp "$TEMPLATE_DIR/.claude/scripts/restructure-plan.py" .claude/scripts/restructure-plan.py
-cp "$TEMPLATE_DIR/.claude/scripts/protect-secrets.py" .claude/scripts/protect-secrets.py
-cp "$TEMPLATE_DIR/.claude/scripts/post-compact.py" .claude/scripts/post-compact.py
+# Universal hook scripts (all project types)
+cp "$COMMON_DIR/.claude/scripts/"*.py .claude/scripts/
+
+# Tech/data-only hook scripts (config-protection, edit-tracker, batch-format-typecheck)
+if [ "<type>" != "research" ]; then
+  TECH_DIR="$CLAUDE_SKILL_DIR/assets/templates/tech"
+  cp "$TECH_DIR/.claude/scripts/"*.py .claude/scripts/
+fi
 
 # Agents
 cp "$TEMPLATE_DIR/.claude/agents/"*.md .claude/agents/
 ```
 
-For **tech/data projects**, this copies: `task-executor.md`, `architect.md`, `code-reviewer.md`, and `security-auditor.md`. For **research projects**, this copies only `task-executor.md`.
+For **tech/data projects**, this copies all 12 hook scripts and 4 agents (task-executor, architect, code-reviewer, security-auditor). For **research projects**, this copies 9 universal hooks and only task-executor.
 
 Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 

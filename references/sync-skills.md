@@ -142,18 +142,25 @@ SKILL_DIR=$(ls -d ~/.claude/skills/create-project 2>/dev/null)
 TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 ```
 
-4. Build the managed file list. These are the files the create-project skill copies verbatim into projects:
+4. Build the managed file list. These are the files the create-project skill copies verbatim into projects. Note that universal hooks come from `assets/templates/common/`, tech-only hooks from `assets/templates/tech/`, and everything else from `assets/templates/<type>/`:
 
-**All project types:**
+**All project types (settings from `<type>/`, hooks from `common/`):**
 - `.claude/settings.json` → `assets/templates/<type>/.claude/settings.json`
-- `.claude/scripts/restructure-plan.py` → `assets/templates/<type>/.claude/scripts/restructure-plan.py`
-- `.claude/scripts/protect-secrets.py` → `assets/templates/<type>/.claude/scripts/protect-secrets.py`
-- `.claude/scripts/pre-compact.py` → `assets/templates/<type>/.claude/scripts/pre-compact.py`
-- `.claude/scripts/post-compact.py` → `assets/templates/<type>/.claude/scripts/post-compact.py`
-- `.claude/scripts/periodic-checkpoint.py` → `assets/templates/<type>/.claude/scripts/periodic-checkpoint.py`
+- `.claude/scripts/_hook_utils.py` → `assets/templates/common/.claude/scripts/_hook_utils.py`
+- `.claude/scripts/protect-secrets.py` → `assets/templates/common/.claude/scripts/protect-secrets.py`
+- `.claude/scripts/block-no-verify.py` → `assets/templates/common/.claude/scripts/block-no-verify.py`
+- `.claude/scripts/restructure-plan.py` → `assets/templates/common/.claude/scripts/restructure-plan.py`
+- `.claude/scripts/pre-compact.py` → `assets/templates/common/.claude/scripts/pre-compact.py`
+- `.claude/scripts/post-compact.py` → `assets/templates/common/.claude/scripts/post-compact.py`
+- `.claude/scripts/periodic-checkpoint.py` → `assets/templates/common/.claude/scripts/periodic-checkpoint.py`
+- `.claude/scripts/strategic-compact.py` → `assets/templates/common/.claude/scripts/strategic-compact.py`
+- `.claude/scripts/desktop-notify.py` → `assets/templates/common/.claude/scripts/desktop-notify.py`
 - `.claude/agents/task-executor.md` → `assets/templates/<type>/.claude/agents/task-executor.md`
 
-**tech and data only:**
+**tech and data only (hooks from `tech/`, agents from `<type>/`):**
+- `.claude/scripts/config-protection.py` → `assets/templates/tech/.claude/scripts/config-protection.py`
+- `.claude/scripts/edit-tracker.py` → `assets/templates/tech/.claude/scripts/edit-tracker.py`
+- `.claude/scripts/batch-format-typecheck.py` → `assets/templates/tech/.claude/scripts/batch-format-typecheck.py`
 - `.claude/agents/architect.md` → `assets/templates/<type>/.claude/agents/architect.md`
 - `.claude/agents/code-reviewer.md` → `assets/templates/<type>/.claude/agents/code-reviewer.md`
 - `.claude/agents/security-auditor.md` → `assets/templates/<type>/.claude/agents/security-auditor.md`
@@ -184,7 +191,7 @@ Write `.claude/skill-manifest.json` (see format below) and tell the user:
         "template_hash": "a1b2c3..."
       },
       ".claude/scripts/protect-secrets.py": {
-        "template": "assets/templates/tech/.claude/scripts/protect-secrets.py",
+        "template": "assets/templates/common/.claude/scripts/protect-secrets.py",
         "installed_hash": "d4e5f6...",
         "template_hash": "d4e5f6..."
       }
@@ -298,12 +305,21 @@ After syncing existing files, check if the skill's templates now include files t
 
 ```bash
 SKILL_DIR=~/.claude/skills/create-project
+COMMON_DIR="$SKILL_DIR/assets/templates/common"
 TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
+TECH_DIR="$SKILL_DIR/assets/templates/tech"
 
-# Check for new .claude/ files in the template
-for template_file in "$TEMPLATE_DIR"/.claude/scripts/*.py "$TEMPLATE_DIR"/.claude/agents/*.md; do
+# Check for new .claude/ files across all template sources
+for template_file in \
+  "$COMMON_DIR"/.claude/scripts/*.py \
+  "$TEMPLATE_DIR"/.claude/scripts/*.py \
+  "$TEMPLATE_DIR"/.claude/agents/*.md \
+  "$TECH_DIR"/.claude/scripts/*.py; do
   [ -f "$template_file" ] || continue
-  relative="${template_file#$TEMPLATE_DIR/}"
+  # Determine relative output path (strip template dir prefix)
+  for prefix in "$COMMON_DIR/" "$TEMPLATE_DIR/" "$TECH_DIR/"; do
+    case "$template_file" in "$prefix"*) relative="${template_file#$prefix}"; break;; esac
+  done
   # Check if this file is already in the manifest
   # If not, it's a new file from upstream
 done
