@@ -148,7 +148,9 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/settings.json` → `assets/templates/<type>/.claude/settings.json`
 - `.claude/scripts/restructure-plan.py` → `assets/templates/<type>/.claude/scripts/restructure-plan.py`
 - `.claude/scripts/protect-secrets.py` → `assets/templates/<type>/.claude/scripts/protect-secrets.py`
+- `.claude/scripts/pre-compact.py` → `assets/templates/<type>/.claude/scripts/pre-compact.py`
 - `.claude/scripts/post-compact.py` → `assets/templates/<type>/.claude/scripts/post-compact.py`
+- `.claude/scripts/periodic-checkpoint.py` → `assets/templates/<type>/.claude/scripts/periodic-checkpoint.py`
 - `.claude/agents/task-executor.md` → `assets/templates/<type>/.claude/agents/task-executor.md`
 
 **tech and data only:**

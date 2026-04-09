@@ -101,18 +101,21 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/data/`, substitute p
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `experiment-tracker.md` | `docs/tasks/experiment-tracker.md` |
+| `experiments/EXPERIMENT-TEMPLATE.md` | `experiments/EXPERIMENT-TEMPLATE.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
 | `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
+| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 
 The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
-- `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
-- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
+- `.claude/settings.json` — pre-configures Claude Code permissions and five hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders on Stop.
+- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD for code, experiment workflow for ML, commits after completion. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
 - `.claude/agents/architect.md` — reviews proposed features, pipeline design, and data model changes. Drafts ADRs for non-obvious decisions. Ships with `model: inherit` and a `# model-tier: deep` comment.
 - `.claude/agents/code-reviewer.md` — reviews changed files using structured perspectives (correctness, data integrity, reproducibility, performance, testing, etc.). Selects 2–4 perspectives based on what changed. Ships with `model: inherit` and a `# model-tier: balanced` comment.

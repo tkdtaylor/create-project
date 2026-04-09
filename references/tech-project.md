@@ -77,16 +77,20 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/tech/`, substitute p
 | `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
+| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 
 The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
-- `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and three hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, and context recovery after compaction.
+- `.claude/settings.json` — pre-configures Claude Code permissions (bash auto-approved, destructive ops prompted) and five hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders on Stop.
 - `.claude/scripts/restructure-plan.py` — PostToolUse hook. Splits plan steps into `docs/tasks/backlog/` task files, creates test spec stubs, updates the coverage tracker, and replaces the plan with a lightweight skeleton.
 - `.claude/scripts/protect-secrets.py` — PreToolUse hook. Hard-blocks writes to private keys, credential files, and auth configs (`.pem`, `.key`, `service-account*.json`, `.npmrc`, etc.).
+- `.claude/scripts/pre-compact.py` — PreCompact hook. Blocks context compaction if there are uncommitted changes, instructing the agent to commit and checkpoint progress first. Complements post-compact.py as a belt-and-suspenders approach.
 - `.claude/scripts/post-compact.py` — PostCompact hook. Re-injects the active task, test spec, and plan status into the conversation after context compaction so Claude doesn't lose track of what it was doing.
+- `.claude/scripts/periodic-checkpoint.py` — Stop hook. Counts agent response turns and blocks every 15 turns (configurable via `CLAUDE_CHECKPOINT_INTERVAL`) if there are uncommitted changes, forcing the agent to save progress. Prevents long sessions from losing work.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one task at a time. Follows TDD with self-review, commits after completion, and reports back without bloating the main conversation. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
 - `.claude/agents/architect.md` — reviews proposed features and design changes against the architecture docs. Drafts ADRs for non-obvious decisions. Ships with `model: inherit` and a `# model-tier: deep` comment.
 - `.claude/agents/code-reviewer.md` — reviews changed files using structured perspectives (correctness, security, performance, testing, API design, concurrency, etc.). Selects 2–4 perspectives based on what changed. Ships with `model: inherit` and a `# model-tier: balanced` comment.

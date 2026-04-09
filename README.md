@@ -18,13 +18,13 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
 10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
-11. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, and context recovery after compaction
+11. Installs hooks: plan-to-tasks restructuring on exit from plan mode, secret file write protection, pre-compact checkpoint enforcement (blocks compaction until uncommitted changes are saved), post-compact context recovery, and periodic checkpoint reminders (every 15 turns)
 12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
 13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — with three-way merge to preserve local customizations
 
 ## First-time setup
 
-Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures three hooks: plan restructuring on exit from plan mode, secret file write protection, and context recovery after compaction. No manual configuration needed per project.
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures five hooks: plan restructuring on exit from plan mode, secret file write protection, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders. No manual configuration needed per project.
 
 If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
 
@@ -138,7 +138,7 @@ code --install-extension ms-vscode-remote.remote-containers
 | Type | Use when | Key structure |
 |------|----------|---------------|
 | **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/` with TDD scaffolding (test specs before tasks) |
-| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/`, `models/`, `tests/`, `docs/` with dual TDD + experiment tracking |
+| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/` (with structured sandbox template), `models/`, `tests/`, `docs/` with dual TDD + experiment tracking |
 | **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/` (with decision brief, deep research, and learning plan templates), `docs/` |
 | **other** | Planning, tracking, organising — wedding planning, job search, project management | Research base structure with domain-specific top-level folders (e.g. `vendors/`, `budget/`, `timeline/`) chosen by the user |
 
@@ -227,11 +227,13 @@ assets/
       CLAUDE.md
       devcontainer.json
       .claude/
-        settings.json            # permissions + hooks (plan, secrets, post-compact)
+        settings.json            # permissions + hooks (plan, secrets, compaction, checkpoint)
         scripts/
           restructure-plan.py    # splits plans into task files on exit from plan mode
           protect-secrets.py     # blocks writes to private keys and credential files
+          pre-compact.py         # blocks compaction until uncommitted changes are saved
           post-compact.py        # re-injects task context after context compaction
+          periodic-checkpoint.py # reminds agent to commit every N turns
         agents/
           task-executor.md       # ephemeral agent for executing one task at a time
           architect.md           # architecture review + ADR drafting (tier: deep)
@@ -249,6 +251,8 @@ assets/
       .claude/                   # same hooks and agents as tech (adapted for ML workflow)
       docker/                    # same Docker pattern as tech
       experiment-tracker.md      # tracks experiment runs alongside coverage-tracker
+      experiments/
+        EXPERIMENT-TEMPLATE.md   # structured sandbox for exploratory research before committing to an approach
       [architecture, task, roadmap templates...]
     research/                    # Per-project templates — research projects
       CLAUDE.md
@@ -328,10 +332,12 @@ If you prefer to update files manually, the managed files live in `assets/templa
 
 | File | What it adds |
 |------|-------------|
-| `.claude/settings.json` | Permissions + hooks (plan restructuring, secret protection, post-compact recovery) |
+| `.claude/settings.json` | Permissions + hooks (plan restructuring, secret protection, compaction, checkpoint) |
 | `.claude/scripts/restructure-plan.py` | Plan-to-tasks hook on exit from plan mode |
 | `.claude/scripts/protect-secrets.py` | Blocks writes to private keys and credential files |
+| `.claude/scripts/pre-compact.py` | Blocks compaction until uncommitted changes are saved |
 | `.claude/scripts/post-compact.py` | Re-injects task context after context compaction |
+| `.claude/scripts/periodic-checkpoint.py` | Reminds agent to commit every N turns |
 | `.claude/agents/task-executor.md` | Ephemeral agent for executing one task at a time |
 | `.claude/agents/architect.md` | Architecture review + ADR drafting (tier: deep) |
 | `.claude/agents/code-reviewer.md` | Structured multi-perspective code review (tier: balanced) |

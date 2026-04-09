@@ -87,14 +87,16 @@ Read each template from `$CLAUDE_SKILL_DIR/assets/templates/research/`, substitu
 | `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
+| `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
+| `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `decision-brief-template.md` | `outputs/templates/decision-brief.md` |
 | `deep-research-template.md` | `outputs/templates/deep-research.md` |
 | `learning-plan-template.md` | `outputs/templates/learning-plan.md` |
 
 The following templates have no placeholders — copy them as-is. These files are tracked in `.claude/skill-manifest.json` (written in Step 3e) so they can be synced when the skill is updated later:
-- `.claude/settings.json` — pre-configures Claude Code permissions and hooks (plan restructuring, secret protection, post-compact context recovery).
-- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, and context recovery after compaction.
+- `.claude/settings.json` — pre-configures Claude Code permissions and five hooks: plan restructuring on ExitPlanMode, secret file protection on Write/Edit, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders on Stop.
+- `.claude/scripts/` — hook scripts for plan restructuring, secret file protection, pre-compact checkpoint enforcement, post-compact context recovery, and periodic checkpoint reminders.
 - `.claude/agents/task-executor.md` — ephemeral agent for executing one research task at a time. Ships with `model: inherit` and a `# model-tier: fast` comment — Step 3d will detect available models and update the field to the best fast-tier model before completing setup.
 - `outputs/templates/decision-brief.md` — structured template for comparing options and making a recommendation. Includes comparison matrix, pros/cons, dissenting considerations, and open questions.
 - `outputs/templates/deep-research.md` — structured template for in-depth research reports. Includes methodology, findings by subtopic, cross-source analysis, and gap identification.

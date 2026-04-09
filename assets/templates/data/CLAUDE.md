@@ -98,6 +98,22 @@ For ML experiments (training runs, hyperparameter searches, model comparisons):
    git push
    ```
 
+## Experiment sandbox
+
+For exploratory research before committing to an approach (comparing frameworks, evaluating data strategies, prototyping architectures):
+
+1. Copy `experiments/EXPERIMENT-TEMPLATE.md` to `experiments/<NNN>-<short-name>/EXPERIMENT.md`
+2. Fill in the Problem, Hypothesis, and Target sections
+3. Work through the lifecycle phases: IDENTIFY → RESEARCH → HYPOTHESIZE → PLAN → IMPLEMENT → EVALUATE → DECIDE
+4. Keep all experiment artifacts (throwaway code, scratch notebooks, intermediate data) inside the experiment folder
+5. Record findings as you go — don't wait until the end
+6. At DECIDE, choose an outcome:
+   - **GO** — create tasks in the project backlog, port validated patterns to `src/`
+   - **NO-GO** — document why, record as a failed approach in the tracker
+   - **ITERATE** — refine hypothesis, adjust parameters, run again
+
+**Rule: port results, not files.** Experiment artifacts stay in the sandbox. Only actionable outcomes (code patterns, validated configs, documented decisions) move to the project.
+
 ## Plan mode
 
 When you exit plan mode, a hook automatically restructures the plan:
