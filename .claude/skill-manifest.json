@@ -1,0 +1,54 @@
+{
+  "create-project": {
+    "project_type": "tech",
+    "setup_date": "2026-04-11",
+    "notes": "Skill repo dogfoods a deliberately-curated minimal subset of its own templates: 4 safety hooks (protect-secrets, block-no-verify, protect-checkout, pre-compact), 3 workflow hooks (post-compact, periodic-checkpoint, strategic-compact), the _hook_utils module, and settings.json. Tech-only hooks (config-protection, edit-tracker, batch-format-typecheck) and strict-profile hooks (desktop-notify) and agents are intentionally excluded \u2014 this repo is a template repository, not a typical project.",
+    "files": {
+      ".claude/settings.json": {
+        "template": "assets/templates/tech/.claude/settings.json",
+        "installed_hash": "12c96e940c792b006894065e7b2a92acb2deacd40b305053a554d77187cbc65a",
+        "template_hash": "19977f953ae4c171103f5e825f30a30fd2aa24853fd1222acaddb2d0e527742c"
+      },
+      ".claude/scripts/_hook_utils.py": {
+        "template": "assets/templates/common/.claude/scripts/_hook_utils.py",
+        "installed_hash": "b4b6db0e23fb01a4662938ad9d19b9956cfa9b8817059d0b0e7b076fbc037b2b",
+        "template_hash": "b4b6db0e23fb01a4662938ad9d19b9956cfa9b8817059d0b0e7b076fbc037b2b"
+      },
+      ".claude/scripts/protect-secrets.py": {
+        "template": "assets/templates/common/.claude/scripts/protect-secrets.py",
+        "installed_hash": "cae0bdfbcba9df1bfe164afaf8df1b4d6c46e0fcba8f39a237ef4bf9391acd61",
+        "template_hash": "cae0bdfbcba9df1bfe164afaf8df1b4d6c46e0fcba8f39a237ef4bf9391acd61"
+      },
+      ".claude/scripts/block-no-verify.py": {
+        "template": "assets/templates/common/.claude/scripts/block-no-verify.py",
+        "installed_hash": "3d77c2583a99896c2600efd443ee51ddd564d8bb070461ee37160c482dbd04b7",
+        "template_hash": "3d77c2583a99896c2600efd443ee51ddd564d8bb070461ee37160c482dbd04b7"
+      },
+      ".claude/scripts/post-compact.py": {
+        "template": "assets/templates/common/.claude/scripts/post-compact.py",
+        "installed_hash": "4865491fe0c0c871281e0c1f577d0db226ce52335dcf5c5592ecc9943a332afe",
+        "template_hash": "4865491fe0c0c871281e0c1f577d0db226ce52335dcf5c5592ecc9943a332afe"
+      },
+      ".claude/scripts/pre-compact.py": {
+        "template": "assets/templates/common/.claude/scripts/pre-compact.py",
+        "installed_hash": "fd6c77e43ae114a55f99e782d93cd380a2ebcfd1e86b1cf648114b0f569acc21",
+        "template_hash": "fd6c77e43ae114a55f99e782d93cd380a2ebcfd1e86b1cf648114b0f569acc21"
+      },
+      ".claude/scripts/periodic-checkpoint.py": {
+        "template": "assets/templates/common/.claude/scripts/periodic-checkpoint.py",
+        "installed_hash": "d5f7cb57ebb4b6f966c73459faf3dde1fb5cc65bf7840a01415e2ad29b2051a9",
+        "template_hash": "d5f7cb57ebb4b6f966c73459faf3dde1fb5cc65bf7840a01415e2ad29b2051a9"
+      },
+      ".claude/scripts/strategic-compact.py": {
+        "template": "assets/templates/common/.claude/scripts/strategic-compact.py",
+        "installed_hash": "7f6f939d829459ab2bc5df2fd57aea5f96bdcf62a404aae1c4fb376a6a04a14d",
+        "template_hash": "7f6f939d829459ab2bc5df2fd57aea5f96bdcf62a404aae1c4fb376a6a04a14d"
+      },
+      ".claude/scripts/protect-checkout.py": {
+        "template": "assets/templates/tech/.claude/scripts/protect-checkout.py",
+        "installed_hash": "a3757293151be0dc5f5b79bfb4ac9633188dc05bcf76940f3ff7c44d901995c3",
+        "template_hash": "a3757293151be0dc5f5b79bfb4ac9633188dc05bcf76940f3ff7c44d901995c3"
+      }
+    }
+  }
+}

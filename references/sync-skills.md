@@ -325,11 +325,28 @@ for template_file in \
 done
 ```
 
-For new files found:
-1. Present them: *"The create-project skill now includes these files that aren't in your project:"*
-2. List each with a one-line description (read the file to summarize)
-3. Ask which ones to add
-4. Copy selected files and add them to the manifest
+For new files found, treat **hook scripts** and **agent files** differently — they are not the same kind of thing:
+
+**Hook scripts** (`.claude/scripts/*.py`) — **auto-add, then report.**
+Hook scripts are safety and workflow infrastructure. Their defaults are carefully chosen, they are gated by the `CLAUDE_HOOK_PROFILE` environment variable (so users can mute them without deleting them), and missing hooks usually indicate the project was set up before the hook existed rather than a deliberate choice to exclude it. The cost of auto-adding a hook the user didn't want is low (they can disable it with `CLAUDE_DISABLED_HOOKS=<name>` or remove it from `settings.json`); the cost of *not* adding a safety hook is potentially high. Copy these without asking, then list what was added in the final report.
+
+**Agent files** (`.claude/agents/*.md`) — **offer, do not auto-add.**
+Agents are opinionated tooling. An agent that is in the template but not in the project can mean either:
+- The user deliberately removed it (respect that), OR
+- The user was never offered it during the original setup — either because they set the project up before the agent existed in the skill, or because Step 3d's subtype guidance didn't recommend it for this project type. Absence is not the same as explicit rejection.
+
+Because you cannot distinguish these cases reliably, **always present missing agents as an opt-in list** — do not assume either removal or omission. Present them as:
+
+> *"The create-project skill ships these additional agents that aren't in your project. They weren't necessarily excluded — they may just never have been offered during the original setup. Would you like me to add any?"*
+
+For each missing agent, read the file and present:
+- Name, model tier (from the `# model-tier:` comment)
+- One-sentence summary of what it does (from the `description:` frontmatter)
+- When to invoke it (typical trigger phrase)
+
+Then let the user pick per-agent. Copy only the selected ones, set the `model:` field based on available models (same mapping as Step 3d), and add them to the manifest.
+
+**Settings files and other managed content** — handle per their own rules (settings.json uses the merge logic in Step 3e).
 
 ---
 
