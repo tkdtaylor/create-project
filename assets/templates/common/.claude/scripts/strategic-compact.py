@@ -13,6 +13,8 @@ Inspired by strategic-compact from everything-claude-code.
 import json
 import os
 import sys
+
+sys.dont_write_bytecode = True  # Don't litter .claude/scripts/ with __pycache__/
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))

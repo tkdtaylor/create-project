@@ -269,6 +269,10 @@ Append to `.gitignore` (create if it does not exist):
 
 # Python virtual environment
 .venv/
+
+# Python bytecode — also emitted by .claude/scripts/ hooks
+__pycache__/
+*.pyc
 ```
 
 **A4. Add a Commands section to `CLAUDE.md`**
@@ -370,6 +374,10 @@ Append to `.gitignore` (create it if it does not exist):
 
 # Python virtual environment (lives in the Docker volume — not part of the repo)
 .venv/
+
+# Python bytecode — also emitted by .claude/scripts/ hooks
+__pycache__/
+*.pyc
 ```
 
 **6. Write `.env` with git credentials**

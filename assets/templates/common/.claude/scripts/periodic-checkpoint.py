@@ -15,6 +15,8 @@ import json
 import os
 import subprocess
 import sys
+
+sys.dont_write_bytecode = True  # Don't litter .claude/scripts/ with __pycache__/
 import time
 from pathlib import Path
 

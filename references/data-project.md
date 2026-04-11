@@ -326,6 +326,10 @@ Append to `.gitignore` (create if it does not exist):
 # Python virtual environment
 .venv/
 
+# Python bytecode — also emitted by .claude/scripts/ hooks
+__pycache__/
+*.pyc
+
 # Model artifacts (too large for git)
 models/*.pkl
 models/*.pt
@@ -477,6 +481,10 @@ Append to `.gitignore` (create if it does not exist):
 
 # Python virtual environment
 .venv/
+
+# Python bytecode — also emitted by .claude/scripts/ hooks
+__pycache__/
+*.pyc
 
 # Model artifacts (too large for git)
 models/*.pkl
