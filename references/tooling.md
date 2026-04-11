@@ -171,6 +171,7 @@ The following hooks are pre-configured in every scaffolded project. All hooks su
 | `protect-secrets` | PreToolUse | Write\|Edit | minimal | Blocks writes to private keys, SSH keys, service accounts, auth token files |
 | `block-no-verify` | PreToolUse | Bash | minimal | Blocks `--no-verify` and `--no-gpg-sign` flags on git commands |
 | `config-protection` | PreToolUse | Write\|Edit | minimal | Blocks modifications to linter/formatter config files (tech/data only) |
+| `protect-checkout` | PreToolUse | Bash | minimal | Blocks `git checkout … -- <path>` over a dirty working tree — the reflog cannot recover uncommitted blobs (tech/data only) |
 | `restructure-plan` | PostToolUse | ExitPlanMode | standard | Splits plan steps into task files, creates test spec stubs, backs up plan |
 | `edit-tracker` | PostToolUse | Edit\|Write | strict | Accumulates edited file paths for batch processing at Stop (tech/data only) |
 | `pre-compact` | PreCompact | — | standard | Blocks compaction if uncommitted changes exist |
@@ -277,15 +278,19 @@ Takes a feature description and produces a paired task file + test spec followin
 Invoke: *"use the task-planner to break down [feature]"*
 Best for: features with unclear scope, anything that touches multiple layers, or when you're not sure where to start.
 
+Two disciplines to build into the agent when creating it:
+- **Flag decisions for ADRs with options, pros/cons, and a recommendation.** When scoping surfaces a non-obvious design decision (framework choice, schema shape, auth model, model/prompt selection), the task-planner should add an *"ADRs required before this task starts"* note to the task file. For each flagged decision, present **2–3 viable options** with **pros and cons for each**, plus a **recommended default with the reasoning**. A bare "needs ADR" note is a cop-out — it forces the human to start from scratch. The point is to do the legwork of surfacing alternatives and trade-offs so the human can accept, amend, or reject a structured analysis. The **final decision still belongs to a human or the architect agent** — task-planner should not pre-commit to one of its options in the test spec. But "don't decide" is not the same as "don't analyze."
+- **Deterministic vs. probabilistic acceptance criteria.** For classical code, acceptance criteria are deterministic ("returns 404 on unknown id"). For features with an AI component (LLM calls, retrieval, classification), at least one AC should be probabilistic and quantified ("≥ 0.85 exact-match on the 20-row eval set"). Refusing to write a measurable AC is refusing to define "done."
+
 **qa** *(tier: balanced)*
 Reads the test spec for the current task, runs the test suite, and reports failures with context from the relevant source files. Identifies missing test cases based on the spec's acceptance criteria. Understands the difference between a test gap and a genuine bug.
 Invoke: *"use the qa agent on task 003"*
 Best for: after implementation is complete, before marking a task done.
 
-**dependency-auditor** *(tier: fast)*
-Reads the project's dependency manifest (`package.json`, `requirements.txt`, `go.mod`, etc.), identifies outdated or CVE-flagged packages, and proposes a pinned upgrade path. Checks for packages that have been abandoned or forked under suspicious names.
+**dependency-auditor** *(tier: fast)* — **template file ships with the skill at `assets/templates/tech/.claude/agents/dependency-auditor.md`**
+Reads the project's dependency manifest (`Cargo.toml`, `package.json`, `requirements.txt`/`pyproject.toml`, `go.mod`), identifies outdated or CVE-flagged packages, unused dependencies, and version fragmentation. Classifies findings as must/should/hold upgrade and proposes a concrete manifest diff for the must-upgrade set. Covers four ecosystems: Cargo, npm, PyPI, Go modules. Complements `dep-scan` (install-time check) and the `code-scanner` skill (pre-install check).
 Invoke: *"use the dependency-auditor"*
-Best for: before releases, after a long period without updates, or when adding a batch of new dependencies.
+Best for: before releases, after a long period without updates, when adding a batch of new dependencies, or after a vulnerability disclosure in the ecosystem.
 
 **docs-writer** *(tier: fast)*
 Generates or updates README sections, API reference docs, inline docstrings, and changelog entries from the current source code. Follows the audience and tone set in CLAUDE.md. Doesn't invent behavior — only documents what the code actually does.
@@ -391,6 +396,20 @@ Agents should use the right model for the job — not the most expensive one for
 | **balanced** | Moderate reasoning with some judgment calls | code-reviewer, qa, source-evaluator, outline-builder |
 | **deep** | Complex reasoning, architecture decisions, ambiguous problems | architect, security-auditor, gap-analyst |
 
+#### Tier-mismatch recovery — agents should self-escalate
+
+Tier assignment is a *starting point*, not a guarantee the tier fits the task. A fast-tier agent can easily be handed a task that actually needs balanced or deep reasoning — and silently producing a subpar result is the worst outcome, because the subpar result gets merged and a higher-tier agent later has to rediscover and rewrite it.
+
+Build this self-escalation discipline into any agent that executes scoped work (especially `task-executor`, but also `docs-writer`, `summary-writer`, `dependency-auditor`, and any future `*-executor` agent):
+
+- **Pre-flight check (before starting):** read the task, then assess whether it matches the tier's scope. Classical mismatch signals: unclear or contradictory spec, cross-cutting architectural change, no template to model on, security-sensitive surface without explicit guardrails, a problem where the spec tells you *what* but not *how*. If any signal fires, stop and return with an escalation recommendation instead of diving in.
+- **Confidence check (at completion):** during self-review, check not just "do I think this is done" but "do I have *high confidence* every acceptance criterion is genuinely met, or am I hoping?" If confidence is low on any specific criterion, do not commit — report back with the uncertain criterion named and recommend a review pass by a higher-tier agent (code-reviewer for quality, architect for design fit, security-auditor for trust-boundary concerns).
+- **Rewriting your own output is a signal.** If an agent implements, self-reviews, rewrites, reviews again, and is still uncertain — that is tier mismatch, not a call for one more pass. Escalate.
+
+The escalation report should include: what was read, which signal applied, the recommended tier, and the exact re-invocation command (e.g. `use architect — task: docs/tasks/backlog/NNN-name.md`). The cost of escalating early is one turn; the cost of shipping subpar work is a rediscovery round trip plus a rewrite.
+
+This pattern emerged from a real failure mode: a fast-tier agent completed a complex task mechanically, the main session merged the result, and a balanced-tier agent had to redo the work when the gaps surfaced later. Early escalation is strictly cheaper.
+
 #### Configuring at project creation time
 
 **Model detection must run during setup** — don't leave agents on `inherit` if better models are available. Step 3d of the main skill flow has a dedicated sub-step for this that runs even when no new agents are being created, so the pre-copied `task-executor.md` always gets its model field configured.
@@ -442,3 +461,41 @@ Where results go and in what form.
 ```
 
 Store at `.claude/agents/<name>.md`. Invoke in a session by describing what you want: *"use the architect agent to review this design"* or *"run the gap-analyst"*.
+
+---
+
+## Multi-repo integration patterns
+
+When a project depends on the runtime behavior of a sibling repo (e.g. a client that talks to an in-house simulator or server, a frontend that needs a backend API, a compiler that needs a runtime library), resist the urge to couple them as package dependencies. The decoupled subprocess pattern is almost always better for CI stability and long-term maintenance.
+
+Recommend this pattern when Step 1 reveals a sibling repo in the user's workspace, when the user mentions "sibling project" or "companion repo," or when the first task involves integration tests that touch another codebase the user owns.
+
+### The pattern — launch the sibling as a subprocess
+
+1. **Depend on the sibling's binary, not its source.** In local dev, run the sibling with the equivalent of `cargo run --manifest-path ../sibling/Cargo.toml -- --config test.toml` (adjust for the actual stack: `node ../sibling/dist/server.js`, `python -m sibling`, `go run ../sibling/cmd/server`, a pre-built docker image, etc). In CI, use a pre-built binary from a GitHub release, a scheduled-workflow artifact, or a container image — whichever gives you version pinning.
+2. **Wait for readiness, then run the test.** Poll a TCP port, a health endpoint, a status file, or a log line. Fail the test with a clear message if readiness doesn't arrive within a timeout, so flaky startup doesn't look like a test-logic bug.
+3. **Skip gracefully when the sibling is unavailable.** A fresh checkout of your repo must run green without the sibling present. Use a runtime probe (e.g. `if $SIBLING_BINARY is unset, skip with a clear reason`), not a build-time feature flag.
+4. **Tear down on Drop / afterEach / cleanup.** The test owns the subprocess lifecycle — no stray processes, no orphaned sockets, no leaked temp directories.
+5. **Own what you test.** Each repo's tests should prove *its* orchestration under real cross-repo traffic. The sibling's own tests should prove *its* wire contract from its side. No duplication — each side owns what it tests.
+
+A minimal harness typically lives in `tests/support/<sibling>.rs` (or the language equivalent): a struct/class holding the child process and the port, with a `start_or_skip()` constructor that returns `None` when the binary is missing, and an automatic teardown on scope exit.
+
+### Anti-pattern — path deps with `optional = true`
+
+Do not use Cargo's `sibling = { path = "../sibling", optional = true }`, nor the equivalent npm `workspaces` / `file:../sibling` / yarn `portal:` / go `replace ../sibling => ../sibling`. They share a single trap: **the package resolver still reads the sibling's manifest at build time**, even when the feature is "disabled." A fresh checkout of your repo without a sibling clone next to it will fail at manifest parse, not at runtime. This is especially nasty with Cargo's `optional = true` because the flag is a lie — it's optional for *linking*, not for *resolution*. Local dev works fine; CI blows up at manifest parse before the first test runs.
+
+If you have already adopted this pattern, the fix is to rip out the path dep entirely and move to the subprocess approach above. Document the rip-out with an ADR so future contributors don't re-add it.
+
+### When coupling IS the right answer
+
+Workspace-style integration (Cargo workspace members, pnpm workspace, go `work use`, uv workspace) is appropriate when:
+
+- The repos are always developed together — atomic cross-repo refactors are the norm, not the exception
+- One repo exists primarily to support the other and has no independent consumers
+- Version drift between them is a bug, not a feature
+
+In that case, merge them into a single workspace — don't fake it with optional path deps. The decoupled subprocess pattern above is for repos that have genuinely independent lifecycles, consumers, and release cadences.
+
+### Handshake for adding new wire-level patterns
+
+When the client repo adds a new interaction pattern with the sibling (a new order type, a new subscription sequence, a new protocol message, anything exercising a sibling code path that was not there before), open an issue against the sibling repo to add a matching contract test *before* the client code ships. The new pattern is not "supported by the sibling" until that contract test lands. This is how you prevent silent drift between what the client assumes and what the sibling actually handles.

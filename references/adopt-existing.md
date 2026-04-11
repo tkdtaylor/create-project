@@ -147,7 +147,7 @@ cp "$TEMPLATE_DIR/.claude/settings.json" .claude/settings.json
 # Universal hook scripts (all project types)
 cp "$COMMON_DIR/.claude/scripts/"*.py .claude/scripts/
 
-# Tech/data-only hook scripts (config-protection, edit-tracker, batch-format-typecheck)
+# Tech/data-only hook scripts (config-protection, protect-checkout, edit-tracker, batch-format-typecheck)
 if [ "<type>" != "research" ]; then
   TECH_DIR="$CLAUDE_SKILL_DIR/assets/templates/tech"
   cp "$TECH_DIR/.claude/scripts/"*.py .claude/scripts/
@@ -157,7 +157,7 @@ fi
 cp "$TEMPLATE_DIR/.claude/agents/"*.md .claude/agents/
 ```
 
-For **tech/data projects**, this copies all 12 hook scripts and 4 agents (task-executor, architect, code-reviewer, security-auditor). For **research projects**, this copies 9 universal hooks and only task-executor.
+For **tech/data projects**, this copies all 13 hook scripts and 4 agents (task-executor, architect, code-reviewer, security-auditor). For **research projects**, this copies 9 universal hooks and only task-executor.
 
 Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 

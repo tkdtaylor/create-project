@@ -79,6 +79,7 @@ Templates come from two directories:
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
 | `.claude/scripts/config-protection.py` | `.claude/scripts/config-protection.py` |
+| `.claude/scripts/protect-checkout.py` | `.claude/scripts/protect-checkout.py` |
 | `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
 | `.claude/scripts/batch-format-typecheck.py` | `.claude/scripts/batch-format-typecheck.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
@@ -102,11 +103,11 @@ Templates come from two directories:
 
 All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync.
 
-**Settings and hooks:** `.claude/settings.json` pre-configures permissions and eleven hooks across five lifecycle events, all gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict) and `CLAUDE_DISABLED_HOOKS` env vars:
+**Settings and hooks:** `.claude/settings.json` pre-configures permissions and twelve hooks across five lifecycle events, all gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict) and `CLAUDE_DISABLED_HOOKS` env vars:
 
 | Profile | Hooks |
 |---------|-------|
-| **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits) |
+| **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits), `protect-checkout` (block `git checkout -- <path>` over a dirty tree) |
 | **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns) |
 | **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `desktop-notify` (OS notification on completion) |
 

@@ -86,7 +86,7 @@ touch src/__init__.py src/data/__init__.py src/features/__init__.py src/models/_
 
 Templates come from three directories:
 - **`$CLAUDE_SKILL_DIR/assets/templates/common/`** — hook scripts shared by all project types
-- **`$CLAUDE_SKILL_DIR/assets/templates/tech/`** — tech-only hook scripts (config-protection, edit-tracker, batch-format-typecheck) — also used by data projects
+- **`$CLAUDE_SKILL_DIR/assets/templates/tech/`** — tech-only hook scripts (config-protection, protect-checkout, edit-tracker, batch-format-typecheck) — also used by data projects
 - **`$CLAUDE_SKILL_DIR/assets/templates/data/`** — data-specific templates, settings, and agents
 
 | Placeholder | Value |
@@ -118,6 +118,7 @@ Templates come from three directories:
 | Template | Output path |
 |----------|-------------|
 | `.claude/scripts/config-protection.py` | `.claude/scripts/config-protection.py` |
+| `.claude/scripts/protect-checkout.py` | `.claude/scripts/protect-checkout.py` |
 | `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
 | `.claude/scripts/batch-format-typecheck.py` | `.claude/scripts/batch-format-typecheck.py` |
 

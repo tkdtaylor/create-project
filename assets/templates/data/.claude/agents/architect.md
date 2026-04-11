@@ -43,9 +43,14 @@ When asked to draft an Architecture Decision Record:
 2. Write the ADR with this structure:
    - **Status:** proposed | accepted | deprecated
    - **Context:** what situation or problem prompted this decision
-   - **Decision:** what we chose and why
-   - **Alternatives considered:** what else was evaluated and why it was rejected
-   - **Consequences:** what changes as a result — both positive and negative
+   - **Options considered:** present **2–3 viable options** with pros/cons for each. For each option include:
+     - A one-sentence description
+     - **Pros** — what this option gets right (2–4 bullets)
+     - **Cons** — what it costs, trades off, or risks (2–4 bullets — for data/ML specifically: reproducibility cost, data movement cost, model-serving complexity, eval harness fit)
+     - A rough implementation sketch (one paragraph) so the trade-offs are concrete, not abstract
+   - **Recommendation:** your recommended option with the reasoning. Be explicit about *why* this wins over the others — not just "it's best." Name the deciding factor (reproducibility, pipeline complexity, inference latency, cost per run, data freshness requirements, etc.).
+   - **Decision:** what was chosen. When drafting a new ADR this may start as the same as your recommendation, but it is the **human's** call to accept, amend, or reject — leave the Status as `proposed` until confirmed.
+   - **Consequences:** what changes as a result — both positive and negative. Include what becomes harder, not just what becomes easier. For data/ML decisions, call out impact on: reproducibility, eval-set validity, training cost, inference cost, and migration cost if the decision needs to be reversed later.
 3. Save to `docs/architecture/decisions/NNN-<slug>.md`
 4. Commit separately:
    ```bash
@@ -53,6 +58,8 @@ When asked to draft an Architecture Decision Record:
    git commit -m "docs: add ADR NNN — <decision title>"
    git push
    ```
+
+**Rule: never present a single option as an ADR.** If there is genuinely only one viable path (and you are highly confident), the decision probably doesn't need an ADR — ADRs exist to document *choices*. If it does need one, find at least one legitimate alternative to compare against, even if it is "do nothing" or "keep the status quo."
 
 ## Output format
 

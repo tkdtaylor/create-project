@@ -81,6 +81,14 @@ Use the **task-executor** agent to work through tasks one at a time. Each agent 
 use task-executor — task: docs/tasks/backlog/NNN-name.md
 ```
 
+### End handoffs with a resume command
+
+When a response completes a logical milestone that leaves follow-on work (a task planned but not executed, a research thread paused for the next session, a source still to be reviewed), end the response with a **fenced code block** containing the exact resume command. Not inline backticks, not a prose description, not a vague pointer — a fenced code block is what renders the copy button in the VSCode chat UI. Inline code does not get that affordance.
+
+**Verify the path exists before writing the resume block.** Glob `docs/tasks/backlog/NNN-*.md` and copy the real filename into the block. Do NOT infer filenames from the plan or from a prior message — the plan-mode hook may rename task files as it writes them out, and a wrong path wastes a whole task-executor round trip when the user or future session blindly pastes it.
+
+If there is genuinely nothing to resume (the work is fully shipped, nothing follows), skip the block. This is a rule for real handoffs, not a ritual at the end of every message.
+
 ## Hook profiles
 
 Hooks run automatically and are gated by profile level. Control via environment variables:

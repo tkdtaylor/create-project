@@ -128,12 +128,20 @@ Use the **task-executor** agent to work through tasks one at a time. Each agent 
 use task-executor — task: docs/tasks/backlog/NNN-name.md, spec: docs/tasks/test-specs/NNN-name-test-spec.md
 ```
 
+### End handoffs with a resume command
+
+When a response completes a logical milestone that leaves follow-on work (a task planned but not executed, an experiment run pending analysis, an ADR drafted awaiting implementation, a handoff to another session or agent), end the response with a **fenced code block** containing the exact resume command. Not inline backticks, not a prose description, not a vague pointer — a fenced code block is what renders the copy button in the VSCode chat UI. Inline code does not get that affordance.
+
+**Verify the path exists before writing the resume block.** Glob `docs/tasks/backlog/NNN-*.md` (and the matching `docs/tasks/test-specs/NNN-*-test-spec.md`) and copy the real filenames into the block. Do NOT infer filenames from the plan or from a prior message — the plan-mode hook may rename task files as it writes them out, and a wrong path wastes a whole task-executor round trip when the user or future session blindly pastes it.
+
+If there is genuinely nothing to resume (the work is fully shipped, nothing follows), skip the block. This is a rule for real handoffs, not a ritual at the end of every message.
+
 ## Hook profiles
 
 Hooks run automatically and are gated by profile level. Control via environment variables:
 
 ```bash
-export CLAUDE_HOOK_PROFILE=minimal    # Safety hooks only (secret protection, block-no-verify, config-protection)
+export CLAUDE_HOOK_PROFILE=minimal    # Safety hooks only (secret protection, block-no-verify, config-protection, protect-checkout)
 export CLAUDE_HOOK_PROFILE=standard   # + workflow hooks (plan restructuring, compaction, checkpoints) — default
 export CLAUDE_HOOK_PROFILE=strict     # + formatting, notifications (batch-format-typecheck, desktop-notify)
 export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable specific hooks
@@ -161,6 +169,7 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Commit large data files or model artifacts to git (use `.gitignore`)
 - Force push or rewrite published git history
 - Add a `Co-Authored-By` line to commits unless explicitly asked
+- Run `git checkout -- <path>` (or `git checkout <ref> -- <path>`) over a dirty working tree — it silently overwrites uncommitted work and the reflog cannot recover it. To *compare* to a prior commit, use `git diff <ref> -- <path>`, `git show <ref>:<path>`, or `git worktree add ../baseline <ref>`. To *discard* changes, `git stash` first. A `protect-checkout` hook blocks this automatically, but the rule stands even if the hook is disabled.
 
 ## Common rationalizations
 
@@ -174,3 +183,17 @@ These are excuses agents use to skip steps. Don't fall for them.
 | "I don't need a config file for this experiment" | Yes you do. Without it, you can't reproduce the run or compare with future experiments. |
 | "The raw data has a small issue, I'll just fix it in place" | Never. Copy to processed/ and fix it there. Raw data is immutable. |
 | "I'll set the random seed later" | Set it now. Every experiment must be reproducible from day one. |
+
+## Failure modes
+
+Project-specific lessons learned. Add an entry here whenever work is lost or significant time is wasted to a preventable mistake — especially the kind where the agent rationalized the action in the moment and only recognized the footgun in retrospect. Each entry should capture:
+
+- **What happened** — the concrete sequence of actions, not a generalization
+- **Why it wasn't caught** — which check, hook, or rule should have blocked it but didn't
+- **The rule that prevents it next time** — phrased as a directive, not a wish
+
+If the rule can be enforced by a hook, tooling change, or a Boundaries entry, wire it up and link it from the failure mode entry. An internalized failure mode (codified into a hook, baked into Boundaries, or made structurally impossible) can be archived or deleted once the guard is in place.
+
+This section is empty at project creation and grows with the project's history. A growing list of entries is not a sign of a bad project — it is a sign of an *honest* one. Resist the urge to cherry-pick only the "interesting" failures; the boring ones are usually the ones that repeat. Data projects are especially prone to silent failure modes (subtle data leakage, wrong train/test split, frozen random seed in the wrong place) — those are the most valuable entries here because they are invisible in the moment.
+
+> *No entries yet.*

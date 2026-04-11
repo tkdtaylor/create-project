@@ -209,7 +209,11 @@ Use the subtype guidance table in `references/tooling.md` to select 3–4 agents
 
 Then ask: *"Would you like me to create these agent files now? I can write `.claude/agents/<name>.md` for each so you can start using them immediately."*
 
-If yes: write each agent file using the format in `references/tooling.md`, setting the `model:` field from the tier mapping you established in Step 1 and including the `# model-tier:` comment. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
+If yes, for each agent:
+
+1. **Check for a template file** at `$CLAUDE_SKILL_DIR/assets/templates/<type>/.claude/agents/<name>.md`. The skill ships templates for some optional agents (e.g. `dependency-auditor`) so they don't need to be regenerated from scratch. For **data** projects, if no template exists under `data/.claude/agents/`, also check `tech/.claude/agents/` — tech templates (like `dependency-auditor`) are ecosystem-agnostic and work fine for data/ML projects that install from PyPI or npm.
+2. **If a template exists:** copy it, substitute the `model:` field with the tier mapping from Step 1, preserve the `# model-tier:` comment, and lightly tailor the instructions to the actual stack (e.g. trim unused ecosystem sections in `dependency-auditor` if the project is single-language).
+3. **If no template exists:** write from scratch using the format in `references/tooling.md`, setting the `model:` field from the tier mapping and including the `# model-tier:` comment. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
 
 For **research projects**, always create source-evaluator and outline-builder at minimum. gap-analyst is worth adding if the project has a well-defined output (report, paper, analysis).
 
@@ -236,6 +240,7 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/scripts/strategic-compact.py` | Yes |
 | `.claude/scripts/desktop-notify.py` | Yes |
 | `.claude/scripts/config-protection.py` | tech, data |
+| `.claude/scripts/protect-checkout.py` | tech, data |
 | `.claude/scripts/edit-tracker.py` | tech, data |
 | `.claude/scripts/batch-format-typecheck.py` | tech, data |
 | `.claude/agents/task-executor.md` | Yes |

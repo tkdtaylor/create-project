@@ -18,13 +18,13 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
 10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
-11. Installs eleven hooks across five lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, plan-to-tasks restructuring, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, and desktop notifications
+11. Installs twelve hooks across five lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, plan-to-tasks restructuring, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, and desktop notifications
 12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
 13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — with three-way merge to preserve local customizations
 
 ## First-time setup
 
-Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures eleven hooks across five lifecycle events (safety, workflow, and formatting), all gated by `CLAUDE_HOOK_PROFILE` environment variable (minimal/standard/strict). No manual configuration needed per project.
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures twelve hooks across five lifecycle events (safety, workflow, and formatting), all gated by `CLAUDE_HOOK_PROFILE` environment variable (minimal/standard/strict). No manual configuration needed per project.
 
 If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
 
@@ -238,9 +238,10 @@ assets/
       CLAUDE.md
       devcontainer.json
       .claude/
-        settings.json            # permissions + 11 hooks across 5 lifecycle events
+        settings.json            # permissions + 12 hooks across 5 lifecycle events
         scripts/
           config-protection.py   # blocks modifications to linter/formatter configs
+          protect-checkout.py    # blocks `git checkout -- <path>` over a dirty tree
           edit-tracker.py        # accumulates edited files for batch processing
           batch-format-typecheck.py  # batch format+typecheck at Stop (strict profile)
         agents/
@@ -346,7 +347,7 @@ If you prefer to update files manually, managed files live across two template d
 
 | File | Source | What it adds |
 |------|--------|-------------|
-| `.claude/settings.json` | `<type>/` | Permissions + 11 hooks with profile gating |
+| `.claude/settings.json` | `<type>/` | Permissions + 12 hooks with profile gating |
 | `.claude/scripts/_hook_utils.py` | `common/` | Shared profile gating module |
 | `.claude/scripts/protect-secrets.py` | `common/` | Blocks writes to private keys and credential files |
 | `.claude/scripts/block-no-verify.py` | `common/` | Blocks --no-verify on git commands |
@@ -357,6 +358,7 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/scripts/strategic-compact.py` | `common/` | Suggests /compact at task boundaries |
 | `.claude/scripts/desktop-notify.py` | `common/` | OS notification on completion (strict profile) |
 | `.claude/scripts/config-protection.py` | `tech/` | Blocks linter/formatter config edits (tech/data only) |
+| `.claude/scripts/protect-checkout.py` | `tech/` | Blocks `git checkout … -- <path>` over a dirty working tree (tech/data only) |
 | `.claude/scripts/edit-tracker.py` | `tech/` | Accumulates edited files for batch processing (tech/data only) |
 | `.claude/scripts/batch-format-typecheck.py` | `tech/` | Batch format+typecheck at Stop (tech/data only) |
 | `.claude/agents/task-executor.md` | `<type>/` | Ephemeral agent for executing one task at a time |
