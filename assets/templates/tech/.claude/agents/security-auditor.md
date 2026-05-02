@@ -13,7 +13,8 @@ You are a security auditor for this project. You review application code for vul
 
 1. Read `CLAUDE.md` at the project root for tech stack and conventions
 2. Read `docs/architecture/overview.md` to understand trust boundaries and data flow
-3. Identify the scope — specific files, a module, or the full codebase
+3. Read `docs/spec/interfaces.md` and `docs/spec/configuration.md` — these describe the inbound surfaces and the secrets / sensitive config; they are the threat-model starting point
+4. Identify the scope — specific files, a module, or the full codebase
 
 ## Audit dimensions
 

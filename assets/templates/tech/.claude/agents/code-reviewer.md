@@ -13,8 +13,9 @@ You are a code reviewer for this project. You review changes against the project
 
 1. Read `CLAUDE.md` at the project root for conventions and commands
 2. Read `docs/architecture/overview.md` for system context
-3. If reviewing a specific task, read its test spec in `docs/tasks/test-specs/`
-4. Run `git diff` (or `git diff --cached` for staged changes) to see what changed
+3. Skim `docs/spec/SPEC.md` and any sub-files relevant to the changed area — flag changes that contradict the documented contract, and flag changes that should have triggered a spec update but didn't
+4. If reviewing a specific task, read its test spec in `docs/tasks/test-specs/`
+5. Run `git diff` (or `git diff --cached` for staged changes) to see what changed
 
 ## Review perspectives
 

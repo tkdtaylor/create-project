@@ -9,7 +9,9 @@
 
 ## High-level design
 
-> Describe the main components and how they interact. Add a diagram to `artifacts/diagrams/` if helpful.
+> Describe the main components and how they interact. Visual diagrams (system components, runtime flows, state machines) live in [diagrams.md](diagrams.md) — keep this section to prose context that the diagrams reference.
+
+> The full source-of-truth spec lives in [`docs/spec/`](../spec/) — start there if you need to know what the system *does and is* today (behaviors, data model, interfaces, configuration). This overview is the narrative tour; the spec is the structured snapshot.
 
 ## Key decisions
 

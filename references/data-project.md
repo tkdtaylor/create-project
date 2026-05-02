@@ -25,10 +25,17 @@ project-root/
 ├── tests/                            # Unit tests for src/ modules
 ├── artifacts/                        # Reports, exported plots, presentations
 └── docs/
+    ├── spec/                         # Authoritative current-state snapshot
+    │   ├── SPEC.md                   #   Index + system summary + invariants
+    │   ├── behaviors.md              #   Pipeline behaviors (training, eval, inference)
+    │   ├── data-model.md             #   Datasets, features, model artifacts, results schema
+    │   ├── interfaces.md             #   CLI runners, notebook entrypoints, public src/ API
+    │   └── configuration.md          #   Experiment configs, env vars, metrics catalog
     ├── architecture/
-    │   ├── overview.md
+    │   ├── overview.md               # Narrative tour of the pipeline
+    │   ├── diagrams.md               # Mermaid data lineage + pipeline flows
     │   ├── tech-stack.md
-    │   └── decisions/                # ADRs
+    │   └── decisions/                # ADRs (history + rationale)
     ├── plans/
     │   └── roadmap.md
     └── tasks/
@@ -40,7 +47,7 @@ project-root/
             └── coverage-tracker.md
 ```
 
-Code in `src/` follows TDD (test spec before implementation). Experiments follow their own workflow: hypothesis → config → run → results → log.
+Code in `src/` follows TDD (test spec before implementation). Experiments follow their own workflow: hypothesis → config → run → results → log. The spec in `docs/spec/` is the authoritative snapshot of what the pipeline does and how to reproduce its results — every pipeline-changing task or experiment updates it in the same commit.
 
 ---
 
@@ -54,6 +61,7 @@ mkdir -p experiments/configs experiments/results
 mkdir -p models
 mkdir -p tests
 mkdir -p artifacts
+mkdir -p docs/spec
 mkdir -p docs/architecture/decisions
 mkdir -p docs/plans
 mkdir -p docs/tasks/active docs/tasks/backlog docs/tasks/completed
@@ -102,7 +110,13 @@ Templates come from three directories:
 |----------|-------------|
 | `README.md` | `README.md` (project root) |
 | `architecture-overview.md` | `docs/architecture/overview.md` |
+| `diagrams.md` | `docs/architecture/diagrams.md` |
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
+| `spec/SPEC.md` | `docs/spec/SPEC.md` |
+| `spec/behaviors.md` | `docs/spec/behaviors.md` |
+| `spec/data-model.md` | `docs/spec/data-model.md` |
+| `spec/interfaces.md` | `docs/spec/interfaces.md` |
+| `spec/configuration.md` | `docs/spec/configuration.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `experiment-tracker.md` | `docs/tasks/experiment-tracker.md` |

@@ -10,21 +10,23 @@ references/                  <- step-by-step setup guides and catalogs
   tech-project.md              T1-T8: technical project setup
   data-project.md              D1-D8: data/ML project setup
   research-project.md          R1-R7: research project setup
-  adopt-existing.md            A1-A9: existing codebase adoption
+  adopt-existing.md            A1-A9: existing codebase adoption (incl. spec/diagram generation)
   sync-skills.md               S1-S5: skill sync with three-way merge
   tooling.md                   skills, hooks, agents, MCPs catalog
   framework-snippets.md        stack-specific CLAUDE.md convention snippets
 assets/
   templates/
     common/.claude/scripts/    9 universal hook scripts (all project types)
-    tech/                      tech templates, settings, agents, 3 tech-only hooks
-    data/                      data templates, settings, agents (hooks from common/ + tech/)
+    tech/                      tech templates incl. diagrams.md and spec/ (5 files), settings, agents, 3 tech-only hooks
+    data/                      data templates incl. diagrams.md and spec/ (5 files), settings, agents (hooks from common/ + tech/)
     research/                  research templates, settings, agents (hooks from common/)
   base/                        shared Docker base images (Dockerfiles + entrypoints)
 evals/evals.json             3 test cases with assertions
 ```
 
 Key design: `common/` holds hooks shared across all types. `tech/` holds hooks only for code projects (config-protection, edit-tracker, batch-format-typecheck). `data/` and `research/` have no scripts of their own — they pull from `common/` and (for data) `tech/`.
+
+**Spec and diagrams:** tech and data templates ship `diagrams.md` (Mermaid) and `spec/` (SPEC + behaviors + data-model + interfaces + configuration) as the **authoritative current-state snapshot** of generated projects. These are dual-natured: outputs of every task that changes externally-visible state, *and* inputs to onboarding, drift checks, and codebase regeneration. They live at `docs/architecture/diagrams.md` and `docs/spec/` in scaffolded projects. Research projects do not get them (the outline is the spec equivalent). The `architect` agent has a third mode (drift-audit) that compares spec and diagrams against the code.
 
 ## How it works
 
@@ -48,6 +50,7 @@ Key design: `common/` holds hooks shared across all types. `tech/` holds hooks o
 - When modifying an existing hook: edit the single canonical copy — no duplication to sync
 - When adding a template file: add to the template table in the relevant reference doc
 - When changing placeholder conventions: update all three project reference files
+- When adding a new spec sub-file (e.g. `interfaces-protocol.md`): add to both tech and data templates if it applies to both, update the table in `spec/SPEC.md`, update the template tables in `tech-project.md` / `data-project.md`, update the README repo structure tree
 - Test with `evals/evals.json` assertions after structural changes
 
 ## Boundaries

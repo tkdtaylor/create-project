@@ -15,6 +15,7 @@ You are a focused executor working on a single task in this project.
 2. Read the task file passed in your prompt
 3. Read the test spec file (if provided)
 4. Read `docs/architecture/overview.md` for system context
+5. Skim `docs/spec/SPEC.md` to know which spec files exist — you'll need to update one or more of them if the task changes externally-visible behavior, the data model, an interface, or configuration
 
 ## Tier check — escalate early, not at commit time
 
@@ -48,11 +49,20 @@ When escalating, stop immediately and return:
    - Any security concerns? Fix them.
    - **Confidence check:** do you have high confidence that every acceptance criterion is genuinely met, or are you hoping it is? If confidence is low on any specific criterion, do not commit — instead, report back noting which criterion is uncertain and recommend a review pass by a higher-tier agent (code-reviewer for quality, architect for design fit, security-auditor for trust-boundary concerns). Low confidence at commit time is a tier-mismatch signal you should not ignore.
    Do not proceed until every criterion is met with high confidence.
-5. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
-6. Update `docs/tasks/test-specs/coverage-tracker.md` — mark spec as complete, status as done
-7. Commit and push:
+5. **Update spec and diagrams in the same commit if the task changed any of:**
+   - **Externally-visible behavior** → edit `docs/spec/behaviors.md`. Add a new `B-NNN` entry or rewrite the existing one (never append "previously this did X" — the ADR carries history).
+   - **Data model** (schema, in-memory state shape, wire format) → edit `docs/spec/data-model.md`.
+   - **Interfaces** (CLI flags, API endpoints, public traits/functions) → edit `docs/spec/interfaces.md`.
+   - **Configuration** (config files, env vars, defaults) → edit `docs/spec/configuration.md`.
+   - **Component boundaries or runtime flow** → edit `docs/architecture/diagrams.md` and bump the date at the top.
+
+   If unsure whether the change is spec-visible, ask: "could a contributor reading only the spec predict this behavior?" If the answer is no after the change, the spec is missing something and must be updated.
+6. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
+7. Update `docs/tasks/test-specs/coverage-tracker.md` — mark spec as complete, status as done
+8. Commit and push (include any spec/diagram files touched in step 5):
    ```bash
    git add src/ docs/tasks/ docs/tasks/test-specs/coverage-tracker.md
+   git add docs/spec/ docs/architecture/diagrams.md 2>/dev/null || true
    git commit -m "feat: complete task NNN — <name>"
    git push
    ```

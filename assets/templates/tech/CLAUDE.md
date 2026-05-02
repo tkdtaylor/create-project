@@ -6,15 +6,18 @@
 
 ```
 src/          ← code outputs (what you write)
-artifacts/    ← non-code outputs (diagrams, schemas, exports)
-docs/         ← documentation inputs (what guides your work)
-  architecture/   system design, ADRs, tech stack
+artifacts/    ← non-code outputs (rendered diagrams, exports, schemas)
+docs/         ← spec + planning + history (the source-of-truth side)
+  spec/           authoritative current-state snapshot — SPEC.md, behaviors, data-model, interfaces, configuration
+  architecture/   narrative overview, diagrams.md, ADRs, tech stack
   plans/          roadmap, sprints
   tasks/          active, backlog, completed task files
     test-specs/   TDD specs — always written before implementation
 ```
 
-The key distinction: `docs/` is the input side (read before you act), `src/` is the output side (what gets produced).
+The key distinction: `docs/` is the input side (read before you act, and the artifact that survives a rewrite), `src/` is the output side (what gets produced).
+
+`docs/spec/` is **dual-natured** — it's the output of every task that changes externally-visible behavior, *and* the input to onboarding, drift audits, and (in the limit) regenerating the codebase from scratch. The code is one realization of the spec. Spec and code that disagree means one of them is wrong; fix it in the same change.
 
 ## Tech stack
 
@@ -35,6 +38,8 @@ The key distinction: `docs/` is the input side (read before you act), `src/` is 
 - Every task has a paired test spec; no implementation starts without one
 - Tasks follow Unix philosophy — one task, one responsibility; break things smaller when in doubt (see Design principles below)
 - ADRs live in `docs/architecture/decisions/` — add one whenever a significant design decision is made
+- **Spec is updated in the same commit as the code change.** A task that changes externally-visible behavior, the data model, an interface, or configuration is not done until the matching `docs/spec/` file reflects the new state. Stale spec entries are rewritten in place — never appended to. The ADR carries the history; the spec carries the current truth.
+- **Diagrams update with the code.** When a component boundary moves or a runtime flow changes, update `docs/architecture/diagrams.md` in the same commit. Use the `architect` agent's drift-audit mode periodically to catch silent drift.
 
 ## Design principles
 
@@ -73,9 +78,11 @@ Derived working rules:
 
 | Milestone | What to stage | Message |
 |-----------|--------------|---------|
-| ADR written | `docs/architecture/decisions/NNN-*.md` | `docs: add ADR NNN — <decision title>` |
+| ADR written | `docs/architecture/decisions/NNN-*.md`, any superseded spec entries rewritten in `docs/spec/` | `docs: add ADR NNN — <decision title>` |
 | Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
-| Task completed | `src/` changes, moved task file, updated `coverage-tracker.md` | `feat: complete task NNN — <name>` |
+| Task completed | `src/` changes, moved task file, updated `coverage-tracker.md`, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
+| Diagram updated | `docs/architecture/diagrams.md` (with date bump at top) | `docs: refresh diagrams — <what changed>` |
+| Spec rewritten standalone | `docs/spec/<file>.md` | `spec: <what changed and why now>` |
 
 After each milestone:
 ```bash
@@ -124,12 +131,15 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Commit and push after every milestone (task completed, spec written, ADR written)
 - Read the task file and test spec before starting work on a task
 - Create an ADR for significant design decisions
+- **Update `docs/spec/` in the same commit as any code change that alters externally-visible behavior, data model, interfaces, or configuration**
+- **Update `docs/architecture/diagrams.md` in the same commit as any code change that moves a component boundary or alters a diagrammed runtime flow**
 
 ### Ask first
-- Modifying files in `docs/` — they are planning documents, not implementation
+- Modifying files in `docs/plans/`, `docs/tasks/`, or `docs/architecture/decisions/` — they are planning and historical documents
 - Deleting or renaming existing source files
 - Adding dependencies not already in the tech stack
 - Changing the project structure beyond what a task requires
+- Reorganizing `docs/spec/` (splitting files, renaming sections) — the structure is a stable contract; restructure deliberately, not opportunistically
 
 ### Never
 - Create files in `src/` without a corresponding task and test spec
@@ -138,6 +148,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Force push or rewrite published git history
 - Add a `Co-Authored-By` line to commits unless explicitly asked
 - Run `git checkout -- <path>` (or `git checkout <ref> -- <path>`) over a dirty working tree — it silently overwrites uncommitted work and the reflog cannot recover it. To *compare* to a prior commit, use `git diff <ref> -- <path>`, `git show <ref>:<path>`, or `git worktree add ../baseline <ref>`. To *discard* changes, `git stash` first. A `protect-checkout` hook blocks this automatically, but the rule stands even if the hook is disabled.
+- **Append to spec entries instead of rewriting them.** When a decision changes, edit the spec entry to reflect the new truth. The ADR keeps the history — the spec is a snapshot, not a changelog.
+- **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned work goes in `docs/plans/` and `docs/tasks/`.
 
 ## Common rationalizations
 
@@ -151,6 +163,9 @@ These are excuses agents use to skip steps. Don't fall for them.
 | "These two tasks are related, I'll do them together" | One task, one commit. If it feels too granular, the tasks are scoped correctly. |
 | "The architecture doc doesn't need updating" | If you made a non-obvious design decision, write an ADR. |
 | "I'll just quickly fix this other thing I noticed" | Stay on your task. Note it for later — don't scope-creep. |
+| "I'll update the spec at the end of the day" | No. Spec drift is silent. Update it in the same commit, every time. |
+| "The spec already covers this — close enough" | If "close enough" required reading the code to confirm, the spec is wrong. Fix it now. |
+| "I'll add a 'previously this was X' note to the spec" | Don't. Rewrite the entry. The ADR carries history; the spec is a snapshot. |
 
 ## Failure modes
 

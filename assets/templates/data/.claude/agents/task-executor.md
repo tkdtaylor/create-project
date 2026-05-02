@@ -15,6 +15,7 @@ You are a focused executor working on a single task in a data/ML project.
 2. Read the task file passed in your prompt
 3. Read the test spec file (if provided)
 4. Read `docs/architecture/overview.md` for system context
+5. Skim `docs/spec/SPEC.md` to know which spec files exist — you'll need to update one or more if the task or experiment changes the pipeline contract (datasets, features, model artifacts, metrics, configuration)
 
 ## Tier check — escalate early, not at commit time
 
@@ -48,11 +49,20 @@ When escalating, stop immediately and return: what you read, which signal applie
    - Data transformations only in `data/processed/`, never `data/raw/`?
    - Reusable logic in `src/`, not in notebooks?
    - **Confidence check:** do you have high confidence that every criterion is genuinely met and every result is reproducible from config alone, or are you hoping? If confidence is low on any specific criterion, do not commit — report back with the uncertain criterion named and recommend a review pass by a higher-tier agent (code-reviewer for quality, architect for pipeline fit, security-auditor for data-leakage concerns).
-6. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
-7. Update `docs/tasks/test-specs/coverage-tracker.md`
-8. Commit and push:
+6. **Update spec and diagrams in the same commit if the task or experiment changed any of:**
+   - **Pipeline behavior** (training, eval, inference) → edit `docs/spec/behaviors.md`. Add a new `B-NNN` entry or rewrite the existing one.
+   - **Datasets, features, or model-artifact contracts** → edit `docs/spec/data-model.md`.
+   - **CLI runners, notebook entrypoints, or public `src/` API** → edit `docs/spec/interfaces.md`.
+   - **Hyperparameter contracts, metrics catalog, or configuration schema** → edit `docs/spec/configuration.md`.
+   - **Pipeline shape** (steps added, removed, reordered) → edit `docs/architecture/diagrams.md` and bump the date at the top.
+
+   If a new metric was computed, it must be added to the metrics catalog in `configuration.md` — unnamed metrics drift in definition between runs.
+7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
+8. Update `docs/tasks/test-specs/coverage-tracker.md`
+9. Commit and push (include any spec/diagram files touched in step 6):
    ```bash
    git add src/ tests/ docs/tasks/ docs/tasks/test-specs/coverage-tracker.md
+   git add docs/spec/ docs/architecture/diagrams.md 2>/dev/null || true
    # Also add experiment files if applicable:
    # git add experiments/ docs/tasks/experiment-tracker.md
    git commit -m "feat: complete task NNN — <name>"

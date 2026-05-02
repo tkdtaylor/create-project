@@ -109,6 +109,54 @@ If `docs/architecture/` already exists, read what's there first and fill gaps ra
 
 ---
 
+## Step A4b — Generate diagrams.md (tech and data only)
+
+Write `docs/architecture/diagrams.md` based on the architecture you mapped in A4. Skip for research projects.
+
+1. **Copy the template** from `$CLAUDE_SKILL_DIR/assets/templates/<type>/diagrams.md` as a starting structure (frontmatter, footer, section ordering).
+
+2. **Replace the placeholder Mermaid blocks with real diagrams** based on what the code actually does. Aim for two starter diagrams:
+   - **System components** (`flowchart TB`) — top-level modules / packages / services as boxes, major edges between them. Use subgraphs for logical boundaries (subsystems, external systems, shared infrastructure). Reference real file paths or module names in the labels.
+   - **Primary runtime flow** (`sequenceDiagram`) — the most important runtime path: startup, first user action, or main data flow end-to-end.
+
+3. **Cross-reference**: link to the ADRs (if any exist) that govern each diagrammed flow. If there are no ADRs yet, leave the references for later.
+
+4. **Be honest about uncertainty.** If the code is large or unclear, don't invent a flow — produce a smaller, accurate diagram with a note like "Initial diagram — covers the trader-mode startup path. Scanner mode and reconnect flow not yet drawn."
+
+5. The "Maintaining these diagrams" footer stays as-is.
+
+If `docs/architecture/diagrams.md` already exists, read it first and update / append rather than overwriting — the user may have hand-drawn diagrams worth preserving.
+
+---
+
+## Step A4c — Generate spec/ (tech and data only)
+
+Write the four-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
+
+```bash
+mkdir -p docs/spec
+```
+
+For each file, copy the template from `$CLAUDE_SKILL_DIR/assets/templates/<type>/spec/` as a structural guide, then **populate it from the code, not the placeholders**:
+
+| File | What to populate from the codebase |
+|------|------------------------------------|
+| `SPEC.md` | The project summary, top-level invariants (architectural rules enforced in code or by guard scripts), non-goals (visible from what the project deliberately doesn't do — read the README and CLAUDE.md you just wrote) |
+| `behaviors.md` | Each major user-facing or scheduled behavior — find them by reading entry points (CLI commands, route handlers, scheduled jobs, public functions). For each: trigger, response, side effects, failure modes. Number sequentially `B-001`, `B-002`, … |
+| `data-model.md` | Persistent stores (DB schemas, file formats), in-memory state (key types and their lock/sharing rules), wire / interchange formats (JSON over HTTP, log formats, exports), data invariants enforced in code |
+| `interfaces.md` | CLI surface (every subcommand and flag), HTTP/RPC API endpoints, internal public traits/interfaces (anything other modules depend on), external services called |
+| `configuration.md` | Config files (read the parsing code for the schema), env vars (grep for them), runtime flags (cross-reference interfaces.md), secrets (names only, never values) |
+
+**Reproducibility for data projects:** read `experiments/configs/` and `experiments/results/` if they exist. The `configuration.md` reproducibility contract should reflect what the project actually records — and call out anything missing as a finding.
+
+**Be honest about uncertainty.** Where the code is clear, populate confidently. Where it's not, leave a clearly-marked TODO with a specific question rather than guessing. Example: `> TODO: confirm whether retry-on-failure behavior is bounded — see <file:line>`. The user can fill these in after review.
+
+**If `docs/spec/` already exists, merge** — preserve anything the user wrote, fill the gaps, flag anything that contradicts the code.
+
+After populating, present a short summary: how many behaviors / entities / interfaces / config keys you documented, and which TODOs need user confirmation.
+
+---
+
 ## Step A5 — Create task structure
 
 ```bash
@@ -188,11 +236,11 @@ Run Step 3 of the main skill flow (3a through 3d) using the project context gath
 
 ```bash
 git add CLAUDE.md docs/ .claude/
-git diff --cached --quiet || git commit -m "chore: add project docs, task structure, and Claude Code tooling"
+git diff --cached --quiet || git commit -m "chore: add project docs, spec, task structure, and Claude Code tooling"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
 
-Note: `.claude/skill-manifest.json` is committed here as part of `.claude/` — it was written during Step 3e (called via A8).
+Note: `.claude/skill-manifest.json` is committed here as part of `.claude/` — it was written during Step 3e (called via A8). The `docs/spec/` and `docs/architecture/diagrams.md` files are **not** in the manifest because they're populated from the user's codebase, not copied verbatim from templates — they're project content from day one.
 
 ---
 

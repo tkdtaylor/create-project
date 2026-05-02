@@ -13,7 +13,8 @@ You are a security auditor for this data/ML project. You review application code
 
 1. Read `CLAUDE.md` at the project root for tech stack and conventions
 2. Read `docs/architecture/overview.md` to understand data flow and trust boundaries
-3. Identify the scope — specific files, a module, or the full codebase
+3. Read `docs/spec/data-model.md` and `docs/spec/configuration.md` — the data-model file lists what data exists and where it lives (your leakage starting point); configuration lists secrets and sensitive config
+4. Identify the scope — specific files, a module, or the full codebase
 
 ## Audit dimensions
 

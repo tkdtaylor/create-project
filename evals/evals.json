@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "I want to start a new project called 'fintracker'. I'm building a REST API in Python using FastAPI — it's a personal finance tracker that stores transaction data in PostgreSQL. I'll be containerizing it with Docker.",
-      "expected_output": "Technical project scaffolded with src/, artifacts/, docs/ structure. CLAUDE.md at root with FastAPI/PostgreSQL context and a Commands section. Step 3 recommends postgres and/or github MCP servers. Docker setup offered. Questions gathered in a single message before files created.",
+      "expected_output": "Technical project scaffolded with src/, artifacts/, docs/ structure (including docs/spec/ and docs/architecture/diagrams.md). CLAUDE.md at root with FastAPI/PostgreSQL context and a Commands section. Step 3 recommends postgres and/or github MCP servers. Docker setup offered. Questions gathered in a single message before files created.",
       "files": [],
       "assertions": [
         "CLAUDE.md was created at the project root",
@@ -13,6 +13,9 @@
         "CLAUDE.md mentions FastAPI or Python in the tech stack or commands section",
         "The directory structure includes a src/ directory",
         "The directory structure includes docs/tasks/ or docs/tasks/active/",
+        "The directory structure includes docs/spec/ with SPEC.md, behaviors.md, data-model.md, interfaces.md, and configuration.md",
+        "docs/architecture/diagrams.md exists and contains at least one mermaid code block",
+        "CLAUDE.md mentions updating docs/spec/ in the same commit as code changes (or equivalent spec maintenance rule)",
         "CLAUDE.md contains a '## Recommended tooling' section",
         "At least one database-related MCP (postgres, sqlite) or github MCP was recommended"
       ]
@@ -38,13 +41,15 @@
     {
       "id": 3,
       "prompt": "start a new project for me, let's call it 'home-reno'. I'm planning and tracking my home renovation — need to keep track of tasks, contractor quotes, material costs, and a rough timeline. not really coding, more just organized notes and lists",
-      "expected_output": "Correctly identified as 'other'/research type. Research structure created (sources/, notes/, outputs/, docs/). CLAUDE.md useful for planning/tracking. No TDD scaffolding or tech-specific files. Tooling suggestions lightweight and relevant.",
+      "expected_output": "Correctly identified as 'other'/research type. Research structure created (sources/, notes/, outputs/, docs/). CLAUDE.md useful for planning/tracking. No TDD scaffolding or tech-specific files. No spec/ or diagrams.md (those are tech/data only). Tooling suggestions lightweight and relevant.",
       "files": [],
       "assertions": [
         "CLAUDE.md was created at the project root",
         "CLAUDE.md contains the project name 'home-reno'",
         "The project was NOT classified as technical — no src/ directory was created",
         "No test-specs directory was created (test-spec scaffolding is for technical projects only)",
+        "No docs/spec/ directory was created (spec is for tech/data projects only)",
+        "No docs/architecture/diagrams.md was created (diagrams are for tech/data projects only)",
         "The directory structure includes docs/tasks/ or equivalent task tracking",
         "CLAUDE.md contains a '## Recommended tooling' section",
         "No heavy developer tools were recommended (postgres, puppeteer, code-scanner, reverse-engineer)"

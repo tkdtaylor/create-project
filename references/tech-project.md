@@ -9,15 +9,22 @@ project-root/
 ├── README.md                         # Project landing page (for GitHub and users)
 ├── CLAUDE.md                         # Project context for Claude Code sessions
 ├── src/                              # Code outputs — written by Claude, committed to repo
-├── artifacts/                        # Non-code outputs (diagrams, schemas, exports)
+├── artifacts/                        # Non-code outputs (rendered diagrams, schemas, exports)
 │   ├── diagrams/
 │   ├── schemas/
 │   └── exports/
-└── docs/                             # Documentation — inputs that guide implementation
+└── docs/                             # Spec + planning + history — the source-of-truth side
+    ├── spec/                         # Authoritative current-state snapshot
+    │   ├── SPEC.md                   #   Index + system summary + invariants
+    │   ├── behaviors.md              #   What the system does
+    │   ├── data-model.md             #   Entities, schemas, state
+    │   ├── interfaces.md             #   CLI, APIs, public surfaces
+    │   └── configuration.md          #   Env vars, configs, runtime knobs
     ├── architecture/
-    │   ├── overview.md
+    │   ├── overview.md               # Narrative system tour
+    │   ├── diagrams.md               # Mermaid diagrams (system + flows)
     │   ├── tech-stack.md
-    │   └── decisions/                # ADRs
+    │   └── decisions/                # ADRs (history + rationale)
     ├── plans/
     │   ├── roadmap.md
     │   └── sprints/
@@ -29,6 +36,8 @@ project-root/
             └── coverage-tracker.md
 ```
 
+`docs/spec/` is the authoritative current-state snapshot — what the system *does and is* today, structured for onboarding, drift checks, and (in the limit) regenerating the codebase. `docs/architecture/` carries the narrative tour, the visual diagrams, and the historical why-trail (ADRs). The two are complementary: spec for what-now, ADRs for why-then.
+
 Every task file (`NNN-name.md`) has a paired test spec (`NNN-name-test-spec.md`). The test spec is always created first — no exceptions.
 
 ---
@@ -38,6 +47,7 @@ Every task file (`NNN-name.md`) has a paired test spec (`NNN-name-test-spec.md`)
 ```bash
 mkdir -p src
 mkdir -p artifacts/diagrams artifacts/schemas artifacts/exports
+mkdir -p docs/spec
 mkdir -p docs/architecture/decisions
 mkdir -p docs/plans/sprints
 mkdir -p docs/tasks/active docs/tasks/backlog docs/tasks/completed
@@ -74,7 +84,13 @@ Templates come from two directories:
 |----------|-------------|
 | `README.md` | `README.md` (project root) |
 | `architecture-overview.md` | `docs/architecture/overview.md` |
+| `diagrams.md` | `docs/architecture/diagrams.md` |
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
+| `spec/SPEC.md` | `docs/spec/SPEC.md` |
+| `spec/behaviors.md` | `docs/spec/behaviors.md` |
+| `spec/data-model.md` | `docs/spec/data-model.md` |
+| `spec/interfaces.md` | `docs/spec/interfaces.md` |
+| `spec/configuration.md` | `docs/spec/configuration.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |

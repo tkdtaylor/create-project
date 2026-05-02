@@ -21,14 +21,17 @@ experiments/   <- experiment tracking
 models/        <- saved model artifacts (gitignored)
 tests/         <- unit tests for src/ modules
 artifacts/     <- reports, exported plots, presentations
-docs/          <- documentation
-  architecture/  system design, ADRs, tech stack
+docs/          <- spec + planning + history (the source-of-truth side)
+  spec/          authoritative current-state snapshot — SPEC.md, behaviors, data-model, interfaces, configuration
+  architecture/  narrative overview, diagrams.md, ADRs, tech stack
   plans/         roadmap
   tasks/         active, backlog, completed task files
     test-specs/  TDD specs for src/ code
 ```
 
 The key distinction: `data/raw/` and `docs/` are inputs (read before you act). `src/`, `notebooks/`, `experiments/`, and `models/` are outputs.
+
+`docs/spec/` is **dual-natured** — it's the output of every task or experiment that changes the pipeline contract, *and* the input to onboarding, drift audits, and (in the limit) regenerating the codebase from scratch with the same scientific results. Reproducibility is non-negotiable for data projects: every parameter that affects results must be in the spec.
 
 ## Tech stack
 
@@ -54,6 +57,8 @@ The key distinction: `data/raw/` and `docs/` are inputs (read before you act). `
 - Code in `src/` follows TDD — test spec before implementation
 - ADRs in `docs/architecture/decisions/` for significant design decisions (model choice, data pipeline architecture, etc.)
 - Set random seeds explicitly in every experiment for reproducibility
+- **Spec is updated in the same commit as the code change.** A task or experiment that changes the pipeline contract — datasets, features, model architecture, metric definitions, configuration — is not done until the matching `docs/spec/` file reflects the new state. Stale entries are rewritten in place; the ADR carries history.
+- **Diagrams update with the pipeline.** When a step is added, removed, or reordered, update `docs/architecture/diagrams.md` in the same commit.
 
 ## Working in this project
 
@@ -69,11 +74,13 @@ The key distinction: `data/raw/` and `docs/` are inputs (read before you act). `
 
 | Milestone | What to stage | Message |
 |-----------|--------------|---------|
-| ADR written | `docs/architecture/decisions/NNN-*.md` | `docs: add ADR NNN — <decision title>` |
+| ADR written | `docs/architecture/decisions/NNN-*.md`, any superseded spec entries rewritten in `docs/spec/` | `docs: add ADR NNN — <decision title>` |
 | Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
-| Task completed | `src/`, `tests/`, moved task file, updated `coverage-tracker.md` | `feat: complete task NNN — <name>` |
-| Experiment run | `experiments/`, updated `experiment-tracker.md` | `experiment: <hypothesis> — <key result>` |
+| Task completed | `src/`, `tests/`, moved task file, updated `coverage-tracker.md`, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
+| Experiment run | `experiments/`, updated `experiment-tracker.md`, **and any affected `docs/spec/` files (new feature, new metric, schema change)** | `experiment: <hypothesis> — <key result>` |
 | Notebook added | `notebooks/` | `explore: add NNN — <topic>` |
+| Diagram updated | `docs/architecture/diagrams.md` (with date bump at top) | `docs: refresh diagrams — <what changed>` |
+| Spec rewritten standalone | `docs/spec/<file>.md` | `spec: <what changed and why now>` |
 
 After each milestone:
 ```bash
@@ -155,12 +162,15 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Set random seeds explicitly for reproducibility
 - Keep `data/raw/` immutable — derive everything into `data/processed/`
 - Log experiments in the tracker before running them
+- **Update `docs/spec/` in the same commit as any pipeline change** — new datasets, schema changes, new features, new metrics, hyperparameter contracts, model artifact contracts
+- **Update `docs/architecture/diagrams.md` when pipeline shape changes** — steps added, removed, or reordered
 
 ### Ask first
-- Modifying files in `docs/` — they are planning documents
+- Modifying files in `docs/plans/`, `docs/tasks/`, or `docs/architecture/decisions/` — they are planning and historical documents
 - Deleting or regenerating processed data
 - Adding dependencies not in the tech stack
 - Changing the data pipeline architecture
+- Reorganizing `docs/spec/` (splitting files, renaming sections) — the structure is a stable contract; restructure deliberately, not opportunistically
 
 ### Never
 - Modify files in `data/raw/` — they are immutable source data
@@ -170,6 +180,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Force push or rewrite published git history
 - Add a `Co-Authored-By` line to commits unless explicitly asked
 - Run `git checkout -- <path>` (or `git checkout <ref> -- <path>`) over a dirty working tree — it silently overwrites uncommitted work and the reflog cannot recover it. To *compare* to a prior commit, use `git diff <ref> -- <path>`, `git show <ref>:<path>`, or `git worktree add ../baseline <ref>`. To *discard* changes, `git stash` first. A `protect-checkout` hook blocks this automatically, but the rule stands even if the hook is disabled.
+- **Append to spec entries instead of rewriting them.** When a feature definition or hyperparameter changes, edit the spec entry to reflect the new truth. The ADR carries history; the spec is a snapshot.
+- **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned experiments and unfinished work go in `docs/plans/` and the experiment tracker.
 
 ## Common rationalizations
 
@@ -183,6 +195,9 @@ These are excuses agents use to skip steps. Don't fall for them.
 | "I don't need a config file for this experiment" | Yes you do. Without it, you can't reproduce the run or compare with future experiments. |
 | "The raw data has a small issue, I'll just fix it in place" | Never. Copy to processed/ and fix it there. Raw data is immutable. |
 | "I'll set the random seed later" | Set it now. Every experiment must be reproducible from day one. |
+| "I'll update the spec at the end of the experiment cycle" | No. Spec drift is silent and silent drift is how reproducibility breaks. Update in the same commit. |
+| "The new metric is obvious — don't need to add it to the catalog" | Yes you do. Unnamed metrics drift in definition between runs. The catalog is the contract. |
+| "I'll add a 'previously this was X' note to the spec" | Don't. Rewrite the entry. The ADR carries history; the spec is a snapshot. |
 
 ## Failure modes
 
