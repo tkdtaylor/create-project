@@ -109,15 +109,15 @@ Global skills:
 
 This step syncs files in the current project that were originally copied from a skill's templates (hooks, agents, settings). It uses `.claude/skill-manifest.json` to track what was installed and detect changes on both sides.
 
-### 3a — Read or generate the manifest
+### 3a — Read the manifest (or enter first-sync mode)
 
 ```bash
 cat .claude/skill-manifest.json 2>/dev/null || echo "NOT_FOUND"
 ```
 
-**If the manifest exists:** read it and proceed to 3b.
+**If the manifest exists:** read it and proceed to 3b in *manifest-tracked* mode.
 
-**If the manifest does NOT exist:** the project was set up before manifest tracking was added. Detect the setup and generate a baseline manifest:
+**If the manifest does NOT exist:** the project was set up before manifest tracking was added. Enter **first-sync mode**: we cannot tell whether the user has edited any of the managed files since install, so the safe default is to *intelligently merge* every file rather than overwrite. Do NOT pre-generate a baseline manifest with `installed_hash == current_hash` — that would mask any existing local edits and let the next upstream change silently overwrite them. The manifest is written at S4 from post-sync hashes.
 
 1. Check for create-project artifacts:
 ```bash
@@ -166,17 +166,11 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/agents/code-reviewer.md` → `assets/templates/<type>/.claude/agents/code-reviewer.md`
 - `.claude/agents/security-auditor.md` → `assets/templates/<type>/.claude/agents/security-auditor.md`
 
-5. Generate the manifest by hashing each managed file that exists in the project. Use the current project file hash as `installed_hash` — this treats all current files as "not modified by user" for the first sync, so any template differences show as upstream changes:
+5. Set `FIRST_SYNC=true` in memory and proceed to 3b. Do not write a manifest yet — it gets written at S4 from post-sync hashes.
 
-```bash
-# For each managed file that exists, compute:
-sha256sum "$file" | cut -d' ' -f1      # installed_hash (current project copy)
-sha256sum "$template_path" | cut -d' ' -f1  # template_hash (current template)
-```
+Tell the user once, before processing any files:
 
-Write `.claude/skill-manifest.json` (see format below) and tell the user:
-
-*"No skill manifest found — I've generated one from the current project state. This is a one-time setup so future syncs can track changes accurately."*
+*"No skill manifest found — I'll merge each managed file rather than overwrite, and show you the diff. After this sync I'll write a manifest so future runs can be more precise. Use `git diff` afterwards to review everything."*
 
 ### Manifest format
 
@@ -209,7 +203,9 @@ The top-level key is the skill name. Multiple skills can contribute to the same 
 
 ### 3b — Compare each managed file
 
-For each file in the manifest, compute two checks:
+The principle: **make this as easy as possible for the user.** If the manifest tells us a file is genuinely safe to update, just update it. If we can't tell, or both sides changed, perform an intelligent merge that preserves local customizations and apply upstream improvements — show the diff, do not prompt unless the merge identifies an irreconcilable conflict (same line/section, incompatible logic). The user's safety net is `git diff` after the sync, not a prompt during it.
+
+**Manifest-tracked mode** (manifest exists) — for each file, compute two checks:
 
 ```bash
 # Current state
@@ -232,17 +228,30 @@ Classification:
 | User modified? | Upstream changed? | Category | Action |
 |---------------|-------------------|----------|--------|
 | No | No | Up to date | Skip |
-| No | Yes | Upstream update | **Auto-update** — copy template, update manifest |
+| No | Yes | Upstream update | **Apply upstream** — copy template, update manifest, report diff (3c) |
 | Yes | No | Local change | **Keep** — user customized, no upstream change |
-| Yes | Yes | Conflict | **Ask user** — show diff, let them decide |
-| File missing | Yes | New upstream | **Offer to add** — new file in template |
+| Yes | Yes | Both changed | **Merge** — intelligent merge, show diff, prompt only on irreconcilable conflict (3d) |
+| File missing | Yes | New upstream | **Offer to add** — new file in template (see 3f) |
 | File missing | No | Removed | **Skip** — user deleted it intentionally |
+
+**First-sync mode** (`FIRST_SYNC=true`, no manifest) — we have no `installed_hash` or `template_hash` to compare against, so we cannot trust the (No / Yes) classification. Treat every file the same way:
+
+| Current vs current template | Action |
+|-----------------------------|--------|
+| Identical | Skip (nothing to do) |
+| Differ | **Merge** — intelligent merge (3d), show diff, prompt only on irreconcilable conflict |
+| File missing in project | New upstream (see 3f) |
+
+This is the "easy as possible" default for an unknown setup: never overwrite blindly, never prompt unnecessarily, always show what changed.
 
 ### 3c — Apply upstream-only updates
 
-For files where the user hasn't modified but the template has changed, copy the new template version:
+**Only reachable in manifest-tracked mode** when the manifest confirms the user hasn't modified the file. In first-sync mode, every divergent file routes through 3d instead.
+
+Capture the diff for the final report, then copy the new template version:
 
 ```bash
+diff_summary=$(diff -u "$file" "$SKILL_DIR/$template_path" | head -40)
 cp "$SKILL_DIR/$template_path" "$file"
 ```
 
@@ -259,29 +268,45 @@ cp "$SKILL_DIR/$template_path" "$file"
 sed -i "s/^model:.*/$current_model/" "$file"
 ```
 
-Report each update:
+Record the file in the sync report (printed once at S5):
 ```
 Updated .claude/scripts/protect-secrets.py — new version from create-project
 Updated .claude/agents/task-executor.md — new instructions (model: sonnet preserved)
 ```
 
-### 3d — Handle conflicts
+### 3d — Intelligent merge (default for any divergence)
 
-For files where both the user and the template have changed:
+This path runs whenever the file may carry local edits — i.e. the (Yes / Yes) row in manifest-tracked mode and *every* divergent file in first-sync mode. The default is **always merge first, prompt only when the merge identifies an irreconcilable conflict**. The user's safety net is `git diff` after the sync — not a prompt during it.
 
-1. Show what changed on each side:
+Procedure:
+
+1. Read the available versions:
+   - **current** — the project file as it stands now (may carry local edits)
+   - **template** — the new upstream template
+   - **base** *(optional, manifest-tracked mode only)* — the prior template the project was synced against. Recover from the skill repo's git history if practical: `git -C "$SKILL_DIR" log --all --pretty=format:%H -- "$template_path" | while read h; do test "$(git -C "$SKILL_DIR" show "$h:$template_path" | sha256sum | cut -d' ' -f1)" = "$template_hash" && echo "$h" && break; done`. If recovery is awkward, skip the base — a two-way merge of *current* against *template*, informed by your understanding of the file's intent, is sufficient. In first-sync mode no base exists.
+
+2. Produce an intelligent merge — not a line-by-line three-way diff, but a content-aware merge that uses your understanding of what the file does:
+   - Preserve every local customization that doesn't directly contradict an upstream change
+   - Apply every upstream improvement that doesn't directly contradict a local edit
+   - For agent files: always preserve the project's `model:` field (extract before merge, restore after)
+   - For settings.json: defer to the merge logic in 3e
+   - For hook scripts: prefer the upstream control-flow but preserve any local config constants the user has set at the top of the file
+   - For task-executor and other workflow agents: prefer upstream when the change is a safety/correctness improvement (e.g., a new pre-stage verification step) — the user is unlikely to want to opt out of those
+
+3. Capture both diffs for the final report — `diff(current, merged)` (what the sync changed) and a one-line summary of the merge intent (e.g. "applied upstream pre-stage verification step; preserved local model: sonnet and custom failure-mode entry"):
+
 ```bash
-# What the user changed (installed → current project file)
-diff <(git show HEAD:.claude/scripts/protect-secrets.py 2>/dev/null || cat /dev/null) .claude/scripts/protect-secrets.py
-
-# What upstream changed (old template → new template)
-# Use the manifest's template_hash to identify the old version, or just show the current template
-diff "$file" "$SKILL_DIR/$template_path"
+diff_summary=$(diff -u "$file" "$merged_tmp" | head -40)
+mv "$merged_tmp" "$file"
 ```
 
-2. Ask: *"This file has local modifications AND upstream changes. Options: (a) keep your version, (b) take the upstream version, (c) let me merge them."*
+4. **Only prompt the user if the merge cannot reconcile a region** — i.e. the same line or contiguous block was changed on both sides in incompatible ways. In that case, present:
+   - The conflicting region from *current*
+   - The conflicting region from *template*
+   - Your recommended resolution and why
+   - Options: `(a) take my recommendation`, `(b) keep my version`, `(c) take upstream`, `(d) describe the merge you want`
 
-3. If they choose (c): read both versions, understand the intent of each change, and produce a merged version that preserves the user's customizations while incorporating the upstream improvements. This is an intelligent merge, not a line-by-line diff — use your understanding of what the code does.
+If no conflict region exists, write the merged file and move on. Do not prompt for confirmation just because the file changed — the diff in the S5 report is the confirmation surface.
 
 ### 3e — Special handling: settings.json
 
@@ -351,25 +376,27 @@ Then let the user pick per-agent. Copy only the selected ones, set the `model:` 
 
 ---
 
-## Step S4 — Update manifest and commit
+## Step S4 — Write or update the manifest and commit
 
-Update `.claude/skill-manifest.json` with new hashes for all files that were synced or confirmed up-to-date:
+Write `.claude/skill-manifest.json` from post-sync hashes. In manifest-tracked mode this is an update; in first-sync mode this is the first time the manifest gets written, and it now reflects the merged state of every file (so subsequent syncs can use precise classification).
 
-For each managed file, update:
-- `installed_hash` — sha256 of the file now in the project
-- `template_hash` — sha256 of the current template
+For each managed file present in the project, write:
+- `installed_hash` — sha256 of the file as it stands now (post-merge, post-update)
+- `template_hash` — sha256 of the template that was synced against in this run
 
 ```bash
-git add .claude/
+git add .claude/ scripts/ 2>/dev/null
 git diff --cached --quiet || git commit -m "chore: sync skill artifacts from updated templates"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
+
+Tell the user before committing that the next step belongs to them: *"Sync done. Run `git diff HEAD~1` to review every change before pushing — or `git reset --hard HEAD~1` to back the whole sync out."*
 
 ---
 
 ## Step S5 — Summary
 
-Present a final report:
+Present a final report listing every project artifact, its action, and (for any file that changed) a short diff summary so the user can review without running diff themselves:
 
 ```
 Skill sync complete.
@@ -379,15 +406,31 @@ Global skills:
   code-scanner — up to date
 
 Project artifacts (from create-project):
-  .claude/scripts/protect-secrets.py — updated
-  .claude/scripts/restructure-plan.py — updated
+  .claude/scripts/protect-secrets.py — applied upstream (no local edits)
+  .claude/scripts/restructure-plan.py — merged (preserved local CHECKPOINT_INTERVAL=20; applied upstream JSON-output fix)
   .claude/scripts/post-compact.py — up to date
-  .claude/settings.json — merged (1 new hook added)
-  .claude/agents/task-executor.md — updated (model: sonnet preserved)
+  .claude/settings.json — merged (1 new hook added; user permissions preserved)
+  .claude/agents/task-executor.md — merged (applied upstream pre-stage verification step; preserved model: sonnet and local failure-mode entry)
   .claude/agents/architect.md — up to date
-  .claude/agents/code-reviewer.md — up to date (local modifications kept)
+  .claude/agents/code-reviewer.md — kept local version (no upstream change)
   .claude/agents/security-auditor.md — up to date
-  NEW: .claude/agents/qa.md — added
+  scripts/check-task-state.sh — added (new file from upstream)
+  NEW: .claude/agents/qa.md — offered, user accepted
+
+Review with:  git diff HEAD~1
+Back out with: git reset --hard HEAD~1
 ```
 
 If no changes were found in either scope, say: *"Everything is up to date — no changes needed."*
+
+Action vocabulary used in the report (use these consistently):
+
+| Term | Meaning |
+|------|---------|
+| `up to date` | No diff between project, manifest, and template |
+| `applied upstream` | Manifest confirmed no local edits; template change copied in (3c) |
+| `merged` | Intelligent merge ran; both sides had something — resolved without prompting |
+| `merged (conflict resolved)` | Intelligent merge surfaced an irreconcilable region; user chose a resolution |
+| `kept local version` | Local edits exist, no upstream change |
+| `added` | File didn't exist in project; auto-added (hook scripts) or user-accepted offer (agents) |
+| `offered, declined` | New agent surfaced; user chose not to add |

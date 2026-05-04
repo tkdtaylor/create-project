@@ -20,7 +20,7 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
 11. Installs twelve hooks across five lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, plan-to-tasks restructuring, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, and desktop notifications
 12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
-13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — with three-way merge to preserve local customizations
+13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — defaults to **intelligent merge over overwrite**, prompts only when a merge can't reconcile, and prints a per-file diff summary so `git diff` is the safety net rather than a wall of confirmation prompts
 
 ## First-time setup
 
@@ -344,18 +344,19 @@ The sync flow does two things:
 
 1. **Updates globally installed skills** — for each skill in `~/.claude/skills/` that is a git repo, fetches and fast-forward pulls upstream changes
 2. **Syncs project artifacts** — compares your project's managed files (hooks, agents, settings) against the latest templates using `.claude/skill-manifest.json`, then:
-   - **Auto-updates** files you haven't modified locally
+   - **Applies upstream-only changes** when the manifest confirms you haven't touched the file
    - **Preserves** your local customizations when the template hasn't changed
-   - **Shows conflicts** when both sides changed, letting you choose how to merge
+   - **Intelligently merges** when both sides changed (or when there is no manifest to consult) — preserves your edits, applies the upstream improvements, and only prompts if a region genuinely can't be reconciled
    - **Offers new files** added to the skill since your project was set up
+   - **Reports a per-file diff summary** at the end so you can review with `git diff HEAD~1` (or back out the entire sync with `git reset --hard HEAD~1`)
 
-Agent files get special handling: when an updated template is applied, the `model:` field from your project is preserved so your model tier configuration isn't lost.
+Agent files get special handling inside the merge: the `model:` field from your project is always preserved so your model tier configuration isn't lost.
 
 ### Manifest tracking
 
 Projects set up with the current version of the skill include `.claude/skill-manifest.json`, which records sha256 hashes of each managed file at install time. This enables precise three-way change detection during sync.
 
-Projects set up before manifest tracking was added still work — the sync generates a baseline manifest on first run by hashing current files, then tracks changes from that point forward.
+Projects set up before manifest tracking was added still sync safely — they enter **first-sync mode**: because the sync can't tell which files you may have edited, it runs an intelligent merge against every divergent file rather than overwriting, then writes the manifest from post-merge hashes so subsequent syncs can use precise classification. Nothing gets clobbered just because no manifest exists yet.
 
 ### Manual upgrade (alternative)
 
