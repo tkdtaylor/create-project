@@ -57,9 +57,14 @@ When escalating, stop immediately and return: what you read, which signal applie
    - **Pipeline shape** (steps added, removed, reordered) → edit `docs/architecture/diagrams.md` and bump the date at the top.
 
    If a new metric was computed, it must be added to the metrics catalog in `configuration.md` — unnamed metrics drift in definition between runs.
-7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
+7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/` — use `git mv`, never plain `mv`
 8. Update `docs/tasks/test-specs/coverage-tracker.md`
-9. Commit and push (include any spec/diagram files touched in step 6):
+9. **Verify task-file state before staging** — run:
+   ```bash
+   git ls-files docs/tasks/ | grep "<NNN>-"
+   ```
+   The task file MUST appear under exactly one of `{backlog, active, completed}`. If it shows up in two directories at once, the previous `git mv` left a stale tracked copy — fix with `git rm <stale-path>` before continuing. Projects that scaffold `scripts/check-task-state.sh` into their pre-commit gate will block the commit otherwise.
+10. Commit and push (include any spec/diagram files touched in step 6):
    ```bash
    git add src/ tests/ docs/tasks/ docs/tasks/test-specs/coverage-tracker.md
    git add docs/spec/ docs/architecture/diagrams.md 2>/dev/null || true

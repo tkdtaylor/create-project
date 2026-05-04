@@ -102,6 +102,7 @@ Templates come from two directories:
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
+| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 
 **From `common/`** (copy as-is, no placeholders):
 

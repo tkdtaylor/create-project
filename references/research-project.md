@@ -92,6 +92,7 @@ Templates come from two directories:
 | `decision-brief-template.md` | `outputs/templates/decision-brief.md` |
 | `deep-research-template.md` | `outputs/templates/deep-research.md` |
 | `learning-plan-template.md` | `outputs/templates/learning-plan.md` |
+| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 
 **From `common/`** (copy as-is, no placeholders):
 

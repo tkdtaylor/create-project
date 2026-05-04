@@ -17,9 +17,9 @@ references/                  <- step-by-step setup guides and catalogs
 assets/
   templates/
     common/.claude/scripts/    9 universal hook scripts (all project types)
-    tech/                      tech templates incl. diagrams.md and spec/ (5 files), settings, agents, 3 tech-only hooks
-    data/                      data templates incl. diagrams.md and spec/ (5 files), settings, agents (hooks from common/ + tech/)
-    research/                  research templates, settings, agents (hooks from common/)
+    tech/                      tech templates incl. diagrams.md, spec/ (5 files), settings, agents, 3 tech-only hooks, scripts/check-task-state.sh
+    data/                      data templates incl. diagrams.md, spec/ (5 files), settings, agents, scripts/check-task-state.sh (hooks from common/ + tech/)
+    research/                  research templates, settings, agents, scripts/check-task-state.sh (hooks from common/)
   base/                        shared Docker base images (Dockerfiles + entrypoints)
 evals/evals.json             3 test cases with assertions
 ```

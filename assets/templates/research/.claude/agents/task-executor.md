@@ -41,9 +41,14 @@ When escalating, return: what you read, which signal applied, the recommended ti
    - Are findings supported by sources?
    - Are there gaps that need flagging?
    - **Confidence check:** do you have high confidence the research question is answered, or are you hoping a future reader will fill in the gaps? Low confidence at completion is a tier-mismatch signal — report back noting the uncertain claim and recommend a balanced-tier agent (source-evaluator, outline-builder, or gap-analyst) for a follow-up pass.
-7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
+7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/` — use `git mv`, never plain `mv`
 8. Update `docs/tasks/progress-tracker.md`
-9. Commit and push:
+9. **Verify task-file state before staging** — run:
+   ```bash
+   git ls-files docs/tasks/ | grep "<NNN>-"
+   ```
+   The task file MUST appear under exactly one of `{backlog, active, completed}`. If it shows up in two directories at once, the previous `git mv` left a stale tracked copy — fix with `git rm <stale-path>` before continuing. Projects that scaffold `scripts/check-task-state.sh` into their pre-commit gate will block the commit otherwise.
+10. Commit and push:
    ```bash
    git add sources/ notes/ docs/ 
    git commit -m "research: complete task NNN — <name>"

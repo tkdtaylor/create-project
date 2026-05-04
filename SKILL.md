@@ -247,6 +247,7 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |
 | `.claude/agents/security-auditor.md` | tech, data |
+| `scripts/check-task-state.sh` | Yes |
 
 Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill.
 

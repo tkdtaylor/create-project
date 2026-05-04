@@ -244,6 +244,8 @@ assets/
         data-model.md            # entities, schemas, state, wire formats
         interfaces.md            # CLI / API / public surfaces
         configuration.md         # env vars, configs, runtime knobs
+      scripts/
+        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
       .claude/
         settings.json            # permissions + 12 hooks across 5 lifecycle events
         scripts/
@@ -272,6 +274,8 @@ assets/
         data-model.md            # datasets, features, model artifacts, results schema
         interfaces.md            # CLI runners, notebook entrypoints, public src/ API
         configuration.md         # experiment configs, env vars, metrics catalog
+      scripts/
+        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
       .claude/                   # settings + agents (hooks from common/ + tech/)
       docker/                    # same Docker pattern as tech
       experiment-tracker.md      # tracks experiment runs alongside coverage-tracker
@@ -284,6 +288,8 @@ assets/
       decision-brief-template.md # structured comparison + recommendation output template
       deep-research-template.md  # in-depth research report output template
       learning-plan-template.md  # three-phase learning syllabus output template
+      scripts/
+        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
       .claude/                   # settings + task-executor agent (hooks from common/)
       docker/
         docker-compose.yml
@@ -379,19 +385,21 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/agents/architect.md` | `<type>/` | Architecture review + ADR drafting (tech/data only) |
 | `.claude/agents/code-reviewer.md` | `<type>/` | Structured multi-perspective code review (tech/data only) |
 | `.claude/agents/security-auditor.md` | `<type>/` | OWASP Top 10 application security audit (tech/data only) |
+| `scripts/check-task-state.sh` | `<type>/` | Invariant check: each `NNN-*.md` task tracked in exactly one of `{backlog, active, completed}` (mode 755) |
 
 Quick copy for a tech project (run from your project root):
 
 ```bash
 SKILL=~/.claude/skills/create-project/assets/templates
-mkdir -p .claude/scripts .claude/agents
+mkdir -p .claude/scripts .claude/agents scripts
 cp "$SKILL/tech/.claude/settings.json" .claude/settings.json
 cp "$SKILL/common/.claude/scripts/"*.py .claude/scripts/
 cp "$SKILL/tech/.claude/scripts/"*.py .claude/scripts/
 cp "$SKILL/tech/.claude/agents/"*.md .claude/agents/
+cp "$SKILL/tech/scripts/check-task-state.sh" scripts/ && chmod +x scripts/check-task-state.sh
 ```
 
-For data projects, replace agent source with `data` (scripts are the same as tech). For research projects, skip the tech scripts and agents lines.
+For data projects, replace agent source with `data` (scripts are the same as tech). For research projects, skip the tech scripts and agents lines (the `scripts/check-task-state.sh` line still applies — copy it from `$SKILL/research/scripts/`).
 
 ### Updating CLAUDE.md
 

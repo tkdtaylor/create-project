@@ -156,6 +156,7 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/scripts/strategic-compact.py` → `assets/templates/common/.claude/scripts/strategic-compact.py`
 - `.claude/scripts/desktop-notify.py` → `assets/templates/common/.claude/scripts/desktop-notify.py`
 - `.claude/agents/task-executor.md` → `assets/templates/<type>/.claude/agents/task-executor.md`
+- `scripts/check-task-state.sh` → `assets/templates/<type>/scripts/check-task-state.sh` (mode 755)
 
 **tech and data only (hooks from `tech/`, agents from `<type>/`):**
 - `.claude/scripts/config-protection.py` → `assets/templates/tech/.claude/scripts/config-protection.py`

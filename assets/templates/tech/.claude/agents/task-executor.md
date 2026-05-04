@@ -57,9 +57,14 @@ When escalating, stop immediately and return:
    - **Component boundaries or runtime flow** → edit `docs/architecture/diagrams.md` and bump the date at the top.
 
    If unsure whether the change is spec-visible, ask: "could a contributor reading only the spec predict this behavior?" If the answer is no after the change, the spec is missing something and must be updated.
-6. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/`
+6. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/` — use `git mv`, never plain `mv`
 7. Update `docs/tasks/test-specs/coverage-tracker.md` — mark spec as complete, status as done
-8. Commit and push (include any spec/diagram files touched in step 5):
+8. **Verify task-file state before staging** — run:
+   ```bash
+   git ls-files docs/tasks/ | grep "<NNN>-"
+   ```
+   The task file MUST appear under exactly one of `{backlog, active, completed}`. If it shows up in two directories at once, the previous `git mv` left a stale tracked copy — fix with `git rm <stale-path>` before continuing. Projects that scaffold `scripts/check-task-state.sh` into their pre-commit gate will block the commit otherwise.
+9. Commit and push (include any spec/diagram files touched in step 5):
    ```bash
    git add src/ docs/tasks/ docs/tasks/test-specs/coverage-tracker.md
    git add docs/spec/ docs/architecture/diagrams.md 2>/dev/null || true
