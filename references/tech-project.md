@@ -17,6 +17,7 @@ project-root/
     ├── spec/                         # Authoritative current-state snapshot
     │   ├── SPEC.md                   #   Index + system summary + invariants
     │   ├── behaviors.md              #   What the system does
+    │   ├── architecture.md           #   C4 element catalog (paired with diagrams.md)
     │   ├── data-model.md             #   Entities, schemas, state
     │   ├── interfaces.md             #   CLI, APIs, public surfaces
     │   └── configuration.md          #   Env vars, configs, runtime knobs
@@ -88,6 +89,7 @@ Templates come from two directories:
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `spec/SPEC.md` | `docs/spec/SPEC.md` |
 | `spec/behaviors.md` | `docs/spec/behaviors.md` |
+| `spec/architecture.md` | `docs/spec/architecture.md` |
 | `spec/data-model.md` | `docs/spec/data-model.md` |
 | `spec/interfaces.md` | `docs/spec/interfaces.md` |
 | `spec/configuration.md` | `docs/spec/configuration.md` |
@@ -98,10 +100,14 @@ Templates come from two directories:
 | `.claude/scripts/protect-checkout.py` | `.claude/scripts/protect-checkout.py` |
 | `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
 | `.claude/scripts/batch-format-typecheck.py` | `.claude/scripts/batch-format-typecheck.py` |
+| `.claude/scripts/spec-coverage-check.py` | `.claude/scripts/spec-coverage-check.py` |
+| `.claude/scripts/scope-drift-summary.py` | `.claude/scripts/scope-drift-summary.py` |
+| `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
+| `.claude/agents/spec-verifier.md` | `.claude/agents/spec-verifier.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 
 **From `common/`** (copy as-is, no placeholders):
@@ -117,15 +123,16 @@ Templates come from two directories:
 | `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/scripts/strategic-compact.py` | `.claude/scripts/strategic-compact.py` |
 | `.claude/scripts/desktop-notify.py` | `.claude/scripts/desktop-notify.py` |
+| `.claude/scripts/inject-retros.py` | `.claude/scripts/inject-retros.py` |
 
 All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync.
 
-**Settings and hooks:** `.claude/settings.json` pre-configures permissions and twelve hooks across five lifecycle events, all gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict) and `CLAUDE_DISABLED_HOOKS` env vars:
+**Settings and hooks:** `.claude/settings.json` pre-configures permissions and hooks across six lifecycle events, all gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict) and `CLAUDE_DISABLED_HOOKS` env vars:
 
 | Profile | Hooks |
 |---------|-------|
 | **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits), `protect-checkout` (block `git checkout -- <path>` over a dirty tree) |
-| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns) |
+| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns), `inject-retros` (SessionStart — surface relevant Failure-mode entries from CLAUDE.md), `spec-coverage-check` (block `git commit` if active task's TC markers have no test references), `scope-drift-summary` (Stop — print one-line summary of diff vs spec coverage), `detect-smoke-tests` (Stop — flag tests in diff with no assertions) |
 | **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `desktop-notify` (OS notification on completion) |
 
 **Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
@@ -133,6 +140,7 @@ All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) 
 - `architect` (deep) — design review and ADR drafting
 - `code-reviewer` (balanced) — structured multi-perspective code review
 - `security-auditor` (deep) — OWASP Top 10 audit
+- `spec-verifier` (balanced) — assertion-by-assertion check that the implementation matches the test spec; invoke before commit on completed tasks
 
 Fill in the tech stack table using what the user provided. If a layer (e.g. framework, database) wasn't mentioned, use `—`.
 

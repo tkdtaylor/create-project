@@ -13,11 +13,16 @@
         "CLAUDE.md mentions FastAPI or Python in the tech stack or commands section",
         "The directory structure includes a src/ directory",
         "The directory structure includes docs/tasks/ or docs/tasks/active/",
-        "The directory structure includes docs/spec/ with SPEC.md, behaviors.md, data-model.md, interfaces.md, and configuration.md",
-        "docs/architecture/diagrams.md exists and contains at least one mermaid code block",
+        "The directory structure includes docs/spec/ with SPEC.md, behaviors.md, architecture.md, data-model.md, interfaces.md, and configuration.md",
+        "docs/architecture/diagrams.md exists and contains at least one mermaid code block (C4Context, C4Container, C4Component, sequenceDiagram, or flowchart)",
         "CLAUDE.md mentions updating docs/spec/ in the same commit as code changes (or equivalent spec maintenance rule)",
         "CLAUDE.md contains a '## Recommended tooling' section",
-        "At least one database-related MCP (postgres, sqlite) or github MCP was recommended"
+        "At least one database-related MCP (postgres, sqlite) or github MCP was recommended",
+        ".claude/scripts/spec-coverage-check.py exists",
+        ".claude/scripts/scope-drift-summary.py exists",
+        ".claude/scripts/detect-smoke-tests.py exists",
+        ".claude/scripts/inject-retros.py exists",
+        ".claude/agents/spec-verifier.md exists"
       ]
     },
     {

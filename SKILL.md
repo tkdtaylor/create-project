@@ -239,14 +239,19 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/scripts/periodic-checkpoint.py` | Yes |
 | `.claude/scripts/strategic-compact.py` | Yes |
 | `.claude/scripts/desktop-notify.py` | Yes |
+| `.claude/scripts/inject-retros.py` | Yes |
 | `.claude/scripts/config-protection.py` | tech, data |
 | `.claude/scripts/protect-checkout.py` | tech, data |
 | `.claude/scripts/edit-tracker.py` | tech, data |
 | `.claude/scripts/batch-format-typecheck.py` | tech, data |
+| `.claude/scripts/spec-coverage-check.py` | tech, data |
+| `.claude/scripts/scope-drift-summary.py` | tech, data |
+| `.claude/scripts/detect-smoke-tests.py` | tech, data |
 | `.claude/agents/task-executor.md` | Yes |
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |
 | `.claude/agents/security-auditor.md` | tech, data |
+| `.claude/agents/spec-verifier.md` | tech, data |
 | `scripts/check-task-state.sh` | Yes |
 
 Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill.

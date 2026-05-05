@@ -107,8 +107,9 @@ Templates come from two directories:
 | `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/scripts/strategic-compact.py` | `.claude/scripts/strategic-compact.py` |
 | `.claude/scripts/desktop-notify.py` | `.claude/scripts/desktop-notify.py` |
+| `.claude/scripts/inject-retros.py` | `.claude/scripts/inject-retros.py` |
 
-All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync. Research projects use eight hooks (no config-protection, edit-tracker, or batch-format-typecheck). See `references/tech-project.md` Step T2 for the full hook profile table.
+All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync. Research projects use a reduced hook set (no config-protection, edit-tracker, batch-format-typecheck, or spec-coverage hooks — research has no test specs). See `references/tech-project.md` Step T2 for the full hook profile table.
 
 **Agent:** `task-executor` (fast) — ephemeral single-task executor for research. Ships with `model: inherit` and `# model-tier: fast` — Step 3d updates it.
 

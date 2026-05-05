@@ -137,8 +137,8 @@ code --install-extension ms-vscode-remote.remote-containers
 
 | Type | Use when | Key structure |
 |------|----------|---------------|
-| **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/spec/` (authoritative current-state snapshot), `docs/architecture/` (overview, diagrams, ADRs), `docs/tasks/` with TDD scaffolding (test specs before tasks) |
-| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/` (with structured sandbox template), `models/`, `tests/`, `docs/spec/` (pipeline + reproducibility contract), `docs/architecture/` (overview, lineage diagrams, ADRs), with dual TDD + experiment tracking |
+| **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/spec/` (authoritative current-state snapshot incl. `architecture.md` C4 element catalog), `docs/architecture/` (overview, C4 Mermaid diagrams, ADRs), `docs/tasks/` with TDD scaffolding (test specs before tasks) |
+| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/` (with structured sandbox template), `models/`, `tests/`, `docs/spec/` (pipeline + reproducibility contract incl. `architecture.md` C4 catalog with datasets), `docs/architecture/` (overview, C4 Mermaid + lineage diagrams, ADRs), with dual TDD + experiment tracking |
 | **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/` (with decision brief, deep research, and learning plan templates), `docs/` |
 | **other** | Planning, tracking, organising — wedding planning, job search, project management | Research base structure with domain-specific top-level folders (e.g. `vendors/`, `budget/`, `timeline/`) chosen by the user |
 
@@ -234,30 +234,36 @@ assets/
         periodic-checkpoint.py   # reminds agent to commit every N turns
         strategic-compact.py     # suggests /compact at task boundaries
         desktop-notify.py        # OS notification on completion (strict profile)
+        inject-retros.py         # SessionStart — surfaces relevant Failure-mode entries from CLAUDE.md
     tech/                        # Per-project templates — technical projects
       CLAUDE.md
       devcontainer.json
-      diagrams.md                # Mermaid system + flow diagrams (part of authoritative spec)
+      diagrams.md                # C4 Mermaid (Context/Container/Component) + sequence flows (part of authoritative spec)
       spec/                      # Authoritative current-state snapshot — see SPEC.md
         SPEC.md
         behaviors.md             # what the system does
+        architecture.md          # C4 element catalog (paired with diagrams.md)
         data-model.md            # entities, schemas, state, wire formats
         interfaces.md            # CLI / API / public surfaces
         configuration.md         # env vars, configs, runtime knobs
       scripts/
         check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
       .claude/
-        settings.json            # permissions + 12 hooks across 5 lifecycle events
+        settings.json            # permissions + hooks across six lifecycle events (PreToolUse, PostToolUse, SessionStart, PreCompact, PostCompact, Stop)
         scripts/
           config-protection.py   # blocks modifications to linter/formatter configs
           protect-checkout.py    # blocks `git checkout -- <path>` over a dirty tree
           edit-tracker.py        # accumulates edited files for batch processing
           batch-format-typecheck.py  # batch format+typecheck at Stop (strict profile)
+          spec-coverage-check.py # blocks `git commit` if active task's TC markers have no test references
+          scope-drift-summary.py # Stop — one-line diff vs spec coverage summary
+          detect-smoke-tests.py  # Stop — flags tests in diff with no assertions
         agents/
           task-executor.md       # ephemeral agent for executing one task at a time
           architect.md           # design review + ADR drafting + spec/diagram drift audit (tier: deep)
           code-reviewer.md       # structured multi-perspective code review (tier: balanced)
           security-auditor.md    # OWASP Top 10 application security audit (tier: deep)
+          spec-verifier.md       # assertion-by-assertion spec adherence check before commit (tier: balanced)
       docker/
         Dockerfile               # extends shared base with project runtime + uid fix
         docker-compose.yml       # builds project image, mounts volume + credentials
@@ -267,10 +273,11 @@ assets/
     data/                        # Per-project templates — data / ML projects
       CLAUDE.md
       devcontainer.json
-      diagrams.md                # Mermaid data lineage + pipeline flows (part of authoritative spec)
+      diagrams.md                # C4 Mermaid (Context/Container/Component) + lineage + sequence flows (part of authoritative spec)
       spec/                      # Authoritative current-state snapshot — see SPEC.md
         SPEC.md
         behaviors.md             # pipeline behaviors (training, eval, inference)
+        architecture.md          # C4 element catalog + datasets (paired with diagrams.md)
         data-model.md            # datasets, features, model artifacts, results schema
         interfaces.md            # CLI runners, notebook entrypoints, public src/ API
         configuration.md         # experiment configs, env vars, metrics catalog
@@ -378,14 +385,19 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/scripts/periodic-checkpoint.py` | `common/` | Reminds agent to commit every N turns |
 | `.claude/scripts/strategic-compact.py` | `common/` | Suggests /compact at task boundaries |
 | `.claude/scripts/desktop-notify.py` | `common/` | OS notification on completion (strict profile) |
+| `.claude/scripts/inject-retros.py` | `common/` | SessionStart — surfaces relevant Failure-mode entries from CLAUDE.md |
 | `.claude/scripts/config-protection.py` | `tech/` | Blocks linter/formatter config edits (tech/data only) |
 | `.claude/scripts/protect-checkout.py` | `tech/` | Blocks `git checkout … -- <path>` over a dirty working tree (tech/data only) |
 | `.claude/scripts/edit-tracker.py` | `tech/` | Accumulates edited files for batch processing (tech/data only) |
 | `.claude/scripts/batch-format-typecheck.py` | `tech/` | Batch format+typecheck at Stop (tech/data only) |
+| `.claude/scripts/spec-coverage-check.py` | `tech/` | Pre-commit — blocks `git commit` if active task's TC markers have no test references (tech/data only) |
+| `.claude/scripts/scope-drift-summary.py` | `tech/` | Stop — prints one-line summary of diff vs spec coverage (tech/data only) |
+| `.claude/scripts/detect-smoke-tests.py` | `tech/` | Stop — flags tests in current diff with no assertion / panic / expect (tech/data only) |
 | `.claude/agents/task-executor.md` | `<type>/` | Ephemeral agent for executing one task at a time |
 | `.claude/agents/architect.md` | `<type>/` | Architecture review + ADR drafting (tech/data only) |
 | `.claude/agents/code-reviewer.md` | `<type>/` | Structured multi-perspective code review (tech/data only) |
 | `.claude/agents/security-auditor.md` | `<type>/` | OWASP Top 10 application security audit (tech/data only) |
+| `.claude/agents/spec-verifier.md` | `<type>/` | Assertion-by-assertion spec adherence check before commit (tech/data only) |
 | `scripts/check-task-state.sh` | `<type>/` | Invariant check: each `NNN-*.md` task tracked in exactly one of `{backlog, active, completed}` (mode 755) |
 
 Quick copy for a tech project (run from your project root):
@@ -434,11 +446,13 @@ The skill will:
 2. **Confirm understanding** — present a summary and ask you to verify before writing anything
 3. **Generate `CLAUDE.md`** — a project context file based on the *actual* code, not generic templates. Includes real commands, real structure, real conventions discovered from the codebase
 4. **Generate `docs/architecture/overview.md`** — component map, data flow, key dependencies, entry points — all derived from reading the code
-5. **Create task structure** — `docs/tasks/active/`, `backlog/`, `completed/`, and test-spec tracking so plan mode and the task-executor work
-6. **Copy hooks and agents** — settings.json, hook scripts, and agent templates (task-executor, architect, code-reviewer, security-auditor for tech/data projects)
-7. **Configure model tiers** — detect available models and set the best one for each agent
-8. **Recommend tooling** — skills, hooks, and CLI tools suited to the project
-9. **Write skill manifest** — records which files came from templates in `.claude/skill-manifest.json`, enabling future syncs
+5. **Generate `docs/architecture/diagrams.md`** *(tech / data)* — C4-structured Mermaid (Context → Container → Component → sequence; data projects also get end-to-end lineage), populated from the actual modules, deployable units, and import graph
+6. **Generate `docs/spec/`** *(tech / data)* — five-file authoritative snapshot: SPEC.md, behaviors.md, architecture.md (the tabular C4 element catalog paired with the diagrams), data-model.md, interfaces.md, configuration.md, all populated from the code with explicit TODOs flagged where the code is ambiguous
+7. **Create task structure** — `docs/tasks/active/`, `backlog/`, `completed/`, and test-spec tracking so plan mode and the task-executor work
+8. **Copy hooks and agents** — settings.json, hook scripts, and agent templates (task-executor, architect, code-reviewer, security-auditor for tech/data projects)
+9. **Configure model tiers** — detect available models and set the best one for each agent
+10. **Recommend tooling** — skills, hooks, and CLI tools suited to the project
+11. **Write skill manifest** — records which files came from templates in `.claude/skill-manifest.json`, enabling future syncs
 
 Existing source code is never moved, renamed, or restructured. The skill adds a documentation and tooling layer alongside what's already there.
 

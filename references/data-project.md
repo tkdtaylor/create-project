@@ -28,6 +28,7 @@ project-root/
     ├── spec/                         # Authoritative current-state snapshot
     │   ├── SPEC.md                   #   Index + system summary + invariants
     │   ├── behaviors.md              #   Pipeline behaviors (training, eval, inference)
+    │   ├── architecture.md           #   C4 element catalog + datasets (paired with diagrams.md)
     │   ├── data-model.md             #   Datasets, features, model artifacts, results schema
     │   ├── interfaces.md             #   CLI runners, notebook entrypoints, public src/ API
     │   └── configuration.md          #   Experiment configs, env vars, metrics catalog
@@ -114,6 +115,7 @@ Templates come from three directories:
 | `tech-stack.md` | `docs/architecture/tech-stack.md` |
 | `spec/SPEC.md` | `docs/spec/SPEC.md` |
 | `spec/behaviors.md` | `docs/spec/behaviors.md` |
+| `spec/architecture.md` | `docs/spec/architecture.md` |
 | `spec/data-model.md` | `docs/spec/data-model.md` |
 | `spec/interfaces.md` | `docs/spec/interfaces.md` |
 | `spec/configuration.md` | `docs/spec/configuration.md` |
@@ -126,6 +128,7 @@ Templates come from three directories:
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
+| `.claude/agents/spec-verifier.md` | `.claude/agents/spec-verifier.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 
 **From `tech/`** (tech-only hooks, also used by data projects):
@@ -136,6 +139,9 @@ Templates come from three directories:
 | `.claude/scripts/protect-checkout.py` | `.claude/scripts/protect-checkout.py` |
 | `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
 | `.claude/scripts/batch-format-typecheck.py` | `.claude/scripts/batch-format-typecheck.py` |
+| `.claude/scripts/spec-coverage-check.py` | `.claude/scripts/spec-coverage-check.py` |
+| `.claude/scripts/scope-drift-summary.py` | `.claude/scripts/scope-drift-summary.py` |
+| `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
 
 **From `common/`** (copy as-is, no placeholders):
 
@@ -150,6 +156,7 @@ Templates come from three directories:
 | `.claude/scripts/periodic-checkpoint.py` | `.claude/scripts/periodic-checkpoint.py` |
 | `.claude/scripts/strategic-compact.py` | `.claude/scripts/strategic-compact.py` |
 | `.claude/scripts/desktop-notify.py` | `.claude/scripts/desktop-notify.py` |
+| `.claude/scripts/inject-retros.py` | `.claude/scripts/inject-retros.py` |
 
 All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) for future sync. Hook profiles are identical to technical projects — see `references/tech-project.md` Step T2 for the full profile table.
 
@@ -158,6 +165,7 @@ All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) 
 - `architect` (deep) — pipeline design review and ADR drafting
 - `code-reviewer` (balanced) — structured review with data integrity and reproducibility perspectives
 - `security-auditor` (deep) — data leakage, credential exposure, injection risks
+- `spec-verifier` (balanced) — assertion-by-assertion check that the implementation matches the test spec; invoke before commit on completed tasks
 
 Fill in the tech stack table using what the user provided. If a layer wasn't mentioned, use `—`.
 
