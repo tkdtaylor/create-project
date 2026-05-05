@@ -17,8 +17,8 @@ references/                  <- step-by-step setup guides and catalogs
 assets/
   templates/
     common/.claude/scripts/    9 universal hook scripts (all project types)
-    tech/                      tech templates incl. diagrams.md, spec/ (5 files), settings, agents, 3 tech-only hooks, scripts/check-task-state.sh
-    data/                      data templates incl. diagrams.md, spec/ (5 files), settings, agents, scripts/check-task-state.sh (hooks from common/ + tech/)
+    tech/                      tech templates incl. C4 diagrams.md, spec/ (6 files incl. architecture.md), settings, agents, 3 tech-only hooks, scripts/check-task-state.sh
+    data/                      data templates incl. C4 diagrams.md, spec/ (6 files incl. architecture.md), settings, agents, scripts/check-task-state.sh (hooks from common/ + tech/)
     research/                  research templates, settings, agents, scripts/check-task-state.sh (hooks from common/)
   base/                        shared Docker base images (Dockerfiles + entrypoints)
 evals/evals.json             3 test cases with assertions
@@ -26,7 +26,7 @@ evals/evals.json             3 test cases with assertions
 
 Key design: `common/` holds hooks shared across all types. `tech/` holds hooks only for code projects (config-protection, edit-tracker, batch-format-typecheck). `data/` and `research/` have no scripts of their own — they pull from `common/` and (for data) `tech/`.
 
-**Spec and diagrams:** tech and data templates ship `diagrams.md` (Mermaid) and `spec/` (SPEC + behaviors + data-model + interfaces + configuration) as the **authoritative current-state snapshot** of generated projects. These are dual-natured: outputs of every task that changes externally-visible state, *and* inputs to onboarding, drift checks, and codebase regeneration. They live at `docs/architecture/diagrams.md` and `docs/spec/` in scaffolded projects. Research projects do not get them (the outline is the spec equivalent). The `architect` agent has a third mode (drift-audit) that compares spec and diagrams against the code.
+**Spec and diagrams:** tech and data templates ship `diagrams.md` (C4-structured Mermaid — Context/Container/Component + sequence/lineage flows) and `spec/` (SPEC + behaviors + architecture + data-model + interfaces + configuration) as the **authoritative current-state snapshot** of generated projects. These are dual-natured: outputs of every task that changes externally-visible state, *and* inputs to onboarding, drift checks, and codebase regeneration. They live at `docs/architecture/diagrams.md` and `docs/spec/` in scaffolded projects. The `spec/architecture.md` file is the *tabular* C4 element catalog that pairs with the *visual* diagrams — they describe the same model in two forms. Research projects do not get them (the outline is the spec equivalent). The `architect` agent has a third mode (drift-audit) that compares spec and diagrams against the code.
 
 ## How it works
 

@@ -72,14 +72,15 @@ When asked to draft an Architecture Decision Record:
 
 When asked to audit drift between the spec, the diagrams, and the pipeline code:
 
-1. **Scope the audit.** If the user named a subsystem or spec file, audit just that. Otherwise, ask: "Full audit (every spec file vs. all of `src/`) or scoped to one of behaviors / data-model / interfaces / configuration / diagrams?" Full audits are slow — confirm before starting.
+1. **Scope the audit.** If the user named a subsystem or spec file, audit just that. Otherwise, ask: "Full audit (every spec file vs. all of `src/`) or scoped to one of behaviors / architecture / data-model / interfaces / configuration / diagrams?" Full audits are slow — confirm before starting.
 
 2. **For each spec file in scope, sample the code.** Don't try to read the whole codebase. Pick a representative slice based on what the file claims:
    - `behaviors.md` → grep for runner / training / evaluation entry points and read those plus their immediate callees
+   - `architecture.md` → for each row in Containers (pipeline stages and stores), verify the source path exists and is a runnable unit; for each row in Datasets, verify the path exists under `data/` or matches what an upstream step writes; for each row in Components, verify the source path exists and the `Depends on` edges resolve to imports / call sites; cross-check the row set against `diagrams.md`
    - `data-model.md` → read dataset schemas, feature definitions, model artifact loaders; spot-check that field lists and feature names match
    - `interfaces.md` → read CLI argument parsers, exposed `src/` module functions, model-serving entry points
    - `configuration.md` → read config classes (Pydantic models, dataclasses), default values, env var reads, the metrics catalog vs. actual metric computation code
-   - `diagrams.md` → read pipeline runner code and verify the named steps and order match
+   - `diagrams.md` → read pipeline runner code and verify the named steps and order match; cross-check that every C4 box has a matching row in `architecture.md`
 
 3. **Spot-check reproducibility claims.** For data projects specifically, the spec makes strong reproducibility promises (seed propagation, library version pinning, deterministic splits). Verify a recent `experiments/results/<id>/run-info.json` actually contains everything `configuration.md`'s reproducibility contract requires.
 

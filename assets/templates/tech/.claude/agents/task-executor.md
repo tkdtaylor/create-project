@@ -15,7 +15,7 @@ You are a focused executor working on a single task in this project.
 2. Read the task file passed in your prompt
 3. Read the test spec file (if provided)
 4. Read `docs/architecture/overview.md` for system context
-5. Skim `docs/spec/SPEC.md` to know which spec files exist — you'll need to update one or more of them if the task changes externally-visible behavior, the data model, an interface, or configuration
+5. Skim `docs/spec/SPEC.md` to know which spec files exist — you'll need to update one or more of them if the task changes externally-visible behavior, the system structure, the data model, an interface, or configuration
 
 ## Tier check — escalate early, not at commit time
 
@@ -51,6 +51,7 @@ When escalating, stop immediately and return:
    Do not proceed until every criterion is met with high confidence.
 5. **Update spec and diagrams in the same commit if the task changed any of:**
    - **Externally-visible behavior** → edit `docs/spec/behaviors.md`. Add a new `B-NNN` entry or rewrite the existing one (never append "previously this did X" — the ADR carries history).
+   - **System structure** (new container / service / load-bearing component, moved boundary, new external integration) → edit `docs/spec/architecture.md` *and* `docs/architecture/diagrams.md` in the same commit — the catalog and the diagrams describe the same model and drift together.
    - **Data model** (schema, in-memory state shape, wire format) → edit `docs/spec/data-model.md`.
    - **Interfaces** (CLI flags, API endpoints, public traits/functions) → edit `docs/spec/interfaces.md`.
    - **Configuration** (config files, env vars, defaults) → edit `docs/spec/configuration.md`.

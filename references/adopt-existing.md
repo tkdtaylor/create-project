@@ -115,9 +115,12 @@ Write `docs/architecture/diagrams.md` based on the architecture you mapped in A4
 
 1. **Copy the template** from `$CLAUDE_SKILL_DIR/assets/templates/<type>/diagrams.md` as a starting structure (frontmatter, footer, section ordering).
 
-2. **Replace the placeholder Mermaid blocks with real diagrams** based on what the code actually does. Aim for two starter diagrams:
-   - **System components** (`flowchart TB`) — top-level modules / packages / services as boxes, major edges between them. Use subgraphs for logical boundaries (subsystems, external systems, shared infrastructure). Reference real file paths or module names in the labels.
+2. **Replace the placeholder Mermaid blocks with real diagrams** based on what the code actually does. The template uses C4 structure (Context → Container → Component → Sequence). Populate the levels the codebase warrants — small projects can collapse Container and Component into one diagram, or skip Container if there's only one deployable unit. Aim for at least:
+   - **System Context** (`C4Context`) — the system as one box, who uses it, what external systems / data sources it touches. Source: README, environment config, observed network calls, third-party imports.
+   - **Containers** (`C4Container`) — independently deployable / runnable units. Source: process entry points, services in compose files, deployment configs, scheduled jobs. For data projects, include both stages (transforms) and stores (where data lands between stages).
+   - **Components** (`C4Component`) — load-bearing modules inside the container a new contributor will touch first. Source: top-level packages and their import graph. Skip for trivial codebases.
    - **Primary runtime flow** (`sequenceDiagram`) — the most important runtime path: startup, first user action, or main data flow end-to-end.
+   - **End-to-end data lineage** (`flowchart LR`) — *data projects only*, in addition to the C4 diagrams. Source: dataset directories, transform scripts, model output paths.
 
 3. **Cross-reference**: link to the ADRs (if any exist) that govern each diagrammed flow. If there are no ADRs yet, leave the references for later.
 
@@ -131,7 +134,7 @@ If `docs/architecture/diagrams.md` already exists, read it first and update / ap
 
 ## Step A4c — Generate spec/ (tech and data only)
 
-Write the four-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
+Write the five-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
 
 ```bash
 mkdir -p docs/spec
@@ -143,6 +146,7 @@ For each file, copy the template from `$CLAUDE_SKILL_DIR/assets/templates/<type>
 |------|------------------------------------|
 | `SPEC.md` | The project summary, top-level invariants (architectural rules enforced in code or by guard scripts), non-goals (visible from what the project deliberately doesn't do — read the README and CLAUDE.md you just wrote) |
 | `behaviors.md` | Each major user-facing or scheduled behavior — find them by reading entry points (CLI commands, route handlers, scheduled jobs, public functions). For each: trigger, response, side effects, failure modes. Number sequentially `B-001`, `B-002`, … |
+| `architecture.md` | The C4 element catalog: Persons (who uses it), Systems (in-scope + external integrations), Containers (deployable units / pipeline stages and stores), Components (load-bearing modules), and — for data projects — Datasets that flow between stages. Source from the actual deployable artifacts and import graph; the table rows must correspond to things that exist on disk. This file is the tabular pair to `docs/architecture/diagrams.md`; both should describe the same model. |
 | `data-model.md` | Persistent stores (DB schemas, file formats), in-memory state (key types and their lock/sharing rules), wire / interchange formats (JSON over HTTP, log formats, exports), data invariants enforced in code |
 | `interfaces.md` | CLI surface (every subcommand and flag), HTTP/RPC API endpoints, internal public traits/interfaces (anything other modules depend on), external services called |
 | `configuration.md` | Config files (read the parsing code for the schema), env vars (grep for them), runtime flags (cross-reference interfaces.md), secrets (names only, never values) |

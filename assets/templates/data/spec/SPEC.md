@@ -27,16 +27,17 @@ The code is one *realization* of this spec. If the spec and code disagree, one o
 
 When a model architecture or feature set is replaced, the spec just reflects the new choice. The ADRs preserve the reasoning trail; the spec preserves the current truth.
 
-## The four files
+## The five files
 
 | File | Covers | Read this when |
 |------|--------|---------------|
 | [behaviors.md](behaviors.md) | What the pipeline does — training, evaluation, inference behaviors and their observable contracts | You need to know what should happen when you run X |
+| [architecture.md](architecture.md) | C4 element catalog — persons, systems, pipeline stages, stores, components, datasets, cross-cutting decisions | You need a structured/queryable view of the pipeline (paired with [`../architecture/diagrams.md`](../architecture/diagrams.md)) |
 | [data-model.md](data-model.md) | Datasets, schemas, feature definitions, model artifacts, experiment results | You need to know what data exists and how it's structured |
 | [interfaces.md](interfaces.md) | CLI runners, notebook entrypoints, model serving APIs, public Python modules | You need to know how to invoke or extend the pipeline |
 | [configuration.md](configuration.md) | Experiment configs, hyperparameters, dataset paths, environment variables | You need to know what's tunable and how to reproduce a run |
 
-The spec **starts at four files and grows organically**. If a topic outgrows its file (e.g. data-model.md becomes too large because the project has many feature sets), split it: `data-model-features.md`, `data-model-artifacts.md`. Don't force everything into the original four.
+The spec **starts at five files and grows organically**. If a topic outgrows its file (e.g. data-model.md becomes too large because the project has many feature sets), split it: `data-model-features.md`, `data-model-artifacts.md`. Don't force everything into the original five.
 
 ## Maintenance rules
 

@@ -8,7 +8,7 @@
 src/          ← code outputs (what you write)
 artifacts/    ← non-code outputs (rendered diagrams, exports, schemas)
 docs/         ← spec + planning + history (the source-of-truth side)
-  spec/           authoritative current-state snapshot — SPEC.md, behaviors, data-model, interfaces, configuration
+  spec/           authoritative current-state snapshot — SPEC.md, behaviors, architecture, data-model, interfaces, configuration
   architecture/   narrative overview, diagrams.md, ADRs, tech stack
   plans/          roadmap, sprints
   tasks/          active, backlog, completed task files

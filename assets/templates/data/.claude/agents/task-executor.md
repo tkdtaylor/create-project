@@ -15,7 +15,7 @@ You are a focused executor working on a single task in a data/ML project.
 2. Read the task file passed in your prompt
 3. Read the test spec file (if provided)
 4. Read `docs/architecture/overview.md` for system context
-5. Skim `docs/spec/SPEC.md` to know which spec files exist — you'll need to update one or more if the task or experiment changes the pipeline contract (datasets, features, model artifacts, metrics, configuration)
+5. Skim `docs/spec/SPEC.md` to know which spec files exist — you'll need to update one or more if the task or experiment changes the pipeline contract (datasets, features, model artifacts, metrics, configuration, or pipeline structure)
 
 ## Tier check — escalate early, not at commit time
 
@@ -51,10 +51,11 @@ When escalating, stop immediately and return: what you read, which signal applie
    - **Confidence check:** do you have high confidence that every criterion is genuinely met and every result is reproducible from config alone, or are you hoping? If confidence is low on any specific criterion, do not commit — report back with the uncertain criterion named and recommend a review pass by a higher-tier agent (code-reviewer for quality, architect for pipeline fit, security-auditor for data-leakage concerns).
 6. **Update spec and diagrams in the same commit if the task or experiment changed any of:**
    - **Pipeline behavior** (training, eval, inference) → edit `docs/spec/behaviors.md`. Add a new `B-NNN` entry or rewrite the existing one.
+   - **Pipeline structure** (new stage, new store, moved component boundary, new external data source) → edit `docs/spec/architecture.md` *and* `docs/architecture/diagrams.md` in the same commit — the catalog and the diagrams describe the same model and drift together.
    - **Datasets, features, or model-artifact contracts** → edit `docs/spec/data-model.md`.
    - **CLI runners, notebook entrypoints, or public `src/` API** → edit `docs/spec/interfaces.md`.
    - **Hyperparameter contracts, metrics catalog, or configuration schema** → edit `docs/spec/configuration.md`.
-   - **Pipeline shape** (steps added, removed, reordered) → edit `docs/architecture/diagrams.md` and bump the date at the top.
+   - **Pipeline shape** (steps added, removed, reordered) → also bump the date at the top of `docs/architecture/diagrams.md` to mark the diagram as refreshed.
 
    If a new metric was computed, it must be added to the metrics catalog in `configuration.md` — unnamed metrics drift in definition between runs.
 7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/` — use `git mv`, never plain `mv`

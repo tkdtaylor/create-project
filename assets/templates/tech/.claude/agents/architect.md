@@ -72,14 +72,15 @@ When asked to draft an Architecture Decision Record:
 
 When asked to audit drift between the spec, the diagrams, and the code:
 
-1. **Scope the audit.** If the user named a subsystem or spec file, audit just that. Otherwise, ask: "Full audit (every spec file vs. all of `src/`) or scoped to one of behaviors / data-model / interfaces / configuration / diagrams?" Full audits are slow — confirm before starting.
+1. **Scope the audit.** If the user named a subsystem or spec file, audit just that. Otherwise, ask: "Full audit (every spec file vs. all of `src/`) or scoped to one of behaviors / architecture / data-model / interfaces / configuration / diagrams?" Full audits are slow — confirm before starting.
 
 2. **For each spec file in scope, sample the code.** Don't try to read the whole codebase. Pick a representative slice based on what the file claims:
    - `behaviors.md` → grep for handler/entry-point names and read those plus their immediate callees
+   - `architecture.md` → for each row in Containers, verify the source path exists and is a deployable unit; for each row in Components, verify the source path exists and the `Depends on` edges resolve to imports / call sites; cross-check the row set against `diagrams.md` (the diagram and the catalog must describe the same model)
    - `data-model.md` → read schema definitions, migrations, and type definitions; spot-check that field lists match
    - `interfaces.md` → read CLI argument parsers, route definitions, public trait/interface declarations
    - `configuration.md` → read config struct/dict definitions and default values; check env var reads
-   - `diagrams.md` → read the entry points and the modules named as boxes; verify the named edges exist as imports/calls
+   - `diagrams.md` → read the entry points and the modules named as boxes; verify the named edges exist as imports/calls; cross-check that every C4 box in the diagrams has a matching row in `architecture.md`
 
 3. **Compare and categorize findings.** For every mismatch, classify as:
    - **Spec is wrong** — code is the truth; the spec entry must be rewritten to match

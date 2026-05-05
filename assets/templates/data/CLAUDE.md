@@ -22,7 +22,7 @@ models/        <- saved model artifacts (gitignored)
 tests/         <- unit tests for src/ modules
 artifacts/     <- reports, exported plots, presentations
 docs/          <- spec + planning + history (the source-of-truth side)
-  spec/          authoritative current-state snapshot — SPEC.md, behaviors, data-model, interfaces, configuration
+  spec/          authoritative current-state snapshot — SPEC.md, behaviors, architecture, data-model, interfaces, configuration
   architecture/  narrative overview, diagrams.md, ADRs, tech stack
   plans/         roadmap
   tasks/         active, backlog, completed task files

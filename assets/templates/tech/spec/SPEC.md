@@ -27,16 +27,17 @@ The code is one *realization* of this spec. If the spec and code disagree, one o
 
 When ADR-005 supersedes ADR-001, the spec just reflects the new choice. The ADRs preserve the reasoning trail; the spec preserves the current truth.
 
-## The four files
+## The five files
 
 | File | Covers | Read this when |
 |------|--------|---------------|
 | [behaviors.md](behaviors.md) | What the system does — user-facing behaviors, use cases, observable contracts | You need to know what should happen when X |
+| [architecture.md](architecture.md) | C4 element catalog — persons, systems, containers, components, cross-cutting decisions | You need a structured/queryable view of the architecture (paired with [`../architecture/diagrams.md`](../architecture/diagrams.md)) |
 | [data-model.md](data-model.md) | Entities, schemas, persistent state, in-memory state shape | You need to know what data exists and how it's structured |
 | [interfaces.md](interfaces.md) | External and internal interfaces — CLI, APIs, public traits, wire protocols | You need to know what calls into or out of the system |
 | [configuration.md](configuration.md) | Env vars, config files, runtime parameters, deployment knobs | You need to know what's tunable |
 
-The spec **starts at four files and grows organically**. If a topic outgrows its file (e.g. interfaces.md becomes too large because the project exposes both a CLI and a wire protocol), split it: `interfaces-cli.md`, `interfaces-protocol.md`. Don't force everything into the original four.
+The spec **starts at five files and grows organically**. If a topic outgrows its file (e.g. interfaces.md becomes too large because the project exposes both a CLI and a wire protocol), split it: `interfaces-cli.md`, `interfaces-protocol.md`. Don't force everything into the original five.
 
 ## Maintenance rules
 
