@@ -31,7 +31,8 @@ project-root/
     │   ├── architecture.md           #   C4 element catalog + datasets (paired with diagrams.md)
     │   ├── data-model.md             #   Datasets, features, model artifacts, results schema
     │   ├── interfaces.md             #   CLI runners, notebook entrypoints, public src/ API
-    │   └── configuration.md          #   Experiment configs, env vars, metrics catalog
+    │   ├── configuration.md          #   Experiment configs, env vars, metrics catalog
+    │   └── fitness-functions.md      #   Executable invariants — reproducibility, raw immutability, perf budgets (run via `make fitness`)
     ├── architecture/
     │   ├── overview.md               # Narrative tour of the pipeline
     │   ├── diagrams.md               # Mermaid data lineage + pipeline flows
@@ -119,6 +120,7 @@ Templates come from three directories:
 | `spec/data-model.md` | `docs/spec/data-model.md` |
 | `spec/interfaces.md` | `docs/spec/interfaces.md` |
 | `spec/configuration.md` | `docs/spec/configuration.md` |
+| `spec/fitness-functions.md` | `docs/spec/fitness-functions.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `experiment-tracker.md` | `docs/tasks/experiment-tracker.md` |
@@ -142,6 +144,7 @@ Templates come from three directories:
 | `.claude/scripts/spec-coverage-check.py` | `.claude/scripts/spec-coverage-check.py` |
 | `.claude/scripts/scope-drift-summary.py` | `.claude/scripts/scope-drift-summary.py` |
 | `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
+| `.claude/scripts/check-fitness.py` | `.claude/scripts/check-fitness.py` |
 
 **From `common/`** (copy as-is, no placeholders):
 
@@ -162,7 +165,7 @@ All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) 
 
 **Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
 - `task-executor` (fast) — ephemeral single-task executor with TDD + experiment workflow
-- `architect` (deep) — pipeline design review and ADR drafting
+- `architect` (deep) — pipeline design review, ADR drafting, drift audit, and fitness function proposal (incl. reproducibility contracts)
 - `code-reviewer` (balanced) — structured review with data integrity and reproducibility perspectives
 - `security-auditor` (deep) — data leakage, credential exposure, injection risks
 - `spec-verifier` (balanced) — assertion-by-assertion check that the implementation matches the test spec; invoke before commit on completed tasks
@@ -674,7 +677,7 @@ Note: `nbstripout` strips notebook outputs before commits — prevents accidenta
 **3. Create a Makefile (if one doesn't exist)**
 
 ```makefile
-.PHONY: lint format test check notebook-clean
+.PHONY: lint format test fitness check notebook-clean
 
 lint:
 	ruff check src/ tests/
@@ -688,9 +691,18 @@ test:
 notebook-clean:
 	nbstripout notebooks/*.ipynb
 
-check: lint test
+fitness:
+	# Run all fitness functions defined in docs/spec/fitness-functions.md.
+	# Add `fitness-<rule>` sub-targets and list them as prerequisites here.
+	# For data projects, reproducibility and data-integrity rules are usually first
+	# (see references/fitness-functions.md in the create-project skill).
+	@echo "No fitness functions defined yet. Add rules in docs/spec/fitness-functions.md and wire them up here."
+
+check: lint test fitness
 	@echo "All checks passed."
 ```
+
+The `fitness` target stays empty/vacuous at scaffold time — the user wires in rules later (or invokes the `architect` agent in fitness-function-proposal mode to seed them). The Stop hook `check-fitness.py` (strict profile) runs `make fitness` automatically; an empty target is a no-op so this stays silent until the user opts in.
 
 If a `Makefile` already exists, add missing targets only.
 

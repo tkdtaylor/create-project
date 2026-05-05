@@ -20,7 +20,8 @@ project-root/
     │   ├── architecture.md           #   C4 element catalog (paired with diagrams.md)
     │   ├── data-model.md             #   Entities, schemas, state
     │   ├── interfaces.md             #   CLI, APIs, public surfaces
-    │   └── configuration.md          #   Env vars, configs, runtime knobs
+    │   ├── configuration.md          #   Env vars, configs, runtime knobs
+    │   └── fitness-functions.md      #   Executable architectural invariants (run via `make fitness`)
     ├── architecture/
     │   ├── overview.md               # Narrative system tour
     │   ├── diagrams.md               # Mermaid diagrams (system + flows)
@@ -93,6 +94,7 @@ Templates come from two directories:
 | `spec/data-model.md` | `docs/spec/data-model.md` |
 | `spec/interfaces.md` | `docs/spec/interfaces.md` |
 | `spec/configuration.md` | `docs/spec/configuration.md` |
+| `spec/fitness-functions.md` | `docs/spec/fitness-functions.md` |
 | `roadmap.md` | `docs/plans/roadmap.md` |
 | `coverage-tracker.md` | `docs/tasks/test-specs/coverage-tracker.md` |
 | `.claude/settings.json` | `.claude/settings.json` |
@@ -103,6 +105,7 @@ Templates come from two directories:
 | `.claude/scripts/spec-coverage-check.py` | `.claude/scripts/spec-coverage-check.py` |
 | `.claude/scripts/scope-drift-summary.py` | `.claude/scripts/scope-drift-summary.py` |
 | `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
+| `.claude/scripts/check-fitness.py` | `.claude/scripts/check-fitness.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
@@ -133,11 +136,11 @@ All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) 
 |---------|-------|
 | **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits), `protect-checkout` (block `git checkout -- <path>` over a dirty tree) |
 | **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns), `inject-retros` (SessionStart — surface relevant Failure-mode entries from CLAUDE.md), `spec-coverage-check` (block `git commit` if active task's TC markers have no test references), `scope-drift-summary` (Stop — print one-line summary of diff vs spec coverage), `detect-smoke-tests` (Stop — flag tests in diff with no assertions) |
-| **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `desktop-notify` (OS notification on completion) |
+| **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `check-fitness` (Stop — runs `make fitness` if defined, warns on failures, doesn't block), `desktop-notify` (OS notification on completion) |
 
 **Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
 - `task-executor` (fast) — ephemeral single-task executor with TDD and self-review
-- `architect` (deep) — design review and ADR drafting
+- `architect` (deep) — design review, ADR drafting, drift audit, and fitness function proposal
 - `code-reviewer` (balanced) — structured multi-perspective code review
 - `security-auditor` (deep) — OWASP Top 10 audit
 - `spec-verifier` (balanced) — assertion-by-assertion check that the implementation matches the test spec; invoke before commit on completed tasks
@@ -780,7 +783,7 @@ No pre-commit framework needed — `cargo clippy` and `cargo fmt` are standard.
 Add a `Makefile` with standard targets so commands are discoverable and consistent:
 
 ```makefile
-.PHONY: lint format test check
+.PHONY: lint format test fitness check
 
 lint:
 	# TODO: fill in (e.g. ruff check src/, npx eslint src/, golangci-lint run)
@@ -791,11 +794,19 @@ format:
 test:
 	# TODO: fill in (e.g. pytest, npm test, go test ./..., cargo test)
 
-check: lint test
+fitness:
+	# Run all architectural fitness functions defined in docs/spec/fitness-functions.md.
+	# Add `fitness-<rule>` sub-targets and list them as prerequisites here.
+	# Empty by default — passes vacuously until the user defines rules.
+	@echo "No fitness functions defined yet. Add rules in docs/spec/fitness-functions.md and wire them up here."
+
+check: lint test fitness
 	@echo "All checks passed."
 ```
 
-Fill in the actual commands based on the detected stack. If a `Makefile` already exists, add missing targets only.
+Fill in `lint`, `format`, and `test` based on the detected stack. Leave the `fitness` target empty/vacuous — the user wires in rules later (or invokes the `architect` agent in fitness-function-proposal mode to seed them). The Stop hook `check-fitness.py` (strict profile) runs `make fitness` automatically; an empty target is a no-op so this stays silent until the user opts in.
+
+If a `Makefile` already exists, add missing targets only.
 
 **4. Update CLAUDE.md commands**
 

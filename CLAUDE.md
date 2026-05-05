@@ -14,19 +14,20 @@ references/                  <- step-by-step setup guides and catalogs
   sync-skills.md               S1-S5: skill sync with three-way merge
   tooling.md                   skills, hooks, agents, MCPs catalog
   framework-snippets.md        stack-specific CLAUDE.md convention snippets
+  fitness-functions.md         per-stack catalog of fitness-function tools (import-linter, dep-cruiser, ArchUnit, k6, etc.)
 assets/
   templates/
     common/.claude/scripts/    9 universal hook scripts (all project types)
-    tech/                      tech templates incl. C4 diagrams.md, spec/ (6 files incl. architecture.md), settings, agents, 3 tech-only hooks, scripts/check-task-state.sh
-    data/                      data templates incl. C4 diagrams.md, spec/ (6 files incl. architecture.md), settings, agents, scripts/check-task-state.sh (hooks from common/ + tech/)
+    tech/                      tech templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents, tech-only hooks (incl. check-fitness.py), scripts/check-task-state.sh
+    data/                      data templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents, scripts/check-task-state.sh (hooks from common/ + tech/)
     research/                  research templates, settings, agents, scripts/check-task-state.sh (hooks from common/)
   base/                        shared Docker base images (Dockerfiles + entrypoints)
 evals/evals.json             3 test cases with assertions
 ```
 
-Key design: `common/` holds hooks shared across all types. `tech/` holds hooks only for code projects (config-protection, edit-tracker, batch-format-typecheck). `data/` and `research/` have no scripts of their own — they pull from `common/` and (for data) `tech/`.
+Key design: `common/` holds hooks shared across all types. `tech/` holds hooks only for code projects (config-protection, edit-tracker, batch-format-typecheck, check-fitness, etc.). `data/` and `research/` have no scripts of their own — they pull from `common/` and (for data) `tech/`.
 
-**Spec and diagrams:** tech and data templates ship `diagrams.md` (C4-structured Mermaid — Context/Container/Component + sequence/lineage flows) and `spec/` (SPEC + behaviors + architecture + data-model + interfaces + configuration) as the **authoritative current-state snapshot** of generated projects. These are dual-natured: outputs of every task that changes externally-visible state, *and* inputs to onboarding, drift checks, and codebase regeneration. They live at `docs/architecture/diagrams.md` and `docs/spec/` in scaffolded projects. The `spec/architecture.md` file is the *tabular* C4 element catalog that pairs with the *visual* diagrams — they describe the same model in two forms. Research projects do not get them (the outline is the spec equivalent). The `architect` agent has a third mode (drift-audit) that compares spec and diagrams against the code.
+**Spec and diagrams:** tech and data templates ship `diagrams.md` (C4-structured Mermaid — Context/Container/Component + sequence/lineage flows) and `spec/` (SPEC + behaviors + architecture + data-model + interfaces + configuration + fitness-functions) as the **authoritative current-state snapshot** of generated projects. These are dual-natured: outputs of every task that changes externally-visible state, *and* inputs to onboarding, drift checks, and codebase regeneration. They live at `docs/architecture/diagrams.md` and `docs/spec/` in scaffolded projects. The `spec/architecture.md` file is the *tabular* C4 element catalog that pairs with the *visual* diagrams — they describe the same model in two forms. The `spec/fitness-functions.md` file is the declarative list of executable architectural invariants (run via `make fitness`); it complements drift-audit (which is semantic and on-demand) by enforcing the rules continuously. Research projects do not get them (the outline is the spec equivalent). The `architect` agent has four modes: design review, ADR drafting, drift audit, and fitness-function proposal.
 
 ## How it works
 

@@ -134,7 +134,7 @@ If `docs/architecture/diagrams.md` already exists, read it first and update / ap
 
 ## Step A4c — Generate spec/ (tech and data only)
 
-Write the five-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
+Write the six-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
 
 ```bash
 mkdir -p docs/spec
@@ -150,6 +150,7 @@ For each file, copy the template from `$CLAUDE_SKILL_DIR/assets/templates/<type>
 | `data-model.md` | Persistent stores (DB schemas, file formats), in-memory state (key types and their lock/sharing rules), wire / interchange formats (JSON over HTTP, log formats, exports), data invariants enforced in code |
 | `interfaces.md` | CLI surface (every subcommand and flag), HTTP/RPC API endpoints, internal public traits/interfaces (anything other modules depend on), external services called |
 | `configuration.md` | Config files (read the parsing code for the schema), env vars (grep for them), runtime flags (cross-reference interfaces.md), secrets (names only, never values) |
+| `fitness-functions.md` | Architectural invariants worth enforcing as executable checks. Seed proposals from what the audit revealed: existing layering rules (e.g. observed import patterns), perf-critical paths, security claims, dataset immutability rules. Mark each as `proposed` until the user confirms — and **only seed a row if you can also point to where the rule is currently enforced (or unenforced)**. Don't invent rules. If nothing in the codebase suggests a real invariant, leave the rules table with example rows and a note that the user (or `architect` Mode 4) should fill it in. |
 
 **Reproducibility for data projects:** read `experiments/configs/` and `experiments/results/` if they exist. The `configuration.md` reproducibility contract should reflect what the project actually records — and call out anything missing as a finding.
 
@@ -209,7 +210,7 @@ fi
 cp "$TEMPLATE_DIR/.claude/agents/"*.md .claude/agents/
 ```
 
-For **tech/data projects**, this copies all 13 hook scripts and 4 agents (task-executor, architect, code-reviewer, security-auditor). For **research projects**, this copies 9 universal hooks and only task-executor.
+For **tech/data projects**, this copies the universal hooks plus the tech-only hooks (config-protection, protect-checkout, edit-tracker, batch-format-typecheck, spec-coverage-check, scope-drift-summary, detect-smoke-tests, check-fitness) and 5 agents (task-executor, architect, code-reviewer, security-auditor, spec-verifier). For **research projects**, this copies the universal hooks and only task-executor.
 
 Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 

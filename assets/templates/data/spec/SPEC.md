@@ -27,7 +27,7 @@ The code is one *realization* of this spec. If the spec and code disagree, one o
 
 When a model architecture or feature set is replaced, the spec just reflects the new choice. The ADRs preserve the reasoning trail; the spec preserves the current truth.
 
-## The five files
+## The six files
 
 | File | Covers | Read this when |
 |------|--------|---------------|
@@ -36,8 +36,18 @@ When a model architecture or feature set is replaced, the spec just reflects the
 | [data-model.md](data-model.md) | Datasets, schemas, feature definitions, model artifacts, experiment results | You need to know what data exists and how it's structured |
 | [interfaces.md](interfaces.md) | CLI runners, notebook entrypoints, model serving APIs, public Python modules | You need to know how to invoke or extend the pipeline |
 | [configuration.md](configuration.md) | Experiment configs, hyperparameters, dataset paths, environment variables | You need to know what's tunable and how to reproduce a run |
+| [fitness-functions.md](fitness-functions.md) | Executable invariants — reproducibility contracts, raw-data immutability, split determinism, perf and resource budgets, layering | You're adding a continuous check, or wondering why `make fitness` exists |
 
-The spec **starts at five files and grows organically**. If a topic outgrows its file (e.g. data-model.md becomes too large because the project has many feature sets), split it: `data-model-features.md`, `data-model-artifacts.md`. Don't force everything into the original five.
+The spec **starts at six files and grows organically**. If a topic outgrows its file (e.g. data-model.md becomes too large because the project has many feature sets), split it: `data-model-features.md`, `data-model-artifacts.md`. Don't force everything into the original six.
+
+### Spec vs. fitness functions vs. drift audit
+
+The first five files describe what *is*; `fitness-functions.md` declares what *must always hold* and is checkable by a tool. The two are different shapes of truth:
+
+- The spec describes the pipeline. Drift audit (the `architect` agent's mode 3) reconciles spec docs against the code on demand.
+- Fitness functions enforce invariants on every run of `make fitness` — locally, and at Stop in the `strict` hook profile. For data projects this is where the reproducibility contract lives in executable form: every "every experiment must record its seed" or "splits must be deterministic from config" claim is a fitness function, not a doc note.
+
+If the rule can be expressed as code, prefer a fitness function over relying on drift audit to catch a regression after the fact.
 
 ## Maintenance rules
 

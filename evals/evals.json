@@ -13,7 +13,7 @@
         "CLAUDE.md mentions FastAPI or Python in the tech stack or commands section",
         "The directory structure includes a src/ directory",
         "The directory structure includes docs/tasks/ or docs/tasks/active/",
-        "The directory structure includes docs/spec/ with SPEC.md, behaviors.md, architecture.md, data-model.md, interfaces.md, and configuration.md",
+        "The directory structure includes docs/spec/ with SPEC.md, behaviors.md, architecture.md, data-model.md, interfaces.md, configuration.md, and fitness-functions.md",
         "docs/architecture/diagrams.md exists and contains at least one mermaid code block (C4Context, C4Container, C4Component, sequenceDiagram, or flowchart)",
         "CLAUDE.md mentions updating docs/spec/ in the same commit as code changes (or equivalent spec maintenance rule)",
         "CLAUDE.md contains a '## Recommended tooling' section",

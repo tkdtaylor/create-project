@@ -247,6 +247,7 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/scripts/spec-coverage-check.py` | tech, data |
 | `.claude/scripts/scope-drift-summary.py` | tech, data |
 | `.claude/scripts/detect-smoke-tests.py` | tech, data |
+| `.claude/scripts/check-fitness.py` | tech, data |
 | `.claude/agents/task-executor.md` | Yes |
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |

@@ -17,14 +17,14 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 7. **Technical / Data:** sets up an isolated workspace automatically — Docker Sandbox (`sbx`) when available (microVM with network policies and credential proxy), falling back to Docker Engine (shared base image + project-specific image + per-project named volume) on Linux or CI
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
-10. Ships four agents out of the box: task-executor (TDD workflow), architect (design review + ADRs), code-reviewer (10 structured review perspectives), and security-auditor (OWASP Top 10). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
-11. Installs twelve hooks across five lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, plan-to-tasks restructuring, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, and desktop notifications
+10. Ships five agents out of the box: task-executor (TDD workflow), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
+11. Installs hooks across six lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, plan-to-tasks restructuring, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, fitness-function execution (`make fitness`), and desktop notifications
 12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
 13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — defaults to **intelligent merge over overwrite**, prompts only when a merge can't reconcile, and prints a per-file diff summary so `git diff` is the safety net rather than a wall of confirmation prompts
 
 ## First-time setup
 
-Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures twelve hooks across five lifecycle events (safety, workflow, and formatting), all gated by `CLAUDE_HOOK_PROFILE` environment variable (minimal/standard/strict). No manual configuration needed per project.
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures hooks across six lifecycle events (safety, workflow, formatting, and fitness-function execution), all gated by `CLAUDE_HOOK_PROFILE` environment variable (minimal/standard/strict). No manual configuration needed per project.
 
 If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
 
@@ -137,8 +137,8 @@ code --install-extension ms-vscode-remote.remote-containers
 
 | Type | Use when | Key structure |
 |------|----------|---------------|
-| **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/spec/` (authoritative current-state snapshot incl. `architecture.md` C4 element catalog), `docs/architecture/` (overview, C4 Mermaid diagrams, ADRs), `docs/tasks/` with TDD scaffolding (test specs before tasks) |
-| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/` (with structured sandbox template), `models/`, `tests/`, `docs/spec/` (pipeline + reproducibility contract incl. `architecture.md` C4 catalog with datasets), `docs/architecture/` (overview, C4 Mermaid + lineage diagrams, ADRs), with dual TDD + experiment tracking |
+| **technical** | Building software — APIs, CLIs, scripts, automation | `src/`, `artifacts/`, `docs/spec/` (authoritative current-state snapshot incl. `architecture.md` C4 element catalog and `fitness-functions.md` executable invariants), `docs/architecture/` (overview, C4 Mermaid diagrams, ADRs), `docs/tasks/` with TDD scaffolding (test specs before tasks) |
+| **data** | Data science or machine learning — model training, data pipelines, analytics, experiment-driven work | `data/`, `notebooks/`, `src/`, `experiments/` (with structured sandbox template), `models/`, `tests/`, `docs/spec/` (pipeline + reproducibility contract incl. `architecture.md` C4 catalog with datasets and `fitness-functions.md` executable reproducibility/integrity invariants), `docs/architecture/` (overview, C4 Mermaid + lineage diagrams, ADRs), with dual TDD + experiment tracking |
 | **research** | Synthesising information — literature reviews, competitive analysis, report writing | `sources/`, `notes/`, `outputs/` (with decision brief, deep research, and learning plan templates), `docs/` |
 | **other** | Planning, tracking, organising — wedding planning, job search, project management | Research base structure with domain-specific top-level folders (e.g. `vendors/`, `budget/`, `timeline/`) chosen by the user |
 
@@ -246,6 +246,7 @@ assets/
         data-model.md            # entities, schemas, state, wire formats
         interfaces.md            # CLI / API / public surfaces
         configuration.md         # env vars, configs, runtime knobs
+        fitness-functions.md     # executable architectural invariants (run via `make fitness`)
       scripts/
         check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
       .claude/
@@ -258,9 +259,10 @@ assets/
           spec-coverage-check.py # blocks `git commit` if active task's TC markers have no test references
           scope-drift-summary.py # Stop — one-line diff vs spec coverage summary
           detect-smoke-tests.py  # Stop — flags tests in diff with no assertions
+          check-fitness.py       # Stop — runs `make fitness` if defined (strict profile, warn-only)
         agents/
           task-executor.md       # ephemeral agent for executing one task at a time
-          architect.md           # design review + ADR drafting + spec/diagram drift audit (tier: deep)
+          architect.md           # design review + ADR drafting + drift audit + fitness-function proposal (tier: deep)
           code-reviewer.md       # structured multi-perspective code review (tier: balanced)
           security-auditor.md    # OWASP Top 10 application security audit (tier: deep)
           spec-verifier.md       # assertion-by-assertion spec adherence check before commit (tier: balanced)
@@ -281,6 +283,7 @@ assets/
         data-model.md            # datasets, features, model artifacts, results schema
         interfaces.md            # CLI runners, notebook entrypoints, public src/ API
         configuration.md         # experiment configs, env vars, metrics catalog
+        fitness-functions.md     # executable invariants — reproducibility, raw-data immutability, perf budgets
       scripts/
         check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
       .claude/                   # settings + agents (hooks from common/ + tech/)
@@ -393,6 +396,7 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/scripts/spec-coverage-check.py` | `tech/` | Pre-commit — blocks `git commit` if active task's TC markers have no test references (tech/data only) |
 | `.claude/scripts/scope-drift-summary.py` | `tech/` | Stop — prints one-line summary of diff vs spec coverage (tech/data only) |
 | `.claude/scripts/detect-smoke-tests.py` | `tech/` | Stop — flags tests in current diff with no assertion / panic / expect (tech/data only) |
+| `.claude/scripts/check-fitness.py` | `tech/` | Stop — runs `make fitness` if defined; warn-only (tech/data only, strict profile) |
 | `.claude/agents/task-executor.md` | `<type>/` | Ephemeral agent for executing one task at a time |
 | `.claude/agents/architect.md` | `<type>/` | Architecture review + ADR drafting (tech/data only) |
 | `.claude/agents/code-reviewer.md` | `<type>/` | Structured multi-perspective code review (tech/data only) |
@@ -447,7 +451,7 @@ The skill will:
 3. **Generate `CLAUDE.md`** — a project context file based on the *actual* code, not generic templates. Includes real commands, real structure, real conventions discovered from the codebase
 4. **Generate `docs/architecture/overview.md`** — component map, data flow, key dependencies, entry points — all derived from reading the code
 5. **Generate `docs/architecture/diagrams.md`** *(tech / data)* — C4-structured Mermaid (Context → Container → Component → sequence; data projects also get end-to-end lineage), populated from the actual modules, deployable units, and import graph
-6. **Generate `docs/spec/`** *(tech / data)* — five-file authoritative snapshot: SPEC.md, behaviors.md, architecture.md (the tabular C4 element catalog paired with the diagrams), data-model.md, interfaces.md, configuration.md, all populated from the code with explicit TODOs flagged where the code is ambiguous
+6. **Generate `docs/spec/`** *(tech / data)* — six-file authoritative snapshot: SPEC.md, behaviors.md, architecture.md (the tabular C4 element catalog paired with the diagrams), data-model.md, interfaces.md, configuration.md, fitness-functions.md (executable architectural invariants — for data projects this includes the reproducibility contract), all populated from the code with explicit TODOs flagged where the code is ambiguous
 7. **Create task structure** — `docs/tasks/active/`, `backlog/`, `completed/`, and test-spec tracking so plan mode and the task-executor work
 8. **Copy hooks and agents** — settings.json, hook scripts, and agent templates (task-executor, architect, code-reviewer, security-auditor for tech/data projects)
 9. **Configure model tiers** — detect available models and set the best one for each agent

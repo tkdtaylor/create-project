@@ -27,7 +27,7 @@ The code is one *realization* of this spec. If the spec and code disagree, one o
 
 When ADR-005 supersedes ADR-001, the spec just reflects the new choice. The ADRs preserve the reasoning trail; the spec preserves the current truth.
 
-## The five files
+## The six files
 
 | File | Covers | Read this when |
 |------|--------|---------------|
@@ -36,8 +36,18 @@ When ADR-005 supersedes ADR-001, the spec just reflects the new choice. The ADRs
 | [data-model.md](data-model.md) | Entities, schemas, persistent state, in-memory state shape | You need to know what data exists and how it's structured |
 | [interfaces.md](interfaces.md) | External and internal interfaces — CLI, APIs, public traits, wire protocols | You need to know what calls into or out of the system |
 | [configuration.md](configuration.md) | Env vars, config files, runtime parameters, deployment knobs | You need to know what's tunable |
+| [fitness-functions.md](fitness-functions.md) | Executable architectural invariants — layering, perf budgets, security thresholds, complexity ceilings | You're adding a continuous check, or wondering why `make fitness` exists |
 
-The spec **starts at five files and grows organically**. If a topic outgrows its file (e.g. interfaces.md becomes too large because the project exposes both a CLI and a wire protocol), split it: `interfaces-cli.md`, `interfaces-protocol.md`. Don't force everything into the original five.
+The spec **starts at six files and grows organically**. If a topic outgrows its file (e.g. interfaces.md becomes too large because the project exposes both a CLI and a wire protocol), split it: `interfaces-cli.md`, `interfaces-protocol.md`. Don't force everything into the original six.
+
+### Spec vs. fitness functions vs. drift audit
+
+The first five files describe what *is*; `fitness-functions.md` declares what *must always hold* and is checkable by a tool. The two are different shapes of truth:
+
+- The spec describes the system. Drift audit (the `architect` agent's mode 3) reconciles spec docs against the code on demand.
+- Fitness functions enforce invariants on every run of `make fitness` — locally, and at Stop in the `strict` hook profile. They are the executable backbone of the architectural rules the spec implies.
+
+If the rule can be expressed as code, prefer a fitness function over relying on drift audit to catch a regression after the fact.
 
 ## Maintenance rules
 
