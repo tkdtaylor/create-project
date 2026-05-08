@@ -24,26 +24,18 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 
 ## Across the Claude Code stack
 
-Claude Code can be framed as a five-layer stack — memory, knowledge, guardrails, delegation, distribution — wrapped by MCP servers on one side and agent teams on the other. `create-project` deposits artifacts at every layer in a single setup pass, so a project starts the way a mature one looks:
+A Claude Code project can be customized at four layers — project memory, subagents, hooks, and skills. `create-project` deposits artifacts at every layer in a single setup pass, so a project starts the way a mature one looks:
 
 ```mermaid
 flowchart TB
-    MCP["<b>MCP Servers</b><br/>tooling.md catalogs<br/>recommended MCPs<br/>per project type"]
-    TEAMS["<b>Agent Teams</b><br/>docs/spec/ + diagrams.md<br/>onboard humans and<br/>future agents alike"]
-
-    subgraph STACK[" "]
-        direction TB
-        L1["<b>Layer 1 · CLAUDE.md</b> — Memory<br/>Generated CLAUDE.md with framework snippets,<br/>three-tier boundaries, retros, repo map"]
-        L2["<b>Layer 2 · Skills</b> — Knowledge<br/>Ships as a skill itself + sync-skills flow<br/>that updates other globally installed skills"]
-        L3["<b>Layer 3 · Hooks</b> — Guardrails<br/>17 hooks across 6 lifecycle events,<br/>profile-gated (minimal / standard / strict)"]
-        L4["<b>Layer 4 · Subagents</b> — Delegation<br/>task-executor · architect · code-reviewer ·<br/>security-auditor · spec-verifier"]
-        L5["<b>Layer 5 · Plugins</b> — Distribution<br/>Copy/clone-installable bundle with<br/>manifest tracking + three-way sync"]
-        L1 --> L2 --> L3 --> L4 --> L5
-    end
-
-    MCP -.-> STACK
-    STACK -.-> TEAMS
+    L1["<b>CLAUDE.md</b> — Project memory<br/>Generated from the actual codebase:<br/>framework snippets, three-tier boundaries,<br/>retros, repo map"]
+    L2["<b>.claude/agents/</b> — Subagents<br/>task-executor · architect · code-reviewer ·<br/>security-auditor · spec-verifier<br/>(+ 4 optional agents)"]
+    L3["<b>.claude/scripts/ + settings.json</b> — Hooks<br/>17 hooks across 6 lifecycle events,<br/>profile-gated (minimal / standard / strict)"]
+    L4["<b>~/.claude/skills/</b> — Skills<br/>This skill itself, plus a sync-skills flow<br/>that keeps other globally installed skills updated"]
+    L1 --> L2 --> L3 --> L4
 ```
+
+The skill also ships `docs/spec/` + `diagrams.md` as the project's authoritative current-state snapshot, and recommends suitable MCP servers via `tooling.md` — but neither of those is a Claude Code customization layer the skill writes to directly.
 
 ## First-time setup
 
