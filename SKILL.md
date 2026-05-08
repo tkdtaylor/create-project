@@ -1,6 +1,6 @@
 ---
 name: create-project
-description: Invoke when a user announces they are starting or creating something new — "start a project", "set up a project", "create a project", "scaffold a codebase" — OR when they want to adopt the create-project workflow for an existing codebase — "set up this project for Claude", "add project structure", "generate docs for this codebase", "onboard this repo" — OR when they want to sync or update skills — "sync my skills", "update my skills", "make sure my skills are up to date", "pull latest skill changes", "update project hooks", "update project agents". For new projects, scaffolds the full workspace. For existing codebases, analyzes what's there and generates baseline docs. For skill sync, checks globally installed skills for upstream updates and syncs managed project artifacts (hooks, agents, settings) from updated templates.
+description: Invoke when a user announces they are starting or creating something new — "start a project", "set up a project", "create a project", "scaffold a codebase" — OR when they want to adopt the create-project workflow for an existing codebase — "set up this project for Claude", "add project structure", "generate docs for this codebase", "onboard this repo" — OR when they want to sync or update skills — "sync my skills", "update my skills", "make sure my skills are up to date", "pull latest skill changes", "update project hooks", "update project agents" — OR when they want to audit a project for doc/spec/diagram drift after a round of tasks — "audit my project", "audit the docs", "drift check", "are docs up to date", "check for drift", "project audit", "post-task audit". For new projects, scaffolds the full workspace. For existing codebases, analyzes what's there and generates baseline docs. For skill sync, checks globally installed skills for upstream updates and syncs managed project artifacts. For project audit, dispatches parallel sub-agents per layer (inventory, hook wiring, spec drift, fitness rows, README freshness) and returns a prioritized punch list.
 ---
 
 # Create Project
@@ -26,6 +26,14 @@ If a user offers a secret in chat, refuse politely and ask them to put it direct
 Before starting the interview, check if the user is asking for a skill sync or update rather than a new project or adoption. Trigger phrases: "sync my skills", "update my skills", "make sure my skills are up to date", "pull latest skill changes", "update project hooks", "update project agents", "check for skill updates".
 
 If this is a sync request: read and follow `$CLAUDE_SKILL_DIR/references/sync-skills.md`. **Do not run Steps 1–3.**
+
+---
+
+## Audit?
+
+If the user is asking for a project audit rather than a new project, adoption, or sync. Trigger phrases: "audit my project", "audit the docs", "drift check", "are docs up to date", "check for drift", "project audit", "post-task audit".
+
+If this is an audit request: read and follow `$CLAUDE_SKILL_DIR/references/audit-project.md`. **Do not run Steps 1–3.** The audit dispatches five parallel/sequential sub-agents (inventory, hook wiring, spec drift, fitness rows, README freshness), aggregates findings, and offers to apply must-fix and should-fix items.
 
 ---
 
@@ -254,8 +262,17 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/agents/security-auditor.md` | tech, data |
 | `.claude/agents/spec-verifier.md` | tech, data |
 | `scripts/check-task-state.sh` | Yes |
+| `scripts/verify-worktree-isolation.sh` | tech, data |
 
-Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill.
+Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill. Optional agent templates the skill ships (`qa.md`, `docs-writer.md`, `task-planner.md`, `dependency-auditor.md`) are only added to the manifest if Step 3d installed them.
+
+**Starter / conditional files are intentionally NOT tracked in the manifest:**
+- `docs/architecture/agent-rules.md` — projects accumulate retro entries here, so sync should not overwrite. Sync only seeds it if absent.
+- `docs/architecture/diagrams.md` — gets edited as the architecture evolves.
+- `CLAUDE.md`, `README.md`, `docs/spec/*` — project-specific content with placeholders expanded at scaffold time.
+- `RELEASE_CHECKLIST.md`, `CONTRIBUTING.md` — only copied if the user opts in (Step 3a/3b in tech-project.md), so they're project-specific too.
+
+These files are excluded from the manifest by design: tracking them would either cause noisy "drift" reports for benign edits, or pressure sync to overwrite content the user actively maintains.
 
 For each managed file that exists in the project:
 
