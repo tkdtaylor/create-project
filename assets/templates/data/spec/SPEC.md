@@ -27,7 +27,7 @@ The code is one *realization* of this spec. If the spec and code disagree, one o
 
 When a model architecture or feature set is replaced, the spec just reflects the new choice. The ADRs preserve the reasoning trail; the spec preserves the current truth.
 
-## The six files
+## The six sub-files
 
 | File | Covers | Read this when |
 |------|--------|---------------|
@@ -38,7 +38,7 @@ When a model architecture or feature set is replaced, the spec just reflects the
 | [configuration.md](configuration.md) | Experiment configs, hyperparameters, dataset paths, environment variables | You need to know what's tunable and how to reproduce a run |
 | [fitness-functions.md](fitness-functions.md) | Executable invariants — reproducibility contracts, raw-data immutability, split determinism, perf and resource budgets, layering | You're adding a continuous check, or wondering why `make fitness` exists |
 
-The spec **starts at six files and grows organically**. If a topic outgrows its file (e.g. data-model.md becomes too large because the project has many feature sets), split it: `data-model-features.md`, `data-model-artifacts.md`. Don't force everything into the original six.
+The spec **starts at six sub-files (plus this SPEC.md index) and grows organically**. If a topic outgrows its file (e.g. data-model.md becomes too large because the project has many feature sets), split it: `data-model-features.md`, `data-model-artifacts.md`. Don't force everything into the original six.
 
 ### Spec vs. fitness functions vs. drift audit
 

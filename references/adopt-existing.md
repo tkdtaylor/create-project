@@ -147,7 +147,7 @@ If `docs/architecture/diagrams.md` already exists, read it first and update / ap
 
 ## Step A4c — Generate spec/ (tech and data only)
 
-Write the six-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
+Write the seven-file spec at `docs/spec/` based on what the code does today. Skip for research projects.
 
 ```bash
 mkdir -p docs/spec

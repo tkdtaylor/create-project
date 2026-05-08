@@ -27,7 +27,7 @@ The code is one *realization* of this spec. If the spec and code disagree, one o
 
 When ADR-005 supersedes ADR-001, the spec just reflects the new choice. The ADRs preserve the reasoning trail; the spec preserves the current truth.
 
-## The six files
+## The six sub-files
 
 | File | Covers | Read this when |
 |------|--------|---------------|
@@ -38,7 +38,7 @@ When ADR-005 supersedes ADR-001, the spec just reflects the new choice. The ADRs
 | [configuration.md](configuration.md) | Env vars, config files, runtime parameters, deployment knobs | You need to know what's tunable |
 | [fitness-functions.md](fitness-functions.md) | Executable architectural invariants — layering, perf budgets, security thresholds, complexity ceilings | You're adding a continuous check, or wondering why `make fitness` exists |
 
-The spec **starts at six files and grows organically**. If a topic outgrows its file (e.g. interfaces.md becomes too large because the project exposes both a CLI and a wire protocol), split it: `interfaces-cli.md`, `interfaces-protocol.md`. Don't force everything into the original six.
+The spec **starts at six sub-files (plus this SPEC.md index) and grows organically**. If a topic outgrows its file (e.g. interfaces.md becomes too large because the project exposes both a CLI and a wire protocol), split it: `interfaces-cli.md`, `interfaces-protocol.md`. Don't force everything into the original six.
 
 ### Spec vs. fitness functions vs. drift audit
 
