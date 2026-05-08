@@ -92,12 +92,12 @@ Templates come from two directories:
 | `decision-brief-template.md` | `outputs/templates/decision-brief.md` |
 | `deep-research-template.md` | `outputs/templates/deep-research.md` |
 | `learning-plan-template.md` | `outputs/templates/learning-plan.md` |
-| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 
-**From `common/`** (copy as-is, no placeholders):
+**From `common/`** (copy as-is, no placeholders — shared across all project types):
 
 | Template | Output path |
 |----------|-------------|
+| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
