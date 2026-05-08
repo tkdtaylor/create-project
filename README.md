@@ -435,6 +435,7 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/agents/qa.md` | `<type>/` | *(optional)* Read-only test-suite verification + spec/test/smoke gap classification (tech/data only) |
 | `.claude/agents/docs-writer.md` | `<type>/` | *(optional)* README / docstring / CHANGELOG synthesis from code + spec (tech/data only) |
 | `.claude/agents/task-planner.md` | `<type>/` | *(optional)* Feature breakdown into scoped tasks with paired test specs (tech/data only) |
+| `.claude/agents/dependency-auditor.md` | `tech/` | *(optional)* Cross-ecosystem dep scanning across Cargo / npm / PyPI / Go (tech only; data projects pull from tech/) |
 | `scripts/check-task-state.sh` | `common/scripts/` | Invariant check: each `NNN-*.md` task tracked in exactly one of `{backlog, active, completed}` (mode 755) |
 | `scripts/verify-worktree-isolation.sh` | `common/scripts/` | Post-dispatch audit confirming parallel agents respected `isolation: "worktree"` (tech/data only, mode 755) |
 | `docs/architecture/agent-rules.md` | `common/agent-rules.md` | Starter retro log paired with the `inject-retros.py` SessionStart hook (tech/data only) |
@@ -478,7 +479,7 @@ If your project was created before the `~/.claude/` writable mount fix, update y
 
 ## Auditing a project after a round of tasks
 
-When a batch of tasks finishes (or before tagging a release), say *"audit my project"*, *"drift check"*, or *"are docs up to date"*. The skill dispatches five focused sub-agents under `isolation: "worktree"`:
+When a batch of tasks finishes (or before tagging a release), say *"audit my project"*, *"drift check"*, or *"are docs up to date"*. The skill dispatches five focused read-only sub-agents against the working tree (worktrees would hide uncommitted edits — exactly what the audit needs to see):
 
 | Layer | What it checks |
 |-------|---------------|
@@ -501,7 +502,7 @@ The skill will:
 3. **Generate `CLAUDE.md`** — a project context file based on the *actual* code, not generic templates. Includes real commands, real structure, real conventions discovered from the codebase
 4. **Generate `docs/architecture/overview.md`** — component map, data flow, key dependencies, entry points — all derived from reading the code
 5. **Generate `docs/architecture/diagrams.md`** *(tech / data)* — C4-structured Mermaid (Context → Container → Component → sequence; data projects also get end-to-end lineage), populated from the actual modules, deployable units, and import graph
-6. **Generate `docs/spec/`** *(tech / data)* — six-file authoritative snapshot: SPEC.md, behaviors.md, architecture.md (the tabular C4 element catalog paired with the diagrams), data-model.md, interfaces.md, configuration.md, fitness-functions.md (executable architectural invariants — for data projects this includes the reproducibility contract), all populated from the code with explicit TODOs flagged where the code is ambiguous
+6. **Generate `docs/spec/`** *(tech / data)* — seven-file authoritative snapshot: SPEC.md, behaviors.md, architecture.md (the tabular C4 element catalog paired with the diagrams), data-model.md, interfaces.md, configuration.md, fitness-functions.md (executable architectural invariants — for data projects this includes the reproducibility contract), all populated from the code with explicit TODOs flagged where the code is ambiguous
 7. **Create task structure** — `docs/tasks/active/`, `backlog/`, `completed/`, and test-spec tracking so plan mode and the task-executor work
 8. **Copy hooks and agents** — settings.json, hook scripts, and agent templates (task-executor, architect, code-reviewer, security-auditor for tech/data projects)
 9. **Configure model tiers** — detect available models and set the best one for each agent
