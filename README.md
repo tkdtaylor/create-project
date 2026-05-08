@@ -6,7 +6,7 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 
 ## What it does
 
-Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", "start a data science project", "sync my skills", or "update my skills". The skill:
+Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", "start a data science project", "sync my skills", "update my skills", or "audit my project". The skill:
 
 1. Interviews you until the goal, scope, and success criteria are unambiguous — confirms a written summary before touching any files
 2. Creates a type-matched directory structure with template files, including requirement-traceable task and test spec templates (`REQ-NNN` IDs flow from task → test spec → code)
@@ -17,10 +17,33 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 7. **Technical / Data:** sets up an isolated workspace automatically — Docker Sandbox (`sbx`) when available (microVM with network policies and credential proxy), falling back to Docker Engine (shared base image + project-specific image + per-project named volume) on Linux or CI
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
-10. Ships five agents out of the box: task-executor (TDD workflow), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Recommends additional agents, skills, hooks, and CLI tools suited to the project, with model tiers auto-mapped to the best available model
-11. Installs hooks across six lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, plan-to-tasks restructuring, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, fitness-function execution (`make fitness`), and desktop notifications
+10. Ships five agents out of the box: task-executor (TDD workflow with a non-negotiable pre-commit verification gate), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Optional agent templates ship for Step 3d to install when warranted: qa (read-only test/spec gap classifier), docs-writer (README/docstring/CHANGELOG synthesis), task-planner (feature → scoped tasks), and dependency-auditor (cross-ecosystem dep scanning). Model tiers auto-mapped to the best available model
+11. Installs hooks across six lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, failure-mode retrospective injection at session start, plan-to-tasks restructuring, edit tracking for batch processing, pre-commit spec-coverage enforcement, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, scope-drift summary, smoke-test detection, fitness-function execution (`make fitness`), and desktop notifications
 12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
 13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — defaults to **intelligent merge over overwrite**, prompts only when a merge can't reconcile, and prints a per-file diff summary so `git diff` is the safety net rather than a wall of confirmation prompts
+
+## Across the Claude Code stack
+
+Claude Code can be framed as a five-layer stack — memory, knowledge, guardrails, delegation, distribution — wrapped by MCP servers on one side and agent teams on the other. `create-project` deposits artifacts at every layer in a single setup pass, so a project starts the way a mature one looks:
+
+```mermaid
+flowchart TB
+    MCP["<b>MCP Servers</b><br/>tooling.md catalogs<br/>recommended MCPs<br/>per project type"]
+    TEAMS["<b>Agent Teams</b><br/>docs/spec/ + diagrams.md<br/>onboard humans and<br/>future agents alike"]
+
+    subgraph STACK[" "]
+        direction TB
+        L1["<b>Layer 1 · CLAUDE.md</b> — Memory<br/>Generated CLAUDE.md with framework snippets,<br/>three-tier boundaries, retros, repo map"]
+        L2["<b>Layer 2 · Skills</b> — Knowledge<br/>Ships as a skill itself + sync-skills flow<br/>that updates other globally installed skills"]
+        L3["<b>Layer 3 · Hooks</b> — Guardrails<br/>17 hooks across 6 lifecycle events,<br/>profile-gated (minimal / standard / strict)"]
+        L4["<b>Layer 4 · Subagents</b> — Delegation<br/>task-executor · architect · code-reviewer ·<br/>security-auditor · spec-verifier"]
+        L5["<b>Layer 5 · Plugins</b> — Distribution<br/>Copy/clone-installable bundle with<br/>manifest tracking + three-way sync"]
+        L1 --> L2 --> L3 --> L4 --> L5
+    end
+
+    MCP -.-> STACK
+    STACK -.-> TEAMS
+```
 
 ## First-time setup
 
@@ -223,7 +246,11 @@ assets/
     research.Dockerfile
     research-entrypoint.sh
   templates/
-    common/                      # Hook scripts shared by all project types
+    common/                      # Hook scripts and shared starters used across all project types
+      agent-rules.md             # starter retro log — worktree, smoke-test, dead-code, git checkout failure modes (tech/data only — paired with inject-retros.py)
+      scripts/
+        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed} (all types)
+        verify-worktree-isolation.sh # post-dispatch audit: confirms parallel agents respected isolation: "worktree" (tech/data only)
       .claude/scripts/
         _hook_utils.py           # shared profile gating module (minimal/standard/strict)
         protect-secrets.py       # blocks writes to private keys and credential files
@@ -234,7 +261,7 @@ assets/
         periodic-checkpoint.py   # reminds agent to commit every N turns
         strategic-compact.py     # suggests /compact at task boundaries
         desktop-notify.py        # OS notification on completion (strict profile)
-        inject-retros.py         # SessionStart — surfaces relevant Failure-mode entries from CLAUDE.md
+        inject-retros.py         # SessionStart — surfaces relevant Failure-mode entries from agent-rules.md
     tech/                        # Per-project templates — technical projects
       CLAUDE.md
       devcontainer.json
@@ -247,8 +274,8 @@ assets/
         interfaces.md            # CLI / API / public surfaces
         configuration.md         # env vars, configs, runtime knobs
         fitness-functions.md     # executable architectural invariants (run via `make fitness`)
-      scripts/
-        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
+      RELEASE_CHECKLIST.md       # conditional — pre-tag verification gate, copied only for projects that ship versioned releases
+      CONTRIBUTING.md            # conditional — public/internal contributor guide; renamed to HANDOVER.md for private projects
       .claude/
         settings.json            # permissions + hooks across six lifecycle events (PreToolUse, PostToolUse, SessionStart, PreCompact, PostCompact, Stop)
         scripts/
@@ -261,11 +288,16 @@ assets/
           detect-smoke-tests.py  # Stop — flags tests in diff with no assertions
           check-fitness.py       # Stop — runs `make fitness` if defined (strict profile, warn-only)
         agents/
-          task-executor.md       # ephemeral agent for executing one task at a time
+          task-executor.md       # ephemeral agent for executing one task at a time (incl. pre-commit verification gate)
           architect.md           # design review + ADR drafting + drift audit + fitness-function proposal (tier: deep)
           code-reviewer.md       # structured multi-perspective code review (tier: balanced)
           security-auditor.md    # OWASP Top 10 application security audit (tier: deep)
           spec-verifier.md       # assertion-by-assertion spec adherence check before commit (tier: balanced)
+          # optional templates picked in Step 3d:
+          qa.md                  # read-only test-suite verification + spec/test gap classification (tier: balanced)
+          docs-writer.md         # README / docstring / CHANGELOG synthesis from code + spec (tier: fast)
+          task-planner.md        # feature → scoped tasks with paired test specs (tier: balanced)
+          dependency-auditor.md  # cross-ecosystem dep scanning (tier: balanced)
       docker/
         Dockerfile               # extends shared base with project runtime + uid fix
         docker-compose.yml       # builds project image, mounts volume + credentials
@@ -284,9 +316,7 @@ assets/
         interfaces.md            # CLI runners, notebook entrypoints, public src/ API
         configuration.md         # experiment configs, env vars, metrics catalog
         fitness-functions.md     # executable invariants — reproducibility, raw-data immutability, perf budgets
-      scripts/
-        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
-      .claude/                   # settings + agents (hooks from common/ + tech/)
+      .claude/                   # settings + agents (hooks from common/ + tech/; optional templates: qa.md, docs-writer.md, task-planner.md). Scripts and agent-rules.md come from common/.
       docker/                    # same Docker pattern as tech
       experiment-tracker.md      # tracks experiment runs alongside coverage-tracker
       experiments/
@@ -298,9 +328,7 @@ assets/
       decision-brief-template.md # structured comparison + recommendation output template
       deep-research-template.md  # in-depth research report output template
       learning-plan-template.md  # three-phase learning syllabus output template
-      scripts/
-        check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed}
-      .claude/                   # settings + task-executor agent (hooks from common/)
+      .claude/                   # settings + task-executor agent (hooks + check-task-state.sh come from common/)
       docker/
         docker-compose.yml
         .env.example
@@ -310,10 +338,12 @@ references/
   tech-project.md                # Step-by-step setup for technical projects (T1–T8)
   data-project.md                # Step-by-step setup for data / ML projects (D1–D8)
   research-project.md            # Step-by-step setup for research / other projects (R1–R7)
-  adopt-existing.md              # Adopting an existing codebase (A1–A9)
+  adopt-existing.md              # Adopting an existing codebase (A1–A9, with sub-steps A4b/A4c, then Step 3 of the main flow for tooling + manifest)
   sync-skills.md                 # Syncing skills and project artifacts (S1–S5)
+  audit-project.md               # Project-wide audit dispatcher (5 layers — inventory, hooks, drift, fitness, README)
   tooling.md                     # Skills, hooks, agents, MCP servers, and CLI tools catalog with project-type matching
   framework-snippets.md          # Framework-specific CLAUDE.md convention snippets (Next.js, Supabase, Go, etc.)
+  fitness-functions.md           # Per-stack catalog of fitness-function tools (import-linter, dep-cruiser, ArchUnit, k6, etc.)
 evals/
   evals.json                     # Test cases and assertions for skill evaluation
 SKILL.md                         # Entry point — gathers info, routes to reference files
@@ -378,7 +408,7 @@ If you prefer to update files manually, managed files live across two template d
 
 | File | Source | What it adds |
 |------|--------|-------------|
-| `.claude/settings.json` | `<type>/` | Permissions + 12 hooks with profile gating |
+| `.claude/settings.json` | `<type>/` | Permissions + 17 hooks with profile gating |
 | `.claude/scripts/_hook_utils.py` | `common/` | Shared profile gating module |
 | `.claude/scripts/protect-secrets.py` | `common/` | Blocks writes to private keys and credential files |
 | `.claude/scripts/block-no-verify.py` | `common/` | Blocks --no-verify on git commands |
@@ -402,21 +432,27 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/agents/code-reviewer.md` | `<type>/` | Structured multi-perspective code review (tech/data only) |
 | `.claude/agents/security-auditor.md` | `<type>/` | OWASP Top 10 application security audit (tech/data only) |
 | `.claude/agents/spec-verifier.md` | `<type>/` | Assertion-by-assertion spec adherence check before commit (tech/data only) |
-| `scripts/check-task-state.sh` | `<type>/` | Invariant check: each `NNN-*.md` task tracked in exactly one of `{backlog, active, completed}` (mode 755) |
+| `.claude/agents/qa.md` | `<type>/` | *(optional)* Read-only test-suite verification + spec/test/smoke gap classification (tech/data only) |
+| `.claude/agents/docs-writer.md` | `<type>/` | *(optional)* README / docstring / CHANGELOG synthesis from code + spec (tech/data only) |
+| `.claude/agents/task-planner.md` | `<type>/` | *(optional)* Feature breakdown into scoped tasks with paired test specs (tech/data only) |
+| `scripts/check-task-state.sh` | `common/scripts/` | Invariant check: each `NNN-*.md` task tracked in exactly one of `{backlog, active, completed}` (mode 755) |
+| `scripts/verify-worktree-isolation.sh` | `common/scripts/` | Post-dispatch audit confirming parallel agents respected `isolation: "worktree"` (tech/data only, mode 755) |
+| `docs/architecture/agent-rules.md` | `common/agent-rules.md` | Starter retro log paired with the `inject-retros.py` SessionStart hook (tech/data only) |
 
 Quick copy for a tech project (run from your project root):
 
 ```bash
 SKILL=~/.claude/skills/create-project/assets/templates
-mkdir -p .claude/scripts .claude/agents scripts
+mkdir -p .claude/scripts .claude/agents scripts docs/architecture
 cp "$SKILL/tech/.claude/settings.json" .claude/settings.json
 cp "$SKILL/common/.claude/scripts/"*.py .claude/scripts/
 cp "$SKILL/tech/.claude/scripts/"*.py .claude/scripts/
 cp "$SKILL/tech/.claude/agents/"*.md .claude/agents/
-cp "$SKILL/tech/scripts/check-task-state.sh" scripts/ && chmod +x scripts/check-task-state.sh
+cp "$SKILL/common/scripts/"*.sh scripts/ && chmod +x scripts/*.sh
+[ -f docs/architecture/agent-rules.md ] || cp "$SKILL/common/agent-rules.md" docs/architecture/agent-rules.md
 ```
 
-For data projects, replace agent source with `data` (scripts are the same as tech). For research projects, skip the tech scripts and agents lines (the `scripts/check-task-state.sh` line still applies — copy it from `$SKILL/research/scripts/`).
+For data projects, replace `tech` with `data` for `.claude/agents/` and `.claude/settings.json` (everything else comes from `common/` already). For research projects, skip the tech `.claude/scripts/` and `.claude/agents/` lines, and skip the `agent-rules.md` line — the only common-script research needs is `check-task-state.sh`.
 
 ### Updating CLAUDE.md
 
@@ -439,6 +475,20 @@ If your project was created before the `~/.claude/` writable mount fix, update y
 ```
 
 **docker-compose.yml** — same change in the volumes section.
+
+## Auditing a project after a round of tasks
+
+When a batch of tasks finishes (or before tagging a release), say *"audit my project"*, *"drift check"*, or *"are docs up to date"*. The skill dispatches five focused sub-agents under `isolation: "worktree"`:
+
+| Layer | What it checks |
+|-------|---------------|
+| 1. Inventory + cross-refs | Every file referenced in tables/manifests exists; markdown links resolve; TC markers in spec map to test files |
+| 2. Hook wiring + stale numbers | Every script in `.claude/scripts/` is wired in `settings.json` (no orphans, no broken refs); cited numbers in prose ("17 hooks", "5 agents") match reality |
+| 3. Spec drift | Architect agent's drift-audit mode — `docs/spec/` and `diagrams.md` still describe the actual code |
+| 4. Fitness rows ↔ Make targets | Every `F-NNN` row in `fitness-functions.md` has a `fitness-<id>` Make target, and vice versa |
+| 5. README freshness | After 1–4, verifies the README's claims (feature list, install commands, examples) still match reality, with prior findings as context |
+
+The audit aggregates findings into must-fix / should-fix / probably-fine and offers to apply the first two batches in a single pass — leaving the working tree dirty for you to review before committing. It is read-only by default; nothing is changed without your confirmation.
 
 ## Adding to an existing codebase
 

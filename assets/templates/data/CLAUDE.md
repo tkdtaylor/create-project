@@ -183,32 +183,23 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - **Append to spec entries instead of rewriting them.** When a feature definition or hyperparameter changes, edit the spec entry to reflect the new truth. The ADR carries history; the spec is a snapshot.
 - **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned experiments and unfinished work go in `docs/plans/` and the experiment tracker.
 
-## Common rationalizations
+## Data-specific rationalizations
 
-These are excuses agents use to skip steps. Don't fall for them.
+Generic process rationalizations live in `docs/architecture/agent-rules.md`. These are the data/ML-specific excuses to refuse:
 
 | Excuse | Reality |
 |--------|---------|
-| "I'll commit after the next task too" | No. Commit now. Batched commits are impossible to untangle later. |
 | "This is just a quick data transformation, no test needed" | If it goes in `src/`, it needs a test spec. Notebooks are for quick exploration. |
 | "I'll log the experiment later" | Log it now. You'll forget the parameters and the result won't be reproducible. |
 | "I don't need a config file for this experiment" | Yes you do. Without it, you can't reproduce the run or compare with future experiments. |
 | "The raw data has a small issue, I'll just fix it in place" | Never. Copy to processed/ and fix it there. Raw data is immutable. |
 | "I'll set the random seed later" | Set it now. Every experiment must be reproducible from day one. |
-| "I'll update the spec at the end of the experiment cycle" | No. Spec drift is silent and silent drift is how reproducibility breaks. Update in the same commit. |
 | "The new metric is obvious — don't need to add it to the catalog" | Yes you do. Unnamed metrics drift in definition between runs. The catalog is the contract. |
-| "I'll add a 'previously this was X' note to the spec" | Don't. Rewrite the entry. The ADR carries history; the spec is a snapshot. |
 
-## Failure modes
+## Agent rules and retros
 
-Project-specific lessons learned. Add an entry here whenever work is lost or significant time is wasted to a preventable mistake — especially the kind where the agent rationalized the action in the moment and only recognized the footgun in retrospect. Each entry should capture:
+Process-level rules, common rationalizations, and project-specific retros all live in `docs/architecture/agent-rules.md`. The `inject-retros.py` SessionStart hook reads that file and surfaces relevant entries at the start of every session, so adding an entry there is how a one-time mistake becomes a permanent guard. The starter file ships with rules covering parallel-dispatch worktree isolation, the `git checkout -- <path>` hazard, smoke-test rationalization, dead-code delegates, and a "Common rationalizations" table.
 
-- **What happened** — the concrete sequence of actions, not a generalization
-- **Why it wasn't caught** — which check, hook, or rule should have blocked it but didn't
-- **The rule that prevents it next time** — phrased as a directive, not a wish
+Data projects are especially prone to silent failure modes (subtle data leakage, wrong train/test split, frozen random seed in the wrong place) — those are the most valuable retros to add to `agent-rules.md` because they are invisible in the moment.
 
-If the rule can be enforced by a hook, tooling change, or a Boundaries entry, wire it up and link it from the failure mode entry. An internalized failure mode (codified into a hook, baked into Boundaries, or made structurally impossible) can be archived or deleted once the guard is in place.
-
-This section is empty at project creation and grows with the project's history. A growing list of entries is not a sign of a bad project — it is a sign of an *honest* one. Resist the urge to cherry-pick only the "interesting" failures; the boring ones are usually the ones that repeat. Data projects are especially prone to silent failure modes (subtle data leakage, wrong train/test split, frozen random seed in the wrong place) — those are the most valuable entries here because they are invisible in the moment.
-
-> *No entries yet.*
+When dispatching parallel agents in one message, run `scripts/verify-worktree-isolation.sh <agent-id> [<agent-id> ...]` after they complete to confirm none bypassed the worktree flag.

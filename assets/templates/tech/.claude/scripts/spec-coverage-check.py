@@ -9,8 +9,11 @@ test file referencing it. It does NOT verify the test actually asserts the
 behavior — that's the spec-verifier agent's job. This hook is the fast
 pre-commit gate.
 
-Bypass for genuinely WIP commits:
+Bypass for genuinely WIP commits — either set in the parent shell, or as a
+shell prefix on the command itself (the prefix form is detected before
+shell evaluation since pre-bash hooks fire before the shell parses the line):
     CLAUDE_SKIP_SPEC_COVERAGE=1 git commit ...
+    export CLAUDE_SKIP_SPEC_COVERAGE=1; git commit ...
 """
 
 import json
@@ -46,6 +49,15 @@ def main():
 
     cmd = hook_input.get("tool_input", {}).get("command", "")
     if not cmd:
+        sys.exit(0)
+
+    # Also honour the bypass when the env-var assignment appears as a shell
+    # prefix in the command string itself (e.g. `CLAUDE_SKIP_SPEC_COVERAGE=1
+    # git commit …`). Claude Code pre-bash hooks run BEFORE the shell
+    # interprets the command, so the env var is not yet in os.environ at
+    # hook time. Checking the command string makes the documented bypass
+    # actually work.
+    if "CLAUDE_SKIP_SPEC_COVERAGE=1" in cmd:
         sys.exit(0)
 
     # Only act on `git commit` (not amend-only, not status, not log).

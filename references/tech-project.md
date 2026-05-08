@@ -111,12 +111,16 @@ Templates come from two directories:
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 | `.claude/agents/spec-verifier.md` | `.claude/agents/spec-verifier.md` |
-| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
+| `RELEASE_CHECKLIST.md` *(conditional — only for projects that ship versioned releases)* | `RELEASE_CHECKLIST.md` |
+| `CONTRIBUTING.md` *(conditional — for going-public projects; rename to `HANDOVER.md` for private)* | `CONTRIBUTING.md` or `HANDOVER.md` |
 
-**From `common/`** (copy as-is, no placeholders):
+**From `common/`** (copy as-is, no placeholders — shared across all project types):
 
 | Template | Output path |
 |----------|-------------|
+| `agent-rules.md` | `docs/architecture/agent-rules.md` |
+| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
+| `scripts/verify-worktree-isolation.sh` | `scripts/verify-worktree-isolation.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
@@ -794,19 +798,74 @@ format:
 test:
 	# TODO: fill in (e.g. pytest, npm test, go test ./..., cargo test)
 
+# Fitness functions — see docs/spec/fitness-functions.md
+#
+# The `fitness` umbrella runs every per-rule target listed as a prerequisite.
+# Each F-NNN rule in fitness-functions.md gets its own `fitness-<id>` target
+# below, and the umbrella lists the ones whose tooling is installed by default.
+# Optional rules (cargo-audit, semgrep, etc.) get their own targets that gate
+# on `command -v <tool>` and are runnable on demand by name.
+#
+# Empty umbrella by default — passes vacuously until rules are wired up.
 fitness:
-	# Run all architectural fitness functions defined in docs/spec/fitness-functions.md.
-	# Add `fitness-<rule>` sub-targets and list them as prerequisites here.
-	# Empty by default — passes vacuously until the user defines rules.
-	@echo "No fitness functions defined yet. Add rules in docs/spec/fitness-functions.md and wire them up here."
+	@echo "No fitness functions defined yet. Add rules in docs/spec/fitness-functions.md and per-rule targets below."
+
+# Worked example — uncomment and adapt when you add F-001 to fitness-functions.md.
+# .PHONY: fitness-no-print
+# fitness-no-print:
+# 	@violations=$$(grep -rn --include='*.py' -E '^[[:space:]]*print\(' src/ || true); \
+# 	if [ -n "$$violations" ]; then \
+# 	  printf "F-001 (no production print) FAILED:\n%s\n" "$$violations"; exit 1; \
+# 	fi; \
+# 	echo "F-001 (no production print) passed."
 
 check: lint test fitness
 	@echo "All checks passed."
 ```
 
-Fill in `lint`, `format`, and `test` based on the detected stack. Leave the `fitness` target empty/vacuous — the user wires in rules later (or invokes the `architect` agent in fitness-function-proposal mode to seed them). The Stop hook `check-fitness.py` (strict profile) runs `make fitness` automatically; an empty target is a no-op so this stays silent until the user opts in.
+Fill in `lint`, `format`, and `test` based on the detected stack. The commented `fitness-no-print` block shows the canonical per-rule shape — uncomment and adapt as rules are added to `fitness-functions.md`. The Stop hook `check-fitness.py` (strict profile) runs `make fitness` automatically; an empty umbrella is a no-op until the user opts in.
 
 If a `Makefile` already exists, add missing targets only.
+
+**3a. Release-check target *(only for projects that ship versioned releases)***
+
+Ask: *"Will this project ship versioned releases — published library, deployable service, distributed CLI? If so I'll add a `RELEASE_CHECKLIST.md` and a `release-check` Make target that chains your verification gates."*
+
+If yes:
+
+1. Copy the checklist:
+   ```bash
+   cp "$CLAUDE_SKILL_DIR/assets/templates/tech/RELEASE_CHECKLIST.md" RELEASE_CHECKLIST.md
+   ```
+
+2. Append to the Makefile:
+   ```makefile
+   # Pre-tag verification gate — see RELEASE_CHECKLIST.md
+   .PHONY: release-check
+   release-check: check fitness
+   	@# Add project-specific stages here (e.g. demo, offline-smoke, packaging dry-run).
+   	@echo "release-check passed — see RELEASE_CHECKLIST.md for the manual items."
+   ```
+
+If the project is internal-only / never published (one-off scripts, personal tools, throwaway prototypes), skip this step. The Makefile is fine without `release-check`.
+
+**3b. CONTRIBUTING.md or HANDOVER.md *(audience-dependent)***
+
+Ask: *"Is this project going public (open source / source-available), staying private (team / personal / internal), or undecided? Public gets a `CONTRIBUTING.md`; private gets the same template renamed to `HANDOVER.md` for operator handoff."*
+
+If public, internal, or undecided:
+
+```bash
+cp "$CLAUDE_SKILL_DIR/assets/templates/tech/CONTRIBUTING.md" CONTRIBUTING.md
+# For private/internal projects, immediately rename:
+#   mv CONTRIBUTING.md HANDOVER.md
+# and adjust the "License posture" section to describe operator handoff
+# (who owns the code, how access is granted, on-call expectations).
+```
+
+The template ships with a header reminding the user about the rename. The structure (Workflow / Project invariants / Local setup / CI) applies to both audiences — only the License posture and audience-specific framing differ.
+
+If the project is a one-off script or throwaway prototype, skip this step.
 
 **4. Update CLAUDE.md commands**
 

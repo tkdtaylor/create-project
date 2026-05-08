@@ -268,12 +268,13 @@ The following agents are already created during project setup (Step T2/D2) from 
 | architect | tech, data | deep | Yes |
 | code-reviewer | tech, data | balanced | Yes |
 | security-auditor | tech, data | deep | Yes |
+| spec-verifier | tech, data | balanced | Yes |
 
 ### Additional technical project agents
 
 Beyond the agents that ship with the scaffold, suggest these additional agents when the project type warrants them. Choose the subset that matches what this project will actually need.
 
-**task-planner** *(tier: balanced)*
+**task-planner** *(tier: balanced)* — **template file ships with the skill at `assets/templates/{tech,data}/.claude/agents/task-planner.md`**
 Takes a feature description and produces a paired task file + test spec following the project's naming conventions. Asks clarifying questions about edge cases and acceptance criteria before writing anything — the output is a well-scoped task, not a vague to-do.
 Invoke: *"use the task-planner to break down [feature]"*
 Best for: features with unclear scope, anything that touches multiple layers, or when you're not sure where to start.
@@ -282,18 +283,18 @@ Two disciplines to build into the agent when creating it:
 - **Flag decisions for ADRs with options, pros/cons, and a recommendation.** When scoping surfaces a non-obvious design decision (framework choice, schema shape, auth model, model/prompt selection), the task-planner should add an *"ADRs required before this task starts"* note to the task file. For each flagged decision, present **2–3 viable options** with **pros and cons for each**, plus a **recommended default with the reasoning**. A bare "needs ADR" note is a cop-out — it forces the human to start from scratch. The point is to do the legwork of surfacing alternatives and trade-offs so the human can accept, amend, or reject a structured analysis. The **final decision still belongs to a human or the architect agent** — task-planner should not pre-commit to one of its options in the test spec. But "don't decide" is not the same as "don't analyze."
 - **Deterministic vs. probabilistic acceptance criteria.** For classical code, acceptance criteria are deterministic ("returns 404 on unknown id"). For features with an AI component (LLM calls, retrieval, classification), at least one AC should be probabilistic and quantified ("≥ 0.85 exact-match on the 20-row eval set"). Refusing to write a measurable AC is refusing to define "done."
 
-**qa** *(tier: balanced)*
-Reads the test spec for the current task, runs the test suite, and reports failures with context from the relevant source files. Identifies missing test cases based on the spec's acceptance criteria. Understands the difference between a test gap and a genuine bug.
+**qa** *(tier: balanced)* — **template file ships with the skill at `assets/templates/{tech,data}/.claude/agents/qa.md`**
+Read-only agent (no Edit/Write — by design) that runs the test suite, classifies findings as bug-in-impl / bug-in-test / test-gap / spec-gap / smoke-gap, and reports without making the call. Catches the "smoke test where spec asks for assertion" failure mode that task-executor's self-review can rationalize past.
 Invoke: *"use the qa agent on task 003"*
-Best for: after implementation is complete, before marking a task done.
+Best for: after implementation is complete, before marking a task done. Pairs naturally with `spec-verifier` (qa is mechanical, spec-verifier is semantic).
 
 **dependency-auditor** *(tier: fast)* — **template file ships with the skill at `assets/templates/tech/.claude/agents/dependency-auditor.md`**
 Reads the project's dependency manifest (`Cargo.toml`, `package.json`, `requirements.txt`/`pyproject.toml`, `go.mod`), identifies outdated or CVE-flagged packages, unused dependencies, and version fragmentation. Classifies findings as must/should/hold upgrade and proposes a concrete manifest diff for the must-upgrade set. Covers four ecosystems: Cargo, npm, PyPI, Go modules. Complements `dep-scan` (install-time check) and the `code-scanner` skill (pre-install check).
 Invoke: *"use the dependency-auditor"*
 Best for: before releases, after a long period without updates, when adding a batch of new dependencies, or after a vulnerability disclosure in the ecosystem.
 
-**docs-writer** *(tier: fast)*
-Generates or updates README sections, API reference docs, inline docstrings, and changelog entries from the current source code. Follows the audience and tone set in CLAUDE.md. Doesn't invent behavior — only documents what the code actually does.
+**docs-writer** *(tier: fast)* — **template file ships with the skill at `assets/templates/{tech,data}/.claude/agents/docs-writer.md`**
+Generates or updates README sections, API reference docs, inline docstrings, and changelog entries from the current source code and `docs/spec/`. Follows the audience and tone set in CLAUDE.md. Doesn't invent behavior — only documents what the code actually does. Three modes: `readme`, `docstring`, `changelog`.
 Invoke: *"use the docs-writer to document [module or endpoint]"*
 Best for: libraries, public APIs, or any project where docs chronically lag behind the code.
 

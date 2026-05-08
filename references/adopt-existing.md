@@ -102,10 +102,23 @@ Write `docs/architecture/overview.md` by reading the actual code:
 - **Key decisions**: architectural patterns in use (e.g. "layered architecture", "event-driven", "monolith", "microservices") — describe what IS there, not what should be
 
 ```bash
-mkdir -p docs/architecture
+mkdir -p docs/architecture docs/architecture/decisions
 ```
 
 If `docs/architecture/` already exists, read what's there first and fill gaps rather than overwriting.
+
+### Bootstrap ADR for projects that predate ADRs
+
+If the project has no `docs/architecture/decisions/` directory and no ADRs anywhere in tree, **do not back-number every prior decision into individual ADRs** — that produces fiction. Instead, generate a single bootstrap ADR `001-foundational-stack.md` that consolidates the existing decisions as observed:
+
+- Stack choice (language, framework, datastore, IPC)
+- Project layout / top-level package boundaries
+- Build / test / packaging tooling
+- Major external dependencies and the role each plays
+
+Frame each decision as *"this is what the codebase already commits to as of {{DATE}}; future ADRs supersede or refine these."* Link it from the architecture overview. The bootstrap ADR makes the existing structure explicit so subsequent ADRs have a coherent baseline to amend, instead of free-floating in a vacuum.
+
+After ADR-001, future decisions get their own ADRs sequentially (ADR-002, ADR-003, …) — including ones that explicitly supersede a section of the bootstrap.
 
 ---
 
@@ -192,7 +205,7 @@ cp "$CLAUDE_SKILL_DIR/assets/templates/data/experiment-tracker.md" docs/tasks/ex
 ```bash
 COMMON_DIR="$CLAUDE_SKILL_DIR/assets/templates/common"
 TEMPLATE_DIR="$CLAUDE_SKILL_DIR/assets/templates/<type>"
-mkdir -p .claude/scripts .claude/agents
+mkdir -p .claude/scripts .claude/agents scripts
 
 # Settings (type-specific — includes hook config)
 cp "$TEMPLATE_DIR/.claude/settings.json" .claude/settings.json
@@ -200,17 +213,34 @@ cp "$TEMPLATE_DIR/.claude/settings.json" .claude/settings.json
 # Universal hook scripts (all project types)
 cp "$COMMON_DIR/.claude/scripts/"*.py .claude/scripts/
 
-# Tech/data-only hook scripts (config-protection, protect-checkout, edit-tracker, batch-format-typecheck)
+# Tech/data-only hook scripts
 if [ "<type>" != "research" ]; then
   TECH_DIR="$CLAUDE_SKILL_DIR/assets/templates/tech"
   cp "$TECH_DIR/.claude/scripts/"*.py .claude/scripts/
 fi
 
-# Agents
+# Agents — copies the always-installed five plus optional templates
+# (qa.md, docs-writer.md, task-planner.md, dependency-auditor.md). Step 3d
+# may further add language-specific reviewers; the wildcard is intentional
+# so existing-codebase adoption picks up the full set without forcing
+# the user through a 3d picker.
 cp "$TEMPLATE_DIR/.claude/agents/"*.md .claude/agents/
+
+# Project scripts (shared across all project types — research only gets check-task-state.sh)
+cp "$COMMON_DIR/scripts/check-task-state.sh" scripts/
+if [ "<type>" != "research" ]; then
+  cp "$COMMON_DIR/scripts/verify-worktree-isolation.sh" scripts/
+
+  # Starter retro log — paired with inject-retros.py (tech/data only)
+  mkdir -p docs/architecture
+  if [ ! -f docs/architecture/agent-rules.md ]; then
+    cp "$COMMON_DIR/agent-rules.md" docs/architecture/agent-rules.md
+  fi
+fi
+chmod +x scripts/*.sh
 ```
 
-For **tech/data projects**, this copies the universal hooks plus the tech-only hooks (config-protection, protect-checkout, edit-tracker, batch-format-typecheck, spec-coverage-check, scope-drift-summary, detect-smoke-tests, check-fitness) and 5 agents (task-executor, architect, code-reviewer, security-auditor, spec-verifier). For **research projects**, this copies the universal hooks and only task-executor.
+For **tech/data projects**, this copies the universal hooks plus the tech-only hooks (config-protection, protect-checkout, edit-tracker, batch-format-typecheck, spec-coverage-check, scope-drift-summary, detect-smoke-tests, check-fitness), 5 always-installed agents (task-executor, architect, code-reviewer, security-auditor, spec-verifier) plus optional templates (qa, docs-writer, task-planner, dependency-auditor for tech), the project scripts (`check-task-state.sh`, `verify-worktree-isolation.sh`), and the starter `agent-rules.md` (only if not already present — it accumulates retro entries). For **research projects**, this copies the universal hooks and only task-executor.
 
 Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 

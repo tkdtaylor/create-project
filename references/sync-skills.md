@@ -155,16 +155,32 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/scripts/periodic-checkpoint.py` → `assets/templates/common/.claude/scripts/periodic-checkpoint.py`
 - `.claude/scripts/strategic-compact.py` → `assets/templates/common/.claude/scripts/strategic-compact.py`
 - `.claude/scripts/desktop-notify.py` → `assets/templates/common/.claude/scripts/desktop-notify.py`
+- `.claude/scripts/inject-retros.py` → `assets/templates/common/.claude/scripts/inject-retros.py`
 - `.claude/agents/task-executor.md` → `assets/templates/<type>/.claude/agents/task-executor.md`
-- `scripts/check-task-state.sh` → `assets/templates/<type>/scripts/check-task-state.sh` (mode 755)
+- `scripts/check-task-state.sh` → `assets/templates/common/scripts/check-task-state.sh` (mode 755)
 
 **tech and data only (hooks from `tech/`, agents from `<type>/`):**
 - `.claude/scripts/config-protection.py` → `assets/templates/tech/.claude/scripts/config-protection.py`
+- `.claude/scripts/protect-checkout.py` → `assets/templates/tech/.claude/scripts/protect-checkout.py`
 - `.claude/scripts/edit-tracker.py` → `assets/templates/tech/.claude/scripts/edit-tracker.py`
 - `.claude/scripts/batch-format-typecheck.py` → `assets/templates/tech/.claude/scripts/batch-format-typecheck.py`
+- `.claude/scripts/spec-coverage-check.py` → `assets/templates/tech/.claude/scripts/spec-coverage-check.py`
+- `.claude/scripts/scope-drift-summary.py` → `assets/templates/tech/.claude/scripts/scope-drift-summary.py`
+- `.claude/scripts/detect-smoke-tests.py` → `assets/templates/tech/.claude/scripts/detect-smoke-tests.py`
+- `.claude/scripts/check-fitness.py` → `assets/templates/tech/.claude/scripts/check-fitness.py`
 - `.claude/agents/architect.md` → `assets/templates/<type>/.claude/agents/architect.md`
 - `.claude/agents/code-reviewer.md` → `assets/templates/<type>/.claude/agents/code-reviewer.md`
 - `.claude/agents/security-auditor.md` → `assets/templates/<type>/.claude/agents/security-auditor.md`
+- `.claude/agents/spec-verifier.md` → `assets/templates/<type>/.claude/agents/spec-verifier.md`
+- `scripts/verify-worktree-isolation.sh` → `assets/templates/common/scripts/verify-worktree-isolation.sh` (mode 755; copied for tech/data only)
+
+**Optional agent templates** — only treated as managed if the project's manifest lists them or the file already exists in the project (Step 3d may have installed them):
+- `.claude/agents/qa.md` → `assets/templates/<type>/.claude/agents/qa.md` (tech, data)
+- `.claude/agents/docs-writer.md` → `assets/templates/<type>/.claude/agents/docs-writer.md` (tech, data)
+- `.claude/agents/task-planner.md` → `assets/templates/<type>/.claude/agents/task-planner.md` (tech, data)
+- `.claude/agents/dependency-auditor.md` → `assets/templates/tech/.claude/agents/dependency-auditor.md` (tech only; data projects pull from tech)
+
+`docs/architecture/agent-rules.md` is a **starter file** (like CLAUDE.md and `docs/architecture/diagrams.md`) — projects accumulate retro entries there, so sync should never overwrite it. Source: `assets/templates/common/agent-rules.md` (tech and data only — research projects skip). Only offer to seed it if the file is missing entirely.
 
 5. Set `FIRST_SYNC=true` in memory and proceed to 3b. Do not write a manifest yet — it gets written at S4 from post-sync hashes.
 

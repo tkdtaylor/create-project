@@ -131,7 +131,6 @@ Templates come from three directories:
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 | `.claude/agents/spec-verifier.md` | `.claude/agents/spec-verifier.md` |
-| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 
 **From `tech/`** (tech-only hooks, also used by data projects):
 
@@ -146,10 +145,13 @@ Templates come from three directories:
 | `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
 | `.claude/scripts/check-fitness.py` | `.claude/scripts/check-fitness.py` |
 
-**From `common/`** (copy as-is, no placeholders):
+**From `common/`** (copy as-is, no placeholders — shared across all project types):
 
 | Template | Output path |
 |----------|-------------|
+| `agent-rules.md` | `docs/architecture/agent-rules.md` |
+| `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
+| `scripts/verify-worktree-isolation.sh` | `scripts/verify-worktree-isolation.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
@@ -691,18 +693,28 @@ test:
 notebook-clean:
 	nbstripout notebooks/*.ipynb
 
+# Fitness functions — see docs/spec/fitness-functions.md
+#
+# For data projects, reproducibility and data-integrity rules usually come first.
+# Each F-NNN rule in fitness-functions.md gets its own `fitness-<id>` target below,
+# and the umbrella lists the ones whose tooling is installed by default.
 fitness:
-	# Run all fitness functions defined in docs/spec/fitness-functions.md.
-	# Add `fitness-<rule>` sub-targets and list them as prerequisites here.
-	# For data projects, reproducibility and data-integrity rules are usually first
-	# (see references/fitness-functions.md in the create-project skill).
-	@echo "No fitness functions defined yet. Add rules in docs/spec/fitness-functions.md and wire them up here."
+	@echo "No fitness functions defined yet. Add rules in docs/spec/fitness-functions.md and per-rule targets below."
+
+# Worked example — uncomment and adapt when you add F-001 to fitness-functions.md.
+# .PHONY: fitness-raw-immutable
+# fitness-raw-immutable:
+# 	@modified=$$(git log --diff-filter=M --name-only --pretty=format: -- 'data/raw/*' | sort -u); \
+# 	if [ -n "$$modified" ]; then \
+# 	  printf "F-001 (raw data immutable) FAILED — files under data/raw/ have been modified after initial commit:\n%s\n" "$$modified"; exit 1; \
+# 	fi; \
+# 	echo "F-001 (raw data immutable) passed."
 
 check: lint test fitness
 	@echo "All checks passed."
 ```
 
-The `fitness` target stays empty/vacuous at scaffold time — the user wires in rules later (or invokes the `architect` agent in fitness-function-proposal mode to seed them). The Stop hook `check-fitness.py` (strict profile) runs `make fitness` automatically; an empty target is a no-op so this stays silent until the user opts in.
+The commented `fitness-raw-immutable` block shows the canonical per-rule shape — uncomment and adapt as rules are added to `fitness-functions.md`. The Stop hook `check-fitness.py` (strict profile) runs `make fitness` automatically; an empty umbrella is a no-op until the user opts in.
 
 If a `Makefile` already exists, add missing targets only.
 

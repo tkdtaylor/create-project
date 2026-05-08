@@ -151,32 +151,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - **Append to spec entries instead of rewriting them.** When a decision changes, edit the spec entry to reflect the new truth. The ADR keeps the history — the spec is a snapshot, not a changelog.
 - **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned work goes in `docs/plans/` and `docs/tasks/`.
 
-## Common rationalizations
+## Agent rules and retros
 
-These are excuses agents use to skip steps. Don't fall for them.
+Process-level rules, common rationalizations, and project-specific retros all live in `docs/architecture/agent-rules.md`. The `inject-retros.py` SessionStart hook reads that file and surfaces relevant entries at the start of every session, so adding an entry there is how a one-time mistake becomes a permanent guard. The starter file ships with rules covering parallel-dispatch worktree isolation, the `git checkout -- <path>` hazard, smoke-test rationalization, dead-code delegates, and a "Common rationalizations" table.
 
-| Excuse | Reality |
-|--------|---------|
-| "I'll commit after the next task too" | No. Commit now. Batched commits are impossible to untangle later. |
-| "This task is too small for a test spec" | The spec defines done — without it you're guessing. Write one. |
-| "I'll add tests later" | Later never comes. The test spec comes first, always. |
-| "These two tasks are related, I'll do them together" | One task, one commit. If it feels too granular, the tasks are scoped correctly. |
-| "The architecture doc doesn't need updating" | If you made a non-obvious design decision, write an ADR. |
-| "I'll just quickly fix this other thing I noticed" | Stay on your task. Note it for later — don't scope-creep. |
-| "I'll update the spec at the end of the day" | No. Spec drift is silent. Update it in the same commit, every time. |
-| "The spec already covers this — close enough" | If "close enough" required reading the code to confirm, the spec is wrong. Fix it now. |
-| "I'll add a 'previously this was X' note to the spec" | Don't. Rewrite the entry. The ADR carries history; the spec is a snapshot. |
-
-## Failure modes
-
-Project-specific lessons learned. Add an entry here whenever work is lost or significant time is wasted to a preventable mistake — especially the kind where the agent rationalized the action in the moment and only recognized the footgun in retrospect. Each entry should capture:
-
-- **What happened** — the concrete sequence of actions, not a generalization
-- **Why it wasn't caught** — which check, hook, or rule should have blocked it but didn't
-- **The rule that prevents it next time** — phrased as a directive, not a wish
-
-If the rule can be enforced by a hook, tooling change, or a Boundaries entry, wire it up and link it from the failure mode entry. An internalized failure mode (codified into a hook, baked into Boundaries, or made structurally impossible) can be archived or deleted once the guard is in place.
-
-This section is empty at project creation and grows with the project's history. A growing list of entries is not a sign of a bad project — it is a sign of an *honest* one. Resist the urge to cherry-pick only the "interesting" failures; the boring ones are usually the ones that repeat.
-
-> *No entries yet.*
+When dispatching parallel agents in one message, run `scripts/verify-worktree-isolation.sh <agent-id> [<agent-id> ...]` after they complete to confirm none bypassed the worktree flag.

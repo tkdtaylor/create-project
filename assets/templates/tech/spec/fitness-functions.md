@@ -39,21 +39,30 @@ For tool selection per language, see `references/fitness-functions.md` in the cr
 
 ## Rules
 
-> Replace these example rows with the rules that actually hold for {{PROJECT_NAME}}. Keep entries concrete: the rule must be checkable by a tool, and the threshold must be a number or a yes/no, not a vibe. Delete rules that are no longer load-bearing.
+> Replace these example rows with the rules that actually hold for {{PROJECT_NAME}}. Keep entries concrete: the rule must be checkable by a tool, and the threshold must be a number or a yes/no, not a vibe. Delete rules that are no longer load-bearing. Each row should be earnable — write a one-line *why* in the row's description so a future reader (or future-you) can tell whether the rule is still load-bearing.
 
-| ID | Rule | Category | Asserts | Threshold | Check command | Severity |
-|----|------|----------|---------|-----------|---------------|----------|
-| F-001 | *(example) No cycles between top-level packages* | structural | Module import graph is acyclic at the package level | 0 cycles | `make fitness-no-cycles` | block |
-| F-002 | *(example) Domain layer does not import infra* | layering | `src/domain/**` imports nothing from `src/infra/**` | 0 violations | `make fitness-layering` | block |
-| F-003 | *(example) Health endpoint p95 latency* | performance | `/health` p95 response time under nominal load | < 50ms | `make fitness-perf` | warn |
-| F-004 | *(example) Cyclomatic complexity ceiling* | complexity | No function exceeds the complexity ceiling | ≤ 15 | `make fitness-complexity` | warn |
-| F-005 | *(example) Zero high-severity vulnerabilities* | security | Dependency scan reports no high or critical CVEs | 0 high+ | `make fitness-deps` | block |
+| ID | Rule | Category | Asserts | Threshold | Check command | Severity | Why this rule earns its row |
+|----|------|----------|---------|-----------|---------------|----------|----------------------------|
+| F-001 | *(example) No cycles between top-level packages* | structural | Module import graph is acyclic at the package level | 0 cycles | `make fitness-no-cycles` | block | Cycles compound across changes; once they appear, they require a refactor to remove. Catch at first introduction. |
+| F-002 | *(example) Domain layer does not import infra* | layering | `src/domain/**` imports nothing from `src/infra/**` | 0 violations | `make fitness-layering` | block | The composability ADR commits to a one-way dependency. Drift here silently couples business rules to a specific store. |
+| F-003 | *(example) No production `print`/`println!`/`console.log` outside an approved logger* | hygiene | Production source contains no direct stdout calls | 0 hits | `make fitness-no-print` | block | Stray prints leak into prod output, bypass log routing/redaction, and mask which call sites are real instrumentation. |
+| F-004 | *(example) Cyclomatic complexity ceiling* | complexity | No function exceeds the complexity ceiling | ≤ 15 | `make fitness-complexity` | warn | Complexity above 15 correlates with bugs in this codebase's history; warn-only because exceptions sometimes have a reason. |
+| F-005 | *(example) Zero high-severity vulnerabilities* | security | Dependency scan reports no high or critical CVEs | 0 high+ | `make fitness-deps` | block | Shipping with a known-exploitable dependency is a security regression that must be visible at commit time. |
 
-Categories: `structural` (cycles, layering, dependency direction), `performance` (latency, throughput, memory), `complexity` (cyclomatic, file size, fan-out), `security` (deps, surface, secrets), `coverage` (test coverage thresholds).
+Categories: `structural` (cycles, layering, dependency direction), `hygiene` (logging, leftovers, debug code), `performance` (latency, throughput, memory), `complexity` (cyclomatic, file size, fan-out), `security` (deps, surface, secrets), `coverage` (test coverage thresholds).
 
 Severity:
 - `block` — fitness check exits non-zero; the runner reports a failure. Fix the violation or relax the rule deliberately.
 - `warn` — surfaces in output but does not fail the runner. Use for budgets that may have a temporary justified excursion.
+
+## Rules considered but rejected
+
+> Negative space matters as much as positive space. When a fitness rule is *proposed* and rejected, record it here so the same rule isn't re-proposed every six months. Keep this section short — if it grows long, the project is rejecting too many rules and the bar may be too high.
+
+| Proposed rule | Why rejected |
+|---------------|--------------|
+| *(example) Per-file LOC ceiling at 500* | Some files are intentionally large (state machines, generated code). A blanket ceiling produced more carve-outs than coverage. Replaced by the per-file-with-ADR-exemption pattern in F-002 instead. |
+| *(example) Test coverage ≥ 90%* | Coverage % is a lagging indicator that drives cosmetic test additions; the spec-coverage hook plus the spec-verifier agent give better signal at lower cost. |
 
 ## Source-of-truth links
 

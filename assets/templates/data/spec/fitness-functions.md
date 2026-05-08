@@ -39,24 +39,33 @@ For tool selection per stack, see `references/fitness-functions.md` in the creat
 
 ## Rules
 
-> Replace these example rows with the rules that actually hold for {{PROJECT_NAME}}. Keep entries concrete: the rule must be checkable by a tool, and the threshold must be a number or a yes/no, not a vibe. Delete rules that are no longer load-bearing.
+> Replace these example rows with the rules that actually hold for {{PROJECT_NAME}}. Keep entries concrete: the rule must be checkable by a tool, and the threshold must be a number or a yes/no, not a vibe. Each row should be earnable — write a one-line *why* in the row's description so a future reader (or future-you) can tell whether the rule is still load-bearing.
 
-| ID | Rule | Category | Asserts | Threshold | Check command | Severity |
-|----|------|----------|---------|-----------|---------------|----------|
-| F-001 | *(example) Raw data is immutable* | data integrity | No file under `data/raw/` was modified after its initial commit | 0 modifications | `make fitness-raw-immutable` | block |
-| F-002 | *(example) Every experiment records its seed and library versions* | reproducibility | Every `experiments/results/*/run-info.json` contains `seed`, `python_version`, and pinned versions for the libraries listed in `configuration.md` | 100% | `make fitness-repro-contract` | block |
-| F-003 | *(example) Train/test split determinism* | reproducibility | Re-running the splitter with the configured seed produces byte-identical split files | 0 diff | `make fitness-split-determinism` | block |
-| F-004 | *(example) No cycles between src/ subpackages* | structural | `src/data`, `src/features`, `src/models`, `src/evaluation` form a DAG | 0 cycles | `make fitness-no-cycles` | block |
-| F-005 | *(example) Notebooks do not import notebooks* | layering | Reusable logic lives in `src/`; one notebook never imports another | 0 violations | `make fitness-notebook-boundary` | warn |
-| F-006 | *(example) Inference latency budget* | performance | Single-record inference p95 on the reference machine | < 100ms | `make fitness-inference-perf` | warn |
-| F-007 | *(example) Model artifact size cap* | resource budget | Saved model in `models/` does not exceed the documented size limit | < 250 MB | `make fitness-model-size` | warn |
-| F-008 | *(example) Zero high-severity dependency CVEs* | security | Dependency scan reports no high or critical CVEs | 0 high+ | `make fitness-deps` | block |
+| ID | Rule | Category | Asserts | Threshold | Check command | Severity | Why this rule earns its row |
+|----|------|----------|---------|-----------|---------------|----------|----------------------------|
+| F-001 | *(example) Raw data is immutable* | data integrity | No file under `data/raw/` was modified after its initial commit | 0 modifications | `make fitness-raw-immutable` | block | Every reproducibility claim depends on raw data being a fixed input. A silent edit invalidates every prior result. |
+| F-002 | *(example) Every experiment records its seed and library versions* | reproducibility | Every `experiments/results/*/run-info.json` contains `seed`, `python_version`, and pinned versions for the libraries listed in `configuration.md` | 100% | `make fitness-repro-contract` | block | Reproducibility-from-config is the project's contract; a missing seed or version makes a result unreproducible without anyone noticing. |
+| F-003 | *(example) Train/test split determinism* | reproducibility | Re-running the splitter with the configured seed produces byte-identical split files | 0 diff | `make fitness-split-determinism` | block | If splits drift, every comparison across experiments becomes apples-to-oranges. Worth catching at commit time, not at submission time. |
+| F-004 | *(example) No cycles between src/ subpackages* | structural | `src/data`, `src/features`, `src/models`, `src/evaluation` form a DAG | 0 cycles | `make fitness-no-cycles` | block | Cycles between layers blur the inputs/outputs distinction in the project's architecture and make refactors expensive. |
+| F-005 | *(example) Notebooks do not import notebooks* | layering | Reusable logic lives in `src/`; one notebook never imports another | 0 violations | `make fitness-notebook-boundary` | warn | Cross-notebook imports rot fast; the right pattern is "lift to `src/`". Warn-only because the fix is mechanical and the lapses are usually exploratory. |
+| F-006 | *(example) Inference latency budget* | performance | Single-record inference p95 on the reference machine | < 100ms | `make fitness-inference-perf` | warn | The behavior contract in `behaviors.md` quotes a latency SLO. A regression here is a contract change that should at minimum surface visibly. |
+| F-007 | *(example) Model artifact size cap* | resource budget | Saved model in `models/` does not exceed the documented size limit | < 250 MB | `make fitness-model-size` | warn | Artifact bloat slows every downstream step (CI, serving, branch checkouts). Warn-only because there are legitimate reasons to upsize deliberately. |
+| F-008 | *(example) Zero high-severity dependency CVEs* | security | Dependency scan reports no high or critical CVEs | 0 high+ | `make fitness-deps` | block | Shipping with a known-exploitable dependency is a security regression that must be visible at commit time. |
 
 Categories: `data integrity` (raw immutability, schema stability), `reproducibility` (seeds, versions, split determinism, config-completeness), `structural` (cycles, layering, dependency direction), `performance` (training/inference latency, throughput), `resource budget` (artifact size, memory), `complexity` (cyclomatic, file size), `security` (deps, surface, secrets), `coverage` (test coverage thresholds).
 
 Severity:
 - `block` — fitness check exits non-zero; the runner reports a failure. Reproducibility and data-integrity rules are almost always `block`.
 - `warn` — surfaces in output but does not fail the runner. Use for budgets that may have a temporary justified excursion.
+
+## Rules considered but rejected
+
+> Negative space matters. When a fitness rule is *proposed* and rejected, record it here so the same rule isn't re-proposed every six months. Keep this section short — if it grows long, the project is rejecting too many rules and the bar may be too high.
+
+| Proposed rule | Why rejected |
+|---------------|--------------|
+| *(example) Per-experiment runtime cap of 1 hour* | Runtime varies legitimately with data size; capping it as a fitness rule produced more noise than insight. The experiment-tracker already records actual runtime; outliers can be reviewed there. |
+| *(example) Model accuracy threshold ≥ 0.85* | Accuracy is the result, not an invariant — encoding it as fitness pressures the run to game the metric. Acceptance criteria belong in the task spec, not the fitness file. |
 
 ## Source-of-truth links
 

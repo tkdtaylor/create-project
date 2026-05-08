@@ -2,7 +2,13 @@
 name: task-executor
 description: Execute a single task from the project plan. Reads the task file and test spec, implements, tests, runs experiments, commits, and reports back. Context is ephemeral — won't bloat the main conversation.
 model: inherit
-# model-tier: fast — scoped implementation work with clear specs; set to fastest capable model
+# model-tier: fast — scoped implementation work with clear specs; set to fastest capable model.
+# Override to `sonnet` (balanced) when tasks routinely span multiple pipeline stages or sit behind
+# a strict reproducibility gate where a broken commit costs more than the model upgrade.
+# Override to `opus` (deep) for cross-stage work: novel modeling decisions, new metric definitions,
+# data-leakage-sensitive splits, or anything where a wrong implementation will silently invalidate
+# prior experiment comparisons. The signal you needed to override is "task-executor shipped an
+# experiment whose results couldn't be reproduced from config" — pay that cost once, then bump.
 color: green
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 ---
@@ -49,6 +55,24 @@ When escalating, stop immediately and return: what you read, which signal applie
    - Data transformations only in `data/processed/`, never `data/raw/`?
    - Reusable logic in `src/`, not in notebooks?
    - **Confidence check:** do you have high confidence that every criterion is genuinely met and every result is reproducible from config alone, or are you hoping? If confidence is low on any specific criterion, do not commit — report back with the uncertain criterion named and recommend a review pass by a higher-tier agent (code-reviewer for quality, architect for pipeline fit, security-auditor for data-leakage concerns).
+
+### 5a. Pre-commit verification gate (NON-NEGOTIABLE)
+
+Before writing the commit, run all four checks below from a fresh shell. Capture the **verbatim** output line your report will quote (paraphrasing is detected and treated as an over-claim):
+
+1. `make check` → final summary line (pytest `==== N passed`, etc.)
+2. `make fitness` → closing line. For data projects, fitness includes reproducibility invariants (raw-data immutability, seed coverage, metric-catalog completeness) — a failure here means a task that *looks* done has broken the reproducibility contract.
+3. Spec-marker grep — every TC marker in the spec must be referenced by a real assertion in tests, not just a smoke call:
+   ```bash
+   for marker in $(grep -oE "TC-[0-9]+(-[A-Za-z0-9]+)?" docs/tasks/test-specs/<NNN>-*.md | sort -u); do
+     if ! grep -rq "$marker" tests/; then echo "MISSING: $marker"; fi
+   done
+   ```
+4. For experiment commits: the run ID, the actual measured metrics (not "passes"), and the config path so the run is reproducible.
+5. If the project has CI: `gh run watch <run-id> --exit-status` → final conclusion (`success` / `failure`).
+
+If any check fails, **fix it before committing** — never stub a no-op and defer the real work. If a structural blocker prevents a real fix, escalate per the tier-check above.
+
 6. **Update spec and diagrams in the same commit if the task or experiment changed any of:**
    - **Pipeline behavior** (training, eval, inference) → edit `docs/spec/behaviors.md`. Add a new `B-NNN` entry or rewrite the existing one.
    - **Pipeline structure** (new stage, new store, moved component boundary, new external data source) → edit `docs/spec/architecture.md` *and* `docs/architecture/diagrams.md` in the same commit — the catalog and the diagrams describe the same model and drift together.
@@ -90,8 +114,10 @@ When escalating, stop immediately and return: what you read, which signal applie
 When done, return:
 1. What you did (brief)
 2. Files changed
-3. Test results
-4. Experiment results (if applicable — metrics, key findings)
-5. Whether the task is complete or needs more work
-6. Any blockers or decisions deferred
-7. Things you noticed but intentionally didn't touch (scope discipline)
+3. **Test results — verbatim final line of `make check` and closing line of `make fitness`** (per gate 5a/5b above; do not paraphrase, do not summarize as "all passed")
+4. Spec-marker grep result ("no missing markers" or the explicit MISSING list)
+5. Experiment results (if applicable — config path, measured metrics with actual numbers, key findings)
+6. CI run ID and the conclusion from `gh run watch <run-id> --exit-status` if the project has CI (do not report complete while CI is in_progress)
+7. Whether the task is complete or needs more work
+8. Any blockers or decisions deferred — including anything you stubbed out
+9. Things you noticed but intentionally didn't touch (scope discipline)
