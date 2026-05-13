@@ -1,1 +1,6 @@
 __pycache__/
+
+# Generated diagram working assets; commit only the final README hero image.
+artifacts/*
+!artifacts/
+!artifacts/claude-code-stack.png

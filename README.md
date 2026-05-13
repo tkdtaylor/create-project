@@ -2,7 +2,9 @@
 
 A Claude Code skill that scaffolds new projects with opinionated structure, isolated Docker workspaces, and Claude-specific tooling setup.
 
-> **Note:** This skill is a work in progress. If you run into any issues, please [open an issue](https://github.com/tkdtaylor/create-project-skill/issues) on the repo.
+![create-project futuristic Claude Code stack diagram showing project memory, subagents, hooks, and skills](artifacts/claude-code-stack.png)
+
+> **Note:** This skill is a work in progress. If you run into any issues, please [open an issue](https://github.com/tkdtaylor/create-project/issues) on the repo.
 
 ## What it does
 
@@ -349,13 +351,13 @@ The skill is developed here and installed to `~/.claude/skills/create-project/`.
 **Option A — Clone (recommended).** Cloning preserves the `.git` directory, which lets the sync flow (`"sync my skills"`) automatically pull upstream updates via `git pull`:
 
 ```bash
-git clone https://github.com/tkdtaylor/create-project-skill.git ~/.claude/skills/create-project
+git clone https://github.com/tkdtaylor/create-project.git ~/.claude/skills/create-project
 ```
 
 **Option B — Copy.** Works, but the sync flow won't be able to auto-update the global install (it will prompt you to reinstall manually):
 
 ```bash
-rm -rf ~/.claude/skills/create-project && cp -r /path/to/create-project-skill ~/.claude/skills/create-project
+rm -rf ~/.claude/skills/create-project && cp -r /path/to/create-project ~/.claude/skills/create-project
 ```
 
 The installed directory name must match the `name:` field in `SKILL.md` (`create-project`).
