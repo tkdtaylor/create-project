@@ -62,11 +62,16 @@ The key distinction: `data/raw/` and `docs/` are inputs (read before you act). `
 
 ## Working in this project
 
-1. Start each session by reading the relevant task file and its test spec
+1. Start each session by reading the relevant task file (including its **Verification plan**) and its test spec
 2. Check `docs/architecture/overview.md` for system context
 3. Write the test spec before implementation code for `src/` modules
 4. Log experiments in the experiment tracker before and after running
-5. **Commit and push after each milestone** — never start the next task without committing
+5. Use the **task-executor** agent to implement — it commits at status **🟡 (code merged)** by default
+6. After the executor returns, use **spec-verifier** on the task — it returns APPROVE or BLOCK based on per-assertion evidence
+7. If spec-verifier APPROVEs **and** the verification plan's L5/L6 evidence is recorded (end-to-end pipeline run on a fixture with measured metric, or operator observation), promote the row to **✅ (verified)** in `coverage-tracker.md` in a **separate commit** titled `verify: confirm task NNN — <fixture + metric>`
+8. **Commit and push after each milestone** — never start the next task without committing
+
+The separation between 🟡 (feat / experiment commit) and ✅ (verify commit) is the load-bearing rule: it makes "code merged" and "pipeline runs end-to-end" two distinct artifacts in git history. The most common data-project failure is "the feature/model passed unit tests but the pipeline never ingests it" — the verify commit closes that gap explicitly.
 
 ## Commit rules
 
@@ -76,7 +81,8 @@ The key distinction: `data/raw/` and `docs/` are inputs (read before you act). `
 |-----------|--------------|---------|
 | ADR written | `docs/architecture/decisions/NNN-*.md`, any superseded spec entries rewritten in `docs/spec/` | `docs: add ADR NNN — <decision title>` |
 | Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
-| Task completed | `src/`, `tests/`, moved task file, updated `coverage-tracker.md`, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
+| Task code merged (🟡) | `src/`, `tests/`, moved task file, `coverage-tracker.md` row set to **🟡**, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
+| Task verified (✅) | `coverage-tracker.md` row promoted from 🟡 → ✅ with `Verified by` column filled (end-to-end pipeline run command + measured metric + fixture/run ID, or operator observation) | `verify: confirm task NNN — <fixture + metric>` |
 | Experiment run | `experiments/`, updated `experiment-tracker.md`, **and any affected `docs/spec/` files (new feature, new metric, schema change)** | `experiment: <hypothesis> — <key result>` |
 | Notebook added | `notebooks/` | `explore: add NNN — <topic>` |
 | Diagram updated | `docs/architecture/diagrams.md` (with date bump at top) | `docs: refresh diagrams — <what changed>` |
@@ -158,12 +164,15 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 
 ### Always
 - Write the test spec before implementation code for `src/` modules
+- Fill in the **Verification plan** section of the task file *before* writing code — fixture path, command, acceptance metric, threshold
 - Commit and push after every milestone (task, experiment, spec, ADR)
 - Set random seeds explicitly for reproducibility
 - Keep `data/raw/` immutable — derive everything into `data/processed/`
 - Log experiments in the tracker before running them
 - **Update `docs/spec/` in the same commit as any pipeline change** — new datasets, schema changes, new features, new metrics, hyperparameter contracts, model artifact contracts
 - **Update `docs/architecture/diagrams.md` when pipeline shape changes** — steps added, removed, or reordered
+- **Default new task status to 🟡 on the feat commit; ✅ only after spec-verifier APPROVE + end-to-end pipeline run on a fixture (or operator-observed live behaviour), in a separate `verify:` commit**
+- **Run `spec-verifier` on every task** before promoting to ✅ — its APPROVE/BLOCK verdict is the gate, not the executor's self-judgement
 
 ### Ask first
 - Modifying files in `docs/plans/`, `docs/tasks/`, or `docs/architecture/decisions/` — they are planning and historical documents
@@ -182,6 +191,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Run `git checkout -- <path>` (or `git checkout <ref> -- <path>`) over a dirty working tree — it silently overwrites uncommitted work and the reflog cannot recover it. To *compare* to a prior commit, use `git diff <ref> -- <path>`, `git show <ref>:<path>`, or `git worktree add ../baseline <ref>`. To *discard* changes, `git stash` first. A `protect-checkout` hook blocks this automatically, but the rule stands even if the hook is disabled.
 - **Append to spec entries instead of rewriting them.** When a feature definition or hyperparameter changes, edit the spec entry to reflect the new truth. The ADR carries history; the spec is a snapshot.
 - **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned experiments and unfinished work go in `docs/plans/` and the experiment tracker.
+- **Mark a task ✅ on the same commit as the feature work or experiment run.** ✅ is reserved for the separate `verify:` commit after spec-verifier APPROVE plus an end-to-end pipeline run on a fixture with the measured metric meeting the acceptance threshold. "Trained the model" is not the same as "the pipeline integrates the model" — the verify commit is where that distinction lives.
+- **Claim a verification level you did not actually reach.** If the pipeline wasn't run end-to-end, the row says `pending` or `N/A`, not ✅. Unit tests on the transform are L2; the pipeline run is L5.
 
 ## Data-specific rationalizations
 

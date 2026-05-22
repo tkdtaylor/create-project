@@ -38,6 +38,26 @@ Before writing any code, verify:
 - [ ] [REQ-001]
 - [ ]
 
+## Verification plan
+
+> **How will we know this works in the running binary?** Fill this in *before* writing code — not after. A task that can't articulate this up-front cannot be marked ✅ later. See `docs/tasks/test-specs/coverage-tracker.md` for the full verification ladder.
+>
+> Pick the highest level that genuinely covers this task and write the exact evidence you expect to produce:
+
+- **Highest level achievable:** L<N> — <one-line reason>
+- **Level 5 — Validation harness command (if applicable):**
+  ```
+  <exact command, e.g. cargo test --release --test e2e_orb -- --ignored>
+  ```
+  Expected final assertion: `<what the harness will print on success>`
+- **Level 6 — Operator observation (if applicable):**
+  - Binary path: `<command to run the relevant binary>`
+  - Targeted behaviour to observe: `<what should appear in stdout / logs / UI>`
+- **Cross-module state risk:** <none | names the new field/queue/event/etc. — the executor must produce a producer-consumer trace>
+- **Runtime-visible surface:** <none | logging | CLI | TUI | endpoint | file output — the executor must run the binary and quote output>
+
+If the task is a pure internal refactor with no runtime-observable surface and no cross-module state, write *"L2 only — internal refactor, unit-test-covered"* and explain why ✅ at L2 is appropriate here.
+
 ## Out of scope
 
 > What this task deliberately does NOT cover. Helps keep it atomic.

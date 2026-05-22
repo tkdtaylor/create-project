@@ -24,6 +24,9 @@ These are excuses agents use to skip steps. Don't fall for them.
 | "I'll update the spec at the end of the day" | No. Spec drift is silent. Update it in the same commit, every time. |
 | "The spec already covers this — close enough" | If "close enough" required reading the code to confirm, the spec is wrong. Fix it now. |
 | "I'll add a 'previously this was X' note to the spec" | Don't. Rewrite the entry. The ADR carries history; the spec is a snapshot. |
+| "Tests pass — the task is done" | Necessary, not sufficient. If the change is runtime-observable, run the binary. If it adds cross-module state, trace producer→consumer on the live path. Status is 🟡 until that's done. |
+| "It worked in the harness — close enough to call it done" | If the harness is the same wire as the live runtime, fine. If the harness is a partial mock or a different code path, it's 🟡, not ✅. Be honest about which one this is. |
+| "The unit test sets the field and the gate fires — wire is good" | A test that sets state by hand proves the gate works *given* the state. It does not prove the state ever gets set on the live path. Grep the write site and the read site and identify the live path before declaring done. |
 
 ## Failure modes (starter set)
 
@@ -63,6 +66,61 @@ session will retry the dispatch.
 **Layer 2 — post-dispatch verification.** After every parallel dispatch completes, run `scripts/verify-worktree-isolation.sh <agent-id> [<agent-id> ...]` and check that each agent has a `worktree-agent-<id>` branch (and that no recent commit on `main` carries the agent's task signature). For any agent that bypassed isolation, `git revert` its commit and re-dispatch with the Layer-1 preamble in place.
 
 **Why both layers:** Layer 1 stops the agent from polluting main if it can detect the missing worktree. But the agent's introspection isn't always trustworthy — Layer 2 is the parent-side audit that catches what slips through. A single layer is not enough: in a real incident, an agent that thought it was inside its worktree ran `git checkout --` to "restore main repo to clean state," which would have wiped foreign uncommitted work from a concurrent session if any had been present.
+
+### "Done" means operationally verified, not "code merged"
+
+A task is not done because `feat-commit` landed, tests passed, or `make fitness` was green. Those are necessary; they are not sufficient. The task is done when the **operational outcome the spec targets is observed** — either by exercising the live binary path or by a validation harness that drives the same code path the runtime uses. Until that observation exists, the task is **🟡 code merged**, not **✅ verified**.
+
+The verification ladder, lowest to highest:
+
+1. Code merged
+2. Unit tests pass
+3. `make fitness` passes
+4. CI pass (if the project has CI)
+5. Validation harness pass — the harness exercises the live runtime path end-to-end
+6. Live binary observation — the operator (or you, via `cargo run` / `npm start` / etc.) sees the targeted behaviour in stdout, logs, or the rendered UI
+
+Levels 1–4 give you 🟡 in the coverage tracker. Level 5 or 6 is what flips it to ✅. Never report a task complete by quoting only levels 1–4 when the task targets runtime-observable behaviour.
+
+The shape of the trap: a feat commit lands, the unit tests pass, the executor declares done, and the next live session reveals the wire was never connected. The fix is to refuse the ✅ until the higher rung is exercised. If the harness for level 5 doesn't exist for this kind of change, that's a blocker to flag, not an excuse to claim ✅ on level 4.
+
+### Producer-consumer trace before declaring done on cross-module state
+
+When the diff adds a new shared state element — a struct field, an `Arc<X>`, an enum variant, a queue, a channel, a config key, a context value, an event, anything one site writes and another reads — the task is not done until you've **traced the producer and the consumer on the live runtime path**.
+
+The trace, as a literal block in your report:
+
+```
+Write sites:
+  - path/to/producer.ext:LINE  — writes inside <stage/handler/function>
+Read sites:
+  - path/to/consumer.ext:LINE  — reads inside <stage/handler/function>
+Live path:
+  <entry point> → <intermediate calls> → producer fires
+                                       → consumer reads
+  Producer fires BEFORE consumer reads on this path: YES / NO / UNVERIFIED
+```
+
+Manually-set-field tests (`state.foo = Some(_); assert!(gate(state))`) prove the gate works *given* the field — they do not prove the field ever gets set on the live path. The trace is what proves the wire meets. If the producer fires after the consumer reads, the feature is broken even though every narrow test passes.
+
+If you can't produce the trace, the task is not done — report blocker. Substituting "by construction" structural tests for the trace is a downgrade and must be flagged, not buried.
+
+### Runtime-visible changes require running it
+
+If the diff affects any of:
+
+- Logging output, log levels, log routing
+- CLI arguments, help text, exit codes
+- TUI rendering, terminal output
+- Server endpoints, HTTP responses, RPC contracts
+- File outputs, generated artifacts
+- Side effects observable from outside the process
+
+…then `make check` + `make fitness` are not verification. You must **actually run the binary path that exercises the change** and quote the relevant output line(s) in your report. Static code review of runtime-observable behaviour is verification theatre.
+
+The pattern that gets caught here: an `eprintln!` → `tracing` migration "passes" all tests because nothing tests stderr layering; the next time someone runs the binary, the TUI is flooded and the log file is empty. Eight lines of diff that a single `cargo run` would have exposed. The rule: when you change what the binary *does at runtime*, observe what the binary *now does at runtime* before claiming done.
+
+If the environment genuinely prevents running the binary (no IB connection, no GPU, no Docker), state that explicitly in the report and downgrade the verdict to 🟡 awaiting operator verification — do not claim ✅.
 
 ### No `git checkout -- <path>` over uncommitted work
 

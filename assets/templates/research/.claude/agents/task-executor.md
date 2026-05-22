@@ -37,12 +37,21 @@ When escalating, return: what you read, which signal applied, the recommended ti
 4. Save worthwhile sources to `sources/web/` as markdown with URL and date at top
 5. Write synthesis notes in `notes/by-topic/` — organize by theme, not by source
 6. **Self-review before completing** — re-read the task's "Done when" criteria:
-   - Is the research question answered?
+   - Is the research question answered, or only "sources gathered"?
    - Are findings supported by sources?
    - Are there gaps that need flagging?
    - **Confidence check:** do you have high confidence the research question is answered, or are you hoping a future reader will fill in the gaps? Low confidence at completion is a tier-mismatch signal — report back noting the uncertain claim and recommend a balanced-tier agent (source-evaluator, outline-builder, or gap-analyst) for a follow-up pass.
+
+   **Answered-by ladder** (mirror in `docs/tasks/progress-tracker.md`):
+   - L1 Searches logged → status ⏳
+   - L2 Sources saved → status 🟡
+   - L3 Synthesis notes written → status 🟡
+   - L4 Research question has a stated answer with citations → status ✅
+   - L5 Answer incorporated into `outputs/drafts/` → status ✅
+
+   "Done when" determines which level is required. *"Find five sources on X"* hits ✅ at L2. *"Answer whether X is feasible for our use case"* requires L4 — sources alone don't answer the question; synthesis does. If you finished at L2 or L3 when the criterion demanded L4, return at 🟡 with the gap named, not ✅.
 7. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/` — use `git mv`, never plain `mv`
-8. Update `docs/tasks/progress-tracker.md`
+8. Update `docs/tasks/progress-tracker.md` — set status to the ladder level you actually reached. Default to 🟡 if the answer is only partially synthesized; ✅ only when the research question has a stated, sourced answer.
 9. **Verify task-file state before staging** — run:
    ```bash
    git ls-files docs/tasks/ | grep "<NNN>-"
@@ -66,10 +75,31 @@ When escalating, return: what you read, which signal applied, the recommended ti
 
 ## Reporting
 
-When done, return:
-1. What you found (brief)
-2. Sources saved
-3. Notes written
-4. Whether the research question is answered or needs more work
-5. Key gaps or follow-up questions identified
-6. Things you noticed but intentionally didn't pursue (scope discipline)
+When done, return the **answered-by ladder** explicitly — state the highest level you reached and what the row in `progress-tracker.md` says:
+
+```
+TASK: NNN — <question>
+TRACKER STATUS: 🟡 sources gathered | ✅ question answered
+
+Answered-by ladder reached: L<N> — <one-line description>
+
+  L1 Searches logged: <count> queries in docs/research-log.md
+  L2 Sources saved: <count> in sources/{web,local}/
+  L3 Synthesis notes: <files in notes/by-topic/>
+  L4 Stated answer with citations: <quote the answer in 1–2 sentences, with source refs>
+  L5 Incorporated into draft: <outputs/drafts/<file>, section>
+
+Key gaps or follow-up questions:
+  - <bullet list, or "none">
+
+Out-of-scope noted but not pursued: <bullet list or "none">
+
+Recommended next step (if 🟡):
+  use source-evaluator on <URL> | use gap-analyst before continuing | continue research on <thread>
+```
+
+Hard rules:
+
+- **Never claim ✅ when the criterion was "answer whether X" and you stopped at "found sources about X."** That's 🟡. Be precise.
+- **Cite sources for any stated answer.** An answer without citations is a guess, not research.
+- **Empty searches count.** Log them — they prevent duplicate work next session.

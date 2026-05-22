@@ -72,6 +72,52 @@ Before writing the commit, run all four checks below from a fresh shell. Capture
 
 If any check fails, **fix it before committing** — never stub a no-op and defer the real work to a future task. If a structural blocker prevents a real fix, escalate per the tier-check above.
 
+### 4b. Producer-consumer trace (required when the diff adds cross-module state)
+
+If the diff adds **any** of: a new struct/class field read elsewhere, a new `Arc<X>` / shared pointer / global, an enum variant consumed by a separate module, a queue or channel, a new event type, a new config key read at a different site, a new context value, or any other shared state where one site writes and another reads — you must produce a producer-consumer trace before commit. Paste this block verbatim into your report:
+
+```
+Cross-module state added: <field / event / config key / etc.>
+
+Write sites (producers):
+  - path/to/producer.ext:LINE — writes inside <stage/handler/function>
+
+Read sites (consumers):
+  - path/to/consumer.ext:LINE — reads inside <stage/handler/function>
+
+Live runtime path:
+  <entry point> → <intermediate calls> → producer fires
+                                       → consumer reads
+
+Producer fires BEFORE consumer reads on this path: YES / NO / UNVERIFIED
+```
+
+A `UNVERIFIED` or `NO` answer is a **blocker**, not a "ship-it-anyway." Report it and stop — do not commit. Manually-set-field unit tests (`state.foo = Some(_); assert!(gate(state))`) prove the gate works *given* the field; they do not prove the field is ever set on the live path. The trace is what proves the wire meets.
+
+If the change does **not** add cross-module state (purely internal refactor, isolated helper function, pure-function bug fix), state that explicitly in the report: "No cross-module state added — trace not required." This makes scope discipline visible to the next reviewer.
+
+### 4c. Runtime-visible change check (required when the diff affects observable behaviour)
+
+If the diff touches **any** of: logging output, log levels, log routing, CLI argument parsing or help text, exit codes, TUI rendering, server endpoints, HTTP/RPC responses, file outputs, generated artifacts, or any side effect observable from outside the process — **run the binary path that exercises the change** and quote the relevant output in your report.
+
+`make check` and `make fitness` do not exercise runtime-observable behaviour. Static code review is not verification for this class of change. The pattern that gets caught here: an `eprintln!` → `tracing` migration "passes" all tests because nothing tests stderr layering; the next time someone runs the binary, the TUI is flooded and the log file is empty. Eight lines of diff that a single `cargo run` / `npm start` would have exposed.
+
+Paste this block into your report:
+
+```
+Runtime-visible surface touched: <logging / CLI / TUI / endpoint / file output / etc.>
+
+Command run: <exact invocation, e.g. cargo run -- --scan>
+Observed output (relevant lines):
+  <verbatim quote — 5–20 lines max, with the targeted behaviour highlighted>
+
+Matches expected behaviour: YES / NO / PARTIAL
+```
+
+If the environment genuinely prevents running the binary (no IB connection, no GPU, no Docker), state that explicitly and downgrade the verdict in the report — do not claim done. The coverage-tracker row stays 🟡 awaiting operator verification.
+
+If the change does **not** affect runtime-observable behaviour, state that explicitly: "No runtime-observable surface touched — runtime check not required."
+
 5. **Update spec and diagrams in the same commit if the task changed any of:**
    - **Externally-visible behavior** → edit `docs/spec/behaviors.md`. Add a new `B-NNN` entry or rewrite the existing one (never append "previously this did X" — the ADR carries history).
    - **System structure** (new container / service / load-bearing component, moved boundary, new external integration) → edit `docs/spec/architecture.md` *and* `docs/architecture/diagrams.md` in the same commit — the catalog and the diagrams describe the same model and drift together.
@@ -82,7 +128,7 @@ If any check fails, **fix it before committing** — never stub a no-op and defe
 
    If unsure whether the change is spec-visible, ask: "could a contributor reading only the spec predict this behavior?" If the answer is no after the change, the spec is missing something and must be updated.
 6. Move the task file from `docs/tasks/backlog/` (or `active/`) to `docs/tasks/completed/` — use `git mv`, never plain `mv`
-7. Update `docs/tasks/test-specs/coverage-tracker.md` — mark spec as complete, status as done
+7. Update `docs/tasks/test-specs/coverage-tracker.md` — mark spec as complete, **status as 🟡 (code merged)**. Do **not** mark ✅ — that is reserved for the main session after spec-verifier APPROVE plus level-5/6 evidence (validation harness or operator observation). In the `Verified by` column, write the highest verification level you reached in 4a–4c (e.g. "L4: CI green + L3: fitness pass" or "L5: harness `<command>` end-to-end on fixture `<path>`").
 8. **Verify task-file state before staging** — run:
    ```bash
    git ls-files docs/tasks/ | grep "<NNN>-"
@@ -111,12 +157,43 @@ If any check fails, **fix it before committing** — never stub a no-op and defe
 
 ## Reporting
 
-When done, return:
-1. What you did (brief)
-2. Files changed
-3. **Test results — verbatim final line of `make check` and closing line of `make fitness`** (per gate 4a/4b above; do not paraphrase, do not summarize as "all passed")
-4. Spec-marker grep result ("no missing markers" or the explicit MISSING list)
-5. CI run ID and the conclusion from `gh run watch <run-id> --exit-status` if the project has CI (do not report complete while CI is in_progress)
-6. Whether the task is complete or needs more work
-7. Any blockers or decisions deferred — **including any function or detector you stubbed out and deferred to a future task**. If you wrote `return False` / `pass` / `return None` as a placeholder for behavior the spec actually requires, name it in the report. Do not bury it in a docstring.
-8. Things you noticed but intentionally didn't touch (scope discipline)
+When done, return the **verification ladder** explicitly — state the highest level you reached and quote the evidence. This is the structure your report must follow:
+
+```
+TASK: NNN — <name>
+COMMIT STATUS: 🟡 code merged (default — main session promotes to ✅ after spec-verifier + harness/operator evidence)
+
+Verification ladder reached: L<N> — <one-line description>
+
+  L1 Code merged: <commit SHA> on <branch>
+  L2 Unit tests: "<verbatim final line of make check>"
+  L3 Fitness: "<verbatim closing line of make fitness>"
+  L4 CI (if applicable): <run-id> → <success | failure>
+  L5 Validation harness: <command> → <final assertion / metric> | N/A — no harness covers this change
+  L6 Operator observation: pending main-session run | N/A — no runtime-observable surface
+
+Producer-consumer trace (4b):
+  <trace block from 4b, or "No cross-module state added — not required">
+
+Runtime-visible check (4c):
+  <observed output block from 4c, or "No runtime-observable surface touched — not required">
+
+Spec-marker grep: <"no missing markers" | MISSING: TC-xxx, TC-yyy>
+
+Stubs / deferrals:
+  <any function or detector left as no-op, with file:line>
+  (none → write "none")
+
+Out-of-scope noted but not touched:
+  <bullet list, or "none">
+
+Recommended next step:
+  use spec-verifier on task NNN before flipping the coverage-tracker row to ✅
+```
+
+Hard rules:
+
+- **Never paraphrase test or fitness output.** "All passed" is an over-claim — quote the verbatim line. The reviewer needs to see the same characters the runner emitted.
+- **Never claim a level you didn't reach.** If you didn't run the validation harness, the row says `N/A` or `pending`, not ✅.
+- **Never bury a stub.** A `return False` / `pass` / `return None` placeholder for behaviour the spec demands is a blocker, not a footnote.
+- **Default the coverage-tracker status to 🟡.** ✅ is for the main session after spec-verifier + level-5/6 evidence; producing it yourself is a rule violation regardless of how confident you feel.

@@ -40,6 +40,15 @@ How to tackle this:
 
 -
 
+## Verification plan
+
+> **How will we know the research question is *answered*, not just "searched"?** Fill this in before starting. See `docs/tasks/progress-tracker.md` for the answered-by ladder.
+
+- **Highest level achievable:** L<N> — <one-line reason>
+- **Level 4 — Stated answer with citations (if applicable):** The task is answered when the question `<restate the question>` has a stated answer of the form `<rough shape: yes/no with reasons | comparison table | recommendation | etc.>`, backed by at least `<N>` independent sources.
+- **Level 5 — Incorporated into a draft (if applicable):** The answer lives in `outputs/drafts/<file>.md` under section `<section name>` and survives a second-pass review.
+- **What "🟡 sources gathered" looks like for this task:** the row stops here if synthesis is incomplete or sources contradict and no resolution is reached. Name what would still need to happen for ✅.
+
 ## Findings
 
 > Populated as work progresses. Link to notes in `notes/by-topic/` for detail.

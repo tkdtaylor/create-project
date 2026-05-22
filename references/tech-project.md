@@ -177,8 +177,9 @@ Populate both with real content based on the project context — not generic pla
 
 Add a row to `docs/tasks/test-specs/coverage-tracker.md`:
 ```
-| 001 | Project setup | 001-project-setup-test-spec.md | ✅ | ⏳ In progress |
+| 001 | Project setup | 001-project-setup-test-spec.md | ✅ | ⏳ | — |
 ```
+(Six columns: Task ID, Feature, Spec file, Tests written, Status, Verified by. The `Verified by` column is filled in by the verify commit later — `—` is fine while the task is in progress.)
 
 Then ask: *"Would you like me to scaffold a minimal starter in `src/` based on your stack? This gives you something runnable from day one — e.g. a health endpoint for an API, an entry point for a CLI, or a basic pipeline skeleton."*
 

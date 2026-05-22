@@ -66,11 +66,15 @@ Derived working rules:
 
 ## Working in this project
 
-1. Start each session by reading the relevant task file and its test spec
+1. Start each session by reading the relevant task file (including its **Verification plan**) and its test spec
 2. Check `docs/architecture/overview.md` for system context
 3. Write the test spec before any implementation code
-4. Move tasks to `completed/` and update `coverage-tracker.md` when done
-5. **Commit and push immediately after each milestone** — never start the next task without committing the current one first
+4. Use the **task-executor** agent to implement — it commits at status **🟡 (code merged)** by default
+5. After the executor returns, use **spec-verifier** on the task — it returns APPROVE or BLOCK based on per-assertion evidence
+6. If spec-verifier APPROVEs **and** the verification plan's L5/L6 evidence is recorded in the executor's report (validation harness output or runtime observation), promote the row to **✅ (verified)** in `coverage-tracker.md` in a **separate commit** titled `verify: confirm task NNN — <evidence>`
+7. **Commit and push after each milestone** — never start the next task without committing the current one first
+
+The separation between 🟡 (feat commit) and ✅ (verify commit) is the load-bearing rule: it makes "merged" and "verified" two distinct artifacts in git history, so neither can silently substitute for the other. **Never** mark ✅ in the same commit as the feature work — the verification step must be its own observable event.
 
 ## Commit rules
 
@@ -80,7 +84,8 @@ Derived working rules:
 |-----------|--------------|---------|
 | ADR written | `docs/architecture/decisions/NNN-*.md`, any superseded spec entries rewritten in `docs/spec/` | `docs: add ADR NNN — <decision title>` |
 | Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
-| Task completed | `src/` changes, moved task file, updated `coverage-tracker.md`, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
+| Task code merged (🟡) | `src/` changes, moved task file, `coverage-tracker.md` row set to **🟡**, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
+| Task verified (✅) | `coverage-tracker.md` row promoted from 🟡 → ✅ with `Verified by` column filled (harness command + final assertion, or operator observation) | `verify: confirm task NNN — <evidence>` |
 | Diagram updated | `docs/architecture/diagrams.md` (with date bump at top) | `docs: refresh diagrams — <what changed>` |
 | Spec rewritten standalone | `docs/spec/<file>.md` | `spec: <what changed and why now>` |
 
@@ -128,11 +133,14 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 
 ### Always
 - Write the test spec before any implementation code
+- Fill in the **Verification plan** section of the task file *before* writing code — the highest verification level achievable, the harness command, the runtime observation
 - Commit and push after every milestone (task completed, spec written, ADR written)
-- Read the task file and test spec before starting work on a task
+- Read the task file (including its Verification plan) and test spec before starting work on a task
 - Create an ADR for significant design decisions
 - **Update `docs/spec/` in the same commit as any code change that alters externally-visible behavior, data model, interfaces, or configuration**
 - **Update `docs/architecture/diagrams.md` in the same commit as any code change that moves a component boundary or alters a diagrammed runtime flow**
+- **Default new task status to 🟡 on the feat commit; ✅ only after spec-verifier APPROVE + recorded L5/L6 evidence, in a separate `verify:` commit**
+- **Run `spec-verifier` on every task** before promoting to ✅ — its APPROVE/BLOCK verdict is the gate, not the executor's self-judgement
 
 ### Ask first
 - Modifying files in `docs/plans/`, `docs/tasks/`, or `docs/architecture/decisions/` — they are planning and historical documents
@@ -150,6 +158,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - Run `git checkout -- <path>` (or `git checkout <ref> -- <path>`) over a dirty working tree — it silently overwrites uncommitted work and the reflog cannot recover it. To *compare* to a prior commit, use `git diff <ref> -- <path>`, `git show <ref>:<path>`, or `git worktree add ../baseline <ref>`. To *discard* changes, `git stash` first. A `protect-checkout` hook blocks this automatically, but the rule stands even if the hook is disabled.
 - **Append to spec entries instead of rewriting them.** When a decision changes, edit the spec entry to reflect the new truth. The ADR keeps the history — the spec is a snapshot, not a changelog.
 - **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned work goes in `docs/plans/` and `docs/tasks/`.
+- **Mark a task ✅ on the same commit as the feature work.** ✅ is reserved for the separate `verify:` commit after spec-verifier APPROVE plus L5/L6 evidence. Merged-equals-verified is the failure mode this rule exists to prevent.
+- **Claim a verification level you did not actually reach.** If the binary wasn't run, the row says `pending` or `N/A`, not ✅. If the harness doesn't exist, that's a blocker to flag, not an excuse for ✅ at L4.
 
 ## Agent rules and retros
 

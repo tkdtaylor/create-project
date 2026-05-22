@@ -200,8 +200,9 @@ Populate both with real content based on the project — include actual acceptan
 
 Add a row to `docs/tasks/test-specs/coverage-tracker.md`:
 ```
-| 001 | Project setup | 001-project-setup-test-spec.md | ✅ | ⏳ In progress |
+| 001 | Project setup | 001-project-setup-test-spec.md | ✅ | ⏳ | — |
 ```
+(Six columns: Task ID, Feature, Spec file, Tests written, Status, Verified by. The `Verified by` column is filled in by the verify commit later — `—` is fine while the task is in progress.)
 
 Then ask: *"Would you like me to scaffold a minimal data pipeline in `src/`? This gives you a working skeleton — a data loader, a basic feature transform, and a simple model training entry point."*
 

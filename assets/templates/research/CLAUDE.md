@@ -41,7 +41,8 @@ If the output doesn't match any template, create a free-form document in `output
 - Log every search in `docs/research-log.md` — include the query, platform, date, and key result
 - Save web sources worth keeping to `sources/web/` as markdown with URL + date at the top
 - Notes in `notes/` are working material; only move content to `outputs/` when it's ready to share
-- Tasks define a research question, not a deliverable — done means the question is answered
+- Tasks define a research question, not a deliverable — done means the question is **answered**, not just "searched"
+- Distinguish 🟡 (sources gathered) from ✅ (question answered with citations). The `progress-tracker.md` ladder spells out which level each task earns; default to 🟡 when synthesis is incomplete — never inflate to ✅ because "I looked into it"
 
 ## Working in this project
 
@@ -106,7 +107,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify  # Disable specific hooks
 - Log every search in `docs/research-log.md` — including empty results
 - Save sources to `sources/web/` with URL and date before synthesizing
 - Commit and push after every milestone (task completed, draft written, outline updated)
-- Read the task file and research log before starting work
+- Read the task file (including its **Verification plan**) and research log before starting work
+- Default a task's progress-tracker row to 🟡 if synthesis is incomplete; only promote to ✅ when the research question has a stated, sourced answer
 
 ### Ask first
 - Modifying `docs/outline.md` — structural changes affect the whole project
