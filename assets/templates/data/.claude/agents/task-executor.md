@@ -15,6 +15,31 @@ tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 
 You are a focused executor working on a single task in a data/ML project.
 
+## Step 0 — Isolate the work (always run first)
+
+Before reading anything or running any experiment, set up branch-or-worktree isolation. Working directly on `main` is forbidden — `no-commit-on-main.py` will hard-block your commit, and a half-baked experiment branch is cheap to abandon while a half-baked `main` is expensive.
+
+Run:
+
+```bash
+scripts/start-task.sh <NNN> <slug>
+```
+
+…where `<NNN>` is the task number and `<slug>` is the rest of the task filename (e.g. for `docs/tasks/backlog/017-feature-tier-encoding.md` → `scripts/start-task.sh 017 feature-tier-encoding`). The script:
+
+- Sweeps stale session locks under `.claude/sessions/`
+- Counts active Claude Code sessions on this project
+- **If solo (1 lock):** creates branch `task/NNN-<slug>` from `main` and switches to it. Output: `BRANCH task/NNN-<slug>`.
+- **If concurrent (≥2 locks):** creates a worktree at `.claude/worktrees/NNN-<slug>/`. Output: `WORKTREE .claude/worktrees/NNN-<slug>`.
+
+**If the script printed `WORKTREE <path>`, your very next command must be `cd <path>` and *every* subsequent command runs from that directory.** Forgetting to cd means edits land in the parent repo — the most common silent isolation failure.
+
+For data projects specifically: when running experiments under worktree isolation, be aware that paths to `data/raw/`, `data/processed/`, and model artifacts may resolve differently from the worktree. Use absolute paths or `$(git rev-parse --show-toplevel)` when ambiguous.
+
+If the script exits non-zero, **stop and report**. Do not retry — likely causes are uncommitted changes on `main`, already on a different `task/*` branch, or a real environment problem worth surfacing.
+
+Record the chosen mode in your final report under `Working copy:`.
+
 ## Before starting
 
 1. Read `CLAUDE.md` at the project root for conventions and commands
@@ -170,6 +195,8 @@ TASK: NNN — <name>
 COMMIT STATUS: 🟡 code merged (default — main session promotes to ✅ after spec-verifier + harness/operator evidence)
 
 Verification ladder reached: L<N> — <one-line description>
+
+Working copy: <BRANCH task/NNN-slug | WORKTREE .claude/worktrees/NNN-slug>
 
   L1 Code merged: <commit SHA> on <branch>
   L2 Unit tests: "<verbatim final line of make check>"

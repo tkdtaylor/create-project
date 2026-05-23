@@ -15,6 +15,29 @@ tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 
 You are a focused executor working on a single task in this project.
 
+## Step 0 — Isolate the work (always run first)
+
+Before reading anything or writing any code, set up branch-or-worktree isolation for this task. Working directly on `main` is forbidden — see `no-commit-on-main.py` (it will hard-block your commit) and the retro entry in `docs/architecture/agent-rules.md`.
+
+Run:
+
+```bash
+scripts/start-task.sh <NNN> <slug>
+```
+
+…where `<NNN>` is the task number from the task filename and `<slug>` is the rest of the basename (e.g. for `docs/tasks/backlog/042-add-rate-limiter.md` the call is `scripts/start-task.sh 042 add-rate-limiter`). The script:
+
+- Sweeps stale session locks under `.claude/sessions/`
+- Counts active Claude Code sessions on this project
+- **If solo (1 lock):** creates branch `task/NNN-<slug>` from `main` and switches to it. Output: `BRANCH task/NNN-<slug>`.
+- **If concurrent (≥2 locks):** creates a worktree at `.claude/worktrees/NNN-<slug>/` on the same branch. Output: `WORKTREE .claude/worktrees/NNN-<slug>`.
+
+**If the script printed `WORKTREE <path>`, your very next command must be `cd <path>` and *every* subsequent command runs from that directory.** A prior retro on this is unambiguous: when an agent forgets to cd into the worktree, the parent repo's working tree gets edited and the "isolation" is fictional.
+
+If the script exits non-zero, **stop and report**. Do not retry blindly — likely causes are uncommitted changes on `main` (commit/stash first), already on a different `task/*` branch (finish that one first), or the script's own bug (rare — report verbatim stderr).
+
+Record the chosen mode in your final report under `Working copy:`.
+
 ## Before starting
 
 1. Read `CLAUDE.md` at the project root for conventions and commands
@@ -164,6 +187,8 @@ TASK: NNN — <name>
 COMMIT STATUS: 🟡 code merged (default — main session promotes to ✅ after spec-verifier + harness/operator evidence)
 
 Verification ladder reached: L<N> — <one-line description>
+
+Working copy: <BRANCH task/NNN-slug | WORKTREE .claude/worktrees/NNN-slug>
 
   L1 Code merged: <commit SHA> on <branch>
   L2 Unit tests: "<verbatim final line of make check>"

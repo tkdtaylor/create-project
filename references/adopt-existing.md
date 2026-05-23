@@ -226,8 +226,9 @@ fi
 # the user through a 3d picker.
 cp "$TEMPLATE_DIR/.claude/agents/"*.md .claude/agents/
 
-# Project scripts (shared across all project types — research only gets check-task-state.sh)
+# Project scripts (shared across all project types — research only gets check-task-state.sh + start-task.sh)
 cp "$COMMON_DIR/scripts/check-task-state.sh" scripts/
+cp "$COMMON_DIR/scripts/start-task.sh" scripts/
 if [ "<type>" != "research" ]; then
   cp "$COMMON_DIR/scripts/verify-worktree-isolation.sh" scripts/
 
@@ -238,9 +239,16 @@ if [ "<type>" != "research" ]; then
   fi
 fi
 chmod +x scripts/*.sh
+
+# .gitignore — make sure .claude/sessions/ doesn't get committed
+if [ -f .gitignore ]; then
+  grep -qxF ".claude/sessions/" .gitignore || echo ".claude/sessions/" >> .gitignore
+else
+  echo ".claude/sessions/" > .gitignore
+fi
 ```
 
-For **tech/data projects**, this copies the universal hooks plus the tech-only hooks (config-protection, protect-checkout, edit-tracker, batch-format-typecheck, spec-coverage-check, scope-drift-summary, detect-smoke-tests, check-fitness), 5 always-installed agents (task-executor, architect, code-reviewer, security-auditor, spec-verifier) plus optional templates (qa, docs-writer, task-planner, dependency-auditor for tech), the project scripts (`check-task-state.sh`, `verify-worktree-isolation.sh`), and the starter `agent-rules.md` (only if not already present — it accumulates retro entries). For **research projects**, this copies the universal hooks and only task-executor.
+For **tech/data projects**, this copies the universal hooks (incl. `no-commit-on-main.py`, `session-lock.py`, `session-lock-touch.py`) plus the tech-only hooks (config-protection, protect-checkout, edit-tracker, batch-format-typecheck, spec-coverage-check, scope-drift-summary, detect-smoke-tests, check-fitness, auto-cleanup-merge), 5 always-installed agents (task-executor, architect, code-reviewer, security-auditor, spec-verifier) plus optional templates (qa, docs-writer, task-planner, dependency-auditor for tech), the project scripts (`check-task-state.sh`, `start-task.sh`, `verify-worktree-isolation.sh`), and the starter `agent-rules.md` (only if not already present — it accumulates retro entries). For **research projects**, this copies the universal hooks (incl. session-lock, no-commit-on-main) plus `start-task.sh` and only task-executor.
 
 Substitute `<type>` with `tech`, `data`, or `research` based on A2.
 

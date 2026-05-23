@@ -156,8 +156,12 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/scripts/strategic-compact.py` → `assets/templates/common/.claude/scripts/strategic-compact.py`
 - `.claude/scripts/desktop-notify.py` → `assets/templates/common/.claude/scripts/desktop-notify.py`
 - `.claude/scripts/inject-retros.py` → `assets/templates/common/.claude/scripts/inject-retros.py`
+- `.claude/scripts/no-commit-on-main.py` → `assets/templates/common/.claude/scripts/no-commit-on-main.py`
+- `.claude/scripts/session-lock.py` → `assets/templates/common/.claude/scripts/session-lock.py`
+- `.claude/scripts/session-lock-touch.py` → `assets/templates/common/.claude/scripts/session-lock-touch.py`
 - `.claude/agents/task-executor.md` → `assets/templates/<type>/.claude/agents/task-executor.md`
 - `scripts/check-task-state.sh` → `assets/templates/common/scripts/check-task-state.sh` (mode 755)
+- `scripts/start-task.sh` → `assets/templates/common/scripts/start-task.sh` (mode 755)
 
 **tech and data only (hooks from `tech/`, agents from `<type>/`):**
 - `.claude/scripts/config-protection.py` → `assets/templates/tech/.claude/scripts/config-protection.py`
@@ -168,6 +172,7 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/scripts/scope-drift-summary.py` → `assets/templates/tech/.claude/scripts/scope-drift-summary.py`
 - `.claude/scripts/detect-smoke-tests.py` → `assets/templates/tech/.claude/scripts/detect-smoke-tests.py`
 - `.claude/scripts/check-fitness.py` → `assets/templates/tech/.claude/scripts/check-fitness.py`
+- `.claude/scripts/auto-cleanup-merge.py` → `assets/templates/tech/.claude/scripts/auto-cleanup-merge.py`
 - `.claude/agents/architect.md` → `assets/templates/<type>/.claude/agents/architect.md`
 - `.claude/agents/code-reviewer.md` → `assets/templates/<type>/.claude/agents/code-reviewer.md`
 - `.claude/agents/security-auditor.md` → `assets/templates/<type>/.claude/agents/security-auditor.md`

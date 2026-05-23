@@ -106,6 +106,7 @@ Templates come from two directories:
 | `.claude/scripts/scope-drift-summary.py` | `.claude/scripts/scope-drift-summary.py` |
 | `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
 | `.claude/scripts/check-fitness.py` | `.claude/scripts/check-fitness.py` |
+| `.claude/scripts/auto-cleanup-merge.py` | `.claude/scripts/auto-cleanup-merge.py` |
 | `.claude/agents/task-executor.md` | `.claude/agents/task-executor.md` |
 | `.claude/agents/architect.md` | `.claude/agents/architect.md` |
 | `.claude/agents/code-reviewer.md` | `.claude/agents/code-reviewer.md` |
@@ -120,10 +121,14 @@ Templates come from two directories:
 |----------|-------------|
 | `agent-rules.md` | `docs/architecture/agent-rules.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
+| `scripts/start-task.sh` | `scripts/start-task.sh` (mode 755) |
 | `scripts/verify-worktree-isolation.sh` | `scripts/verify-worktree-isolation.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
+| `.claude/scripts/no-commit-on-main.py` | `.claude/scripts/no-commit-on-main.py` |
+| `.claude/scripts/session-lock.py` | `.claude/scripts/session-lock.py` |
+| `.claude/scripts/session-lock-touch.py` | `.claude/scripts/session-lock-touch.py` |
 | `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
 | `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
@@ -138,8 +143,8 @@ All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) 
 
 | Profile | Hooks |
 |---------|-------|
-| **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits), `protect-checkout` (block `git checkout -- <path>` over a dirty tree) |
-| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns), `inject-retros` (SessionStart — surface relevant Failure-mode entries from CLAUDE.md), `spec-coverage-check` (block `git commit` if active task's TC markers have no test references), `scope-drift-summary` (Stop — print one-line summary of diff vs spec coverage), `detect-smoke-tests` (Stop — flag tests in diff with no assertions) |
+| **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits), `protect-checkout` (block `git checkout -- <path>` over a dirty tree), `no-commit-on-main` (block `git commit` on main/master/trunk once `task/*` branches exist, with `[allow-main]` opt-out), `session-lock` + `session-lock-touch` (SessionStart writes a per-session lock and sweeps stale ones; Stop refreshes the lock) |
+| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns), `inject-retros` (SessionStart — surface relevant Failure-mode entries from CLAUDE.md), `spec-coverage-check` (block `git commit` if active task's TC markers have no test references), `scope-drift-summary` (Stop — print one-line summary of diff vs spec coverage), `detect-smoke-tests` (Stop — flag tests in diff with no assertions), `auto-cleanup-merge` (PostToolUse Bash — after `git merge task/...` or `gh pr merge`, auto-deletes the branch and removes the worktree) |
 | **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `check-fitness` (Stop — runs `make fitness` if defined, warns on failures, doesn't block), `desktop-notify` (OS notification on completion) |
 
 **Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
@@ -332,6 +337,12 @@ Append to `.gitignore` (create if it does not exist):
 # Docker Sandbox worktrees
 .sbx/
 
+# Per-task worktrees (created by scripts/start-task.sh under concurrent sessions)
+.claude/worktrees/
+
+# Per-session lock files (used by session-lock.py to detect concurrent sessions)
+.claude/sessions/
+
 # Secrets
 .env
 
@@ -498,6 +509,12 @@ Do not substitute `${HOME}` — that is a Docker Compose variable resolved at ru
 
 Append to `.gitignore` (create it if it does not exist):
 ```
+# Per-task worktrees (created by scripts/start-task.sh under concurrent sessions)
+.claude/worktrees/
+
+# Per-session lock files (used by session-lock.py to detect concurrent sessions)
+.claude/sessions/
+
 # Secrets
 .env
 

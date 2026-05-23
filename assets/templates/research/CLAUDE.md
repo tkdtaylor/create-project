@@ -46,11 +46,15 @@ If the output doesn't match any template, create a free-form document in `output
 
 ## Working in this project
 
+Every research task runs on its own branch — working directly on `main` is blocked by the `no-commit-on-main.py` hook so concurrent sessions never overwrite each other's notes. `scripts/start-task.sh` is how you set it up.
+
 1. Start each session by reading the active task file and `docs/research-log.md`
 2. Check `docs/outline.md` for the target output structure
-3. Log every search before moving on — even dead ends
-4. Save sources before synthesizing — don't rely on memory
-5. **Commit and push after each milestone** — never start the next task without committing
+3. Use the **task-executor** agent for research tasks — its Step 0 runs `scripts/start-task.sh <NNN> <slug>` to create branch `task/NNN-<slug>` (or a worktree under concurrent sessions)
+4. Log every search before moving on — even dead ends
+5. Save sources before synthesizing — don't rely on memory
+6. When the task is done, **merge to main** explicitly: `git checkout main && git merge task/NNN-<slug> && git branch -d task/NNN-<slug>`
+7. **Commit and push after each milestone** — never start the next task without committing
 
 ## Commit rules
 
@@ -109,6 +113,7 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify  # Disable specific hooks
 - Commit and push after every milestone (task completed, draft written, outline updated)
 - Read the task file (including its **Verification plan**) and research log before starting work
 - Default a task's progress-tracker row to 🟡 if synthesis is incomplete; only promote to ✅ when the research question has a stated, sourced answer
+- Start every task on its own branch via `scripts/start-task.sh <NNN> <slug>` — the task-executor runs this as Step 0
 
 ### Ask first
 - Modifying `docs/outline.md` — structural changes affect the whole project
@@ -121,6 +126,7 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify  # Disable specific hooks
 - Skip logging a search — dead ends prevent duplicate work
 - Combine multiple tasks into one commit
 - Add a `Co-Authored-By` line to commits unless explicitly asked
+- Commit directly to `main`. Every task commit lands on `task/NNN-<slug>`. For a standalone fix to a typo or outline tweak that doesn't warrant a task, include `[allow-main]` in the commit message.
 
 ## Common rationalizations
 

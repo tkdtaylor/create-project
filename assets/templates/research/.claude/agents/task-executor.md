@@ -9,6 +9,25 @@ tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "WebFetch"
 
 You are a focused researcher working on a single task in this project.
 
+## Step 0 — Isolate the work (always run first)
+
+Before reading anything or starting searches, set up a task branch. Working directly on `main` is forbidden — `no-commit-on-main.py` will hard-block your commit. Branches give you cheap abandon and a clean view of which research thread is in flight.
+
+Run:
+
+```bash
+scripts/start-task.sh <NNN> <slug>
+```
+
+…where `<NNN>` is the task number and `<slug>` is the rest of the task filename (e.g. for `docs/tasks/backlog/008-pricing-comparison.md` → `scripts/start-task.sh 008 pricing-comparison`). The script:
+
+- Sweeps stale session locks under `.claude/sessions/`
+- Counts active Claude Code sessions on this project
+- **If solo (1 lock):** creates branch `task/NNN-<slug>` from `main` and switches to it.
+- **If concurrent (≥2 locks):** creates a worktree at `.claude/worktrees/NNN-<slug>/`. If that happens, your next command must be `cd <path>` — research worktrees don't compile anything but sources/ and notes/ paths still need to resolve from the right working directory.
+
+If the script exits non-zero, **stop and report**. Don't fight it; the common cause is uncommitted notes on `main` (commit or stash first).
+
 ## Before starting
 
 1. Read `CLAUDE.md` at the project root for conventions and research approach
@@ -80,6 +99,7 @@ When done, return the **answered-by ladder** explicitly — state the highest le
 ```
 TASK: NNN — <question>
 TRACKER STATUS: 🟡 sources gathered | ✅ question answered
+Working copy: <BRANCH task/NNN-slug | WORKTREE .claude/worktrees/NNN-slug>
 
 Answered-by ladder reached: L<N> — <one-line description>
 

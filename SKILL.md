@@ -248,6 +248,9 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/scripts/strategic-compact.py` | Yes |
 | `.claude/scripts/desktop-notify.py` | Yes |
 | `.claude/scripts/inject-retros.py` | Yes |
+| `.claude/scripts/session-lock.py` | Yes |
+| `.claude/scripts/session-lock-touch.py` | Yes |
+| `.claude/scripts/no-commit-on-main.py` | Yes |
 | `.claude/scripts/config-protection.py` | tech, data |
 | `.claude/scripts/protect-checkout.py` | tech, data |
 | `.claude/scripts/edit-tracker.py` | tech, data |
@@ -256,12 +259,14 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/scripts/scope-drift-summary.py` | tech, data |
 | `.claude/scripts/detect-smoke-tests.py` | tech, data |
 | `.claude/scripts/check-fitness.py` | tech, data |
+| `.claude/scripts/auto-cleanup-merge.py` | tech, data |
 | `.claude/agents/task-executor.md` | Yes |
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |
 | `.claude/agents/security-auditor.md` | tech, data |
 | `.claude/agents/spec-verifier.md` | tech, data |
 | `scripts/check-task-state.sh` | Yes |
+| `scripts/start-task.sh` | Yes |
 | `scripts/verify-worktree-isolation.sh` | tech, data |
 
 Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill. Optional agent templates the skill ships (`qa.md`, `docs-writer.md`, `task-planner.md`, `dependency-auditor.md`) are only added to the manifest if Step 3d installed them.
@@ -348,9 +353,11 @@ When asked to add a task to an existing project:
 
 **Important: you must commit and push after every milestone. Never start the next task without committing the current one first. Do not batch multiple tasks into a single commit.**
 
-When a **technical** task is completed:
+Implementation work runs through `task-executor`, which calls `scripts/start-task.sh <NNN> <slug>` as Step 0 to create the `task/NNN-<slug>` branch (or a worktree under concurrent sessions). All task commits land on that branch, never on `main`. The project's `CLAUDE.md` describes the full lifecycle (🟡 feat commit → spec-verifier → ✅ verify commit → merge → auto-cleanup).
+
+When a **technical** task is completed (on its task branch):
 1. Move the task file from `tasks/active/` to `tasks/completed/`
-2. Update the status in `coverage-tracker.md`
+2. Update the status in `coverage-tracker.md` — **🟡 by default**, ✅ only after spec-verifier APPROVE + L5/L6 evidence in a separate verify commit
 3. Commit and push before starting anything else:
    ```bash
    git add src/ docs/tasks/ docs/tasks/test-specs/coverage-tracker.md
@@ -358,9 +365,9 @@ When a **technical** task is completed:
    git push
    ```
 
-When a **research** task is completed:
+When a **research** task is completed (on its task branch):
 1. Move the task file from `tasks/active/` to `tasks/completed/`
-2. Update the status in `progress-tracker.md`
+2. Update the status in `progress-tracker.md` — **🟡** if only sources were gathered; **✅** when the research question has a stated, sourced answer
 3. Commit and push before starting anything else:
    ```bash
    git add sources/ notes/ docs/tasks/ docs/research-log.md docs/tasks/progress-tracker.md
@@ -368,12 +375,14 @@ When a **research** task is completed:
    git push
    ```
 
-When an ADR is written (tech), commit and push immediately:
+When an ADR is written (tech) on a task branch, commit and push:
 ```bash
 git add docs/architecture/decisions/
 git commit -m "docs: add ADR NNN — <decision title>"
 git push
 ```
+
+For a standalone ADR that doesn't belong to any task (e.g. retroactive documentation of an existing decision), include `[allow-main]` in the message so the `no-commit-on-main` hook lets it through on the default branch.
 
 When an outline is updated (research), commit and push immediately:
 ```bash

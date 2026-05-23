@@ -19,8 +19,8 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 7. **Technical / Data:** sets up an isolated workspace automatically — Docker Sandbox (`sbx`) when available (microVM with network policies and credential proxy), falling back to Docker Engine (shared base image + project-specific image + per-project named volume) on Linux or CI
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
-10. Ships five agents out of the box: task-executor (TDD workflow with a non-negotiable pre-commit verification gate), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Optional agent templates ship for Step 3d to install when warranted: qa (read-only test/spec gap classifier), docs-writer (README/docstring/CHANGELOG synthesis), task-planner (feature → scoped tasks), and dependency-auditor (cross-ecosystem dep scanning). Model tiers auto-mapped to the best available model
-11. Installs hooks across six lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, failure-mode retrospective injection at session start, plan-to-tasks restructuring, edit tracking for batch processing, pre-commit spec-coverage enforcement, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, batch format+typecheck, scope-drift summary, smoke-test detection, fitness-function execution (`make fitness`), and desktop notifications
+10. Ships five agents out of the box: task-executor (TDD workflow with automatic branch-or-worktree isolation, producer-consumer trace, runtime-visible-change check, and a non-negotiable pre-commit verification gate), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Optional agent templates ship for Step 3d to install when warranted: qa (read-only test/spec gap classifier), docs-writer (README/docstring/CHANGELOG synthesis), task-planner (feature → scoped tasks), and dependency-auditor (cross-ecosystem dep scanning). Model tiers auto-mapped to the best available model
+11. Installs hooks across six lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, no-commit-on-main with `[allow-main]` opt-out, session locking + stale-lock sweep for multi-session safety, failure-mode retrospective injection at session start, plan-to-tasks restructuring, edit tracking for batch processing, pre-commit spec-coverage enforcement, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, auto-cleanup of merged task branches and worktrees, batch format+typecheck, scope-drift summary, smoke-test detection, fitness-function execution (`make fitness`), and desktop notifications
 12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
 13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — defaults to **intelligent merge over overwrite**, prompts only when a merge can't reconcile, and prints a per-file diff summary so `git diff` is the safety net rather than a wall of confirmation prompts
 
@@ -32,7 +32,7 @@ A Claude Code project can be customized at four layers — project memory, subag
 flowchart TB
     L1["<b>CLAUDE.md</b> — Project memory<br/>Generated from the actual codebase:<br/>framework snippets, three-tier boundaries,<br/>retros, repo map"]
     L2["<b>.claude/agents/</b> — Subagents<br/>task-executor · architect · code-reviewer ·<br/>security-auditor · spec-verifier<br/>(+ 4 optional agents)"]
-    L3["<b>.claude/scripts/ + settings.json</b> — Hooks<br/>17 hooks across 6 lifecycle events,<br/>profile-gated (minimal / standard / strict)"]
+    L3["<b>.claude/scripts/ + settings.json</b> — Hooks<br/>21 hooks across 6 lifecycle events,<br/>profile-gated (minimal / standard / strict)"]
     L4["<b>~/.claude/skills/</b> — Skills<br/>This skill itself, plus a sync-skills flow<br/>that keeps other globally installed skills updated"]
     L1 --> L2 --> L3 --> L4
 ```
@@ -41,7 +41,7 @@ The skill also ships `docs/spec/` + `diagrams.md` as the project's authoritative
 
 ## First-time setup
 
-Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures hooks across six lifecycle events (safety, workflow, formatting, and fitness-function execution), all gated by `CLAUDE_HOOK_PROFILE` environment variable (minimal/standard/strict). No manual configuration needed per project.
+Every project created by this skill includes a `.claude/settings.json` that auto-approves most bash commands inside the container while retaining prompts for destructive operations (`sudo`, `rm -rf`, `git push --force`, etc.). It also configures hooks across six lifecycle events (safety, multi-session isolation, workflow, formatting, and fitness-function execution), all gated by `CLAUDE_HOOK_PROFILE` environment variable (minimal/standard/strict). No manual configuration needed per project.
 
 If you want the same behaviour on the **host** or in sessions outside a project container, add the same permissions to your global `~/.claude/settings.json`:
 
@@ -244,11 +244,15 @@ assets/
       agent-rules.md             # starter retro log — worktree, smoke-test, dead-code, git checkout failure modes (tech/data only — paired with inject-retros.py)
       scripts/
         check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed} (all types)
+        start-task.sh            # branch-or-worktree setup keyed off live session count (all types)
         verify-worktree-isolation.sh # post-dispatch audit: confirms parallel agents respected isolation: "worktree" (tech/data only)
       .claude/scripts/
         _hook_utils.py           # shared profile gating module (minimal/standard/strict)
         protect-secrets.py       # blocks writes to private keys and credential files
         block-no-verify.py       # blocks --no-verify on git commands
+        no-commit-on-main.py     # PreToolUse Bash — blocks `git commit` on main/master unless [allow-main] marker present
+        session-lock.py          # SessionStart — writes per-session lock, sweeps stale ones (mtime > 4h)
+        session-lock-touch.py    # Stop — refreshes this session's lock mtime so it doesn't age out mid-work
         restructure-plan.py      # splits plans into task files on exit from plan mode
         pre-compact.py           # blocks compaction until uncommitted changes are saved
         post-compact.py          # re-injects task context after context compaction
@@ -281,6 +285,7 @@ assets/
           scope-drift-summary.py # Stop — one-line diff vs spec coverage summary
           detect-smoke-tests.py  # Stop — flags tests in diff with no assertions
           check-fitness.py       # Stop — runs `make fitness` if defined (strict profile, warn-only)
+          auto-cleanup-merge.py  # PostToolUse Bash — after `git merge task/...`, auto-deletes the branch and removes the worktree
         agents/
           task-executor.md       # ephemeral agent for executing one task at a time (incl. pre-commit verification gate)
           architect.md           # design review + ADR drafting + drift audit + fitness-function proposal (tier: deep)
@@ -402,10 +407,13 @@ If you prefer to update files manually, managed files live across two template d
 
 | File | Source | What it adds |
 |------|--------|-------------|
-| `.claude/settings.json` | `<type>/` | Permissions + 17 hooks with profile gating |
+| `.claude/settings.json` | `<type>/` | Permissions + 21 hooks with profile gating |
 | `.claude/scripts/_hook_utils.py` | `common/` | Shared profile gating module |
 | `.claude/scripts/protect-secrets.py` | `common/` | Blocks writes to private keys and credential files |
 | `.claude/scripts/block-no-verify.py` | `common/` | Blocks --no-verify on git commands |
+| `.claude/scripts/no-commit-on-main.py` | `common/` | PreToolUse Bash — blocks `git commit` on main/master/trunk once `task/*` branches exist; `[allow-main]` opt-out |
+| `.claude/scripts/session-lock.py` | `common/` | SessionStart — writes per-session lock under `.claude/sessions/` and sweeps stale ones (>4h since last touch) |
+| `.claude/scripts/session-lock-touch.py` | `common/` | Stop — refreshes this session's lock mtime so it doesn't age out during active work |
 | `.claude/scripts/restructure-plan.py` | `common/` | Plan-to-tasks hook on exit from plan mode |
 | `.claude/scripts/pre-compact.py` | `common/` | Blocks compaction until uncommitted changes are saved |
 | `.claude/scripts/post-compact.py` | `common/` | Re-injects task context after context compaction |
@@ -421,6 +429,7 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/scripts/scope-drift-summary.py` | `tech/` | Stop — prints one-line summary of diff vs spec coverage (tech/data only) |
 | `.claude/scripts/detect-smoke-tests.py` | `tech/` | Stop — flags tests in current diff with no assertion / panic / expect (tech/data only) |
 | `.claude/scripts/check-fitness.py` | `tech/` | Stop — runs `make fitness` if defined; warn-only (tech/data only, strict profile) |
+| `.claude/scripts/auto-cleanup-merge.py` | `tech/` | PostToolUse Bash — after `git merge task/...` or `gh pr merge`, auto-deletes the branch and removes the worktree (tech/data only) |
 | `.claude/agents/task-executor.md` | `<type>/` | Ephemeral agent for executing one task at a time |
 | `.claude/agents/architect.md` | `<type>/` | Architecture review + ADR drafting (tech/data only) |
 | `.claude/agents/code-reviewer.md` | `<type>/` | Structured multi-perspective code review (tech/data only) |
@@ -431,6 +440,7 @@ If you prefer to update files manually, managed files live across two template d
 | `.claude/agents/task-planner.md` | `<type>/` | *(optional)* Feature breakdown into scoped tasks with paired test specs (tech/data only) |
 | `.claude/agents/dependency-auditor.md` | `tech/` | *(optional)* Cross-ecosystem dep scanning across Cargo / npm / PyPI / Go (tech only; data projects pull from tech/) |
 | `scripts/check-task-state.sh` | `common/scripts/` | Invariant check: each `NNN-*.md` task tracked in exactly one of `{backlog, active, completed}` (mode 755) |
+| `scripts/start-task.sh` | `common/scripts/` | Branch-or-worktree setup keyed off live session count from `.claude/sessions/`; called as Step 0 by task-executor (all types, mode 755) |
 | `scripts/verify-worktree-isolation.sh` | `common/scripts/` | Post-dispatch audit confirming parallel agents respected `isolation: "worktree"` (tech/data only, mode 755) |
 | `docs/architecture/agent-rules.md` | `common/agent-rules.md` | Starter retro log paired with the `inject-retros.py` SessionStart hook (tech/data only) |
 
@@ -478,7 +488,7 @@ When a batch of tasks finishes (or before tagging a release), say *"audit my pro
 | Layer | What it checks |
 |-------|---------------|
 | 1. Inventory + cross-refs | Every file referenced in tables/manifests exists; markdown links resolve; TC markers in spec map to test files |
-| 2. Hook wiring + stale numbers | Every script in `.claude/scripts/` is wired in `settings.json` (no orphans, no broken refs); cited numbers in prose ("17 hooks", "5 agents") match reality |
+| 2. Hook wiring + stale numbers | Every script in `.claude/scripts/` is wired in `settings.json` (no orphans, no broken refs); cited numbers in prose ("21 hooks", "5 agents") match reality |
 | 3. Spec drift | Architect agent's drift-audit mode — `docs/spec/` and `diagrams.md` still describe the actual code |
 | 4. Fitness rows ↔ Make targets | Every `F-NNN` row in `fitness-functions.md` has a `fitness-<id>` Make target, and vice versa |
 | 5. README freshness | After 1–4, verifies the README's claims (feature list, install commands, examples) still match reality, with prior findings as context |

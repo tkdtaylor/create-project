@@ -18,10 +18,10 @@ references/                  <- step-by-step setup guides and catalogs
 assets/
   templates/
     common/                    shared starters for all/most project types
-      .claude/scripts/         9 universal hook scripts (+ _hook_utils.py shared module)
-      scripts/                 check-task-state.sh (all types) + verify-worktree-isolation.sh (tech/data)
+      .claude/scripts/         12 universal hook scripts (+ _hook_utils.py shared module)
+      scripts/                 check-task-state.sh, start-task.sh (all types) + verify-worktree-isolation.sh (tech/data)
       agent-rules.md           starter retro log (tech/data, paired with inject-retros.py)
-    tech/                      tech templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents, tech-only hooks (incl. check-fitness.py), conditional RELEASE_CHECKLIST.md / CONTRIBUTING.md
+    tech/                      tech templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents, tech-only hooks (incl. check-fitness.py + auto-cleanup-merge.py), conditional RELEASE_CHECKLIST.md / CONTRIBUTING.md
     data/                      data templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents (hooks from common/ + tech/)
     research/                  research templates, settings, agents (hooks from common/)
   base/                        shared Docker base images (Dockerfiles + entrypoints)

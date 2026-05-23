@@ -122,6 +122,21 @@ The pattern that gets caught here: an `eprintln!` → `tracing` migration "passe
 
 If the environment genuinely prevents running the binary (no IB connection, no GPU, no Docker), state that explicitly in the report and downgrade the verdict to 🟡 awaiting operator verification — do not claim ✅.
 
+### Never work directly on the default branch
+
+Every task lives on its own `task/NNN-<slug>` branch. The first action of any task-executor invocation is `scripts/start-task.sh <NNN> <slug>` — that script picks branch (solo session) or worktree (concurrent sessions detected via `.claude/sessions/*.lock`) and sets you up on it. Working on `main` is the failure mode that lets two sessions silently overwrite each other and that makes "abandon this half-done task" require destructive operations.
+
+The `no-commit-on-main.py` hook is the floor: it hard-blocks `git commit` on `main`/`master`/`trunk` once any `task/*` branch exists in the repo. The rule stands even when the hook is disabled — discipline > automation.
+
+**Escape hatches** (use deliberately, not as a workaround):
+
+- `[allow-main]` in the commit message for genuine main-only fixes (standalone doc typos, hotfix patterns, the scaffold-time `chore:` commits). Self-documenting in `git log`.
+- The hook skips the check entirely when no `task/*` branches have ever existed — the project hasn't started doing task work yet.
+
+**Worktree gotcha (concurrent-session case):** when `start-task.sh` prints `WORKTREE <path>`, your **next command must be `cd <path>`**. Every subsequent command runs from that directory. The most common silent failure: agent forgets to `cd`, edits land in the parent repo, "isolation" is fictional. The pre-existing parallel-dispatch retro covers the same shape; this is the single-task version of it.
+
+**Cleanup is automatic** once a task branch is merged into `main`: the `auto-cleanup-merge.py` hook deletes the branch (safe `-d`, refuses if unmerged) and removes the worktree (`git worktree remove`). If you see the branch or worktree linger after a merge, check the hook's stderr — likely an unmerged ref or a force-push scenario that needs your attention.
+
 ### No `git checkout -- <path>` over uncommitted work
 
 When you want to compare current behavior to a prior commit (linter baseline, test count, file size, anything), use `git stash` first or `git worktree add` for the comparison. **Never** reach for `git checkout HEAD -- <path>` or `git checkout <ref> -- <path>` while you have uncommitted changes you intend to keep. The checkout silently overwrites those changes with the prior commit's content, the only recovery path is the reflog (which does not capture uncommitted blobs), and `git fsck --unreachable` can return ambiguous results that look like recoverable work but aren't.

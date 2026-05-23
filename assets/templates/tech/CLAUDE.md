@@ -66,13 +66,22 @@ Derived working rules:
 
 ## Working in this project
 
+Every task lives on its own branch (or worktree under concurrent sessions). Working directly on `main` is blocked by the `no-commit-on-main.py` hook — `scripts/start-task.sh` is how you pick the right isolation for the moment.
+
 1. Start each session by reading the relevant task file (including its **Verification plan**) and its test spec
 2. Check `docs/architecture/overview.md` for system context
 3. Write the test spec before any implementation code
-4. Use the **task-executor** agent to implement — it commits at status **🟡 (code merged)** by default
+4. Use the **task-executor** agent to implement. Its Step 0 runs `scripts/start-task.sh <NNN> <slug>` to set up either:
+   - `BRANCH task/NNN-<slug>` (solo session — the common case), or
+   - `WORKTREE .claude/worktrees/NNN-<slug>/` (concurrent session detected; the executor `cd`s in)
+
+   The executor commits at status **🟡 (code merged)** on the task branch.
 5. After the executor returns, use **spec-verifier** on the task — it returns APPROVE or BLOCK based on per-assertion evidence
-6. If spec-verifier APPROVEs **and** the verification plan's L5/L6 evidence is recorded in the executor's report (validation harness output or runtime observation), promote the row to **✅ (verified)** in `coverage-tracker.md` in a **separate commit** titled `verify: confirm task NNN — <evidence>`
-7. **Commit and push after each milestone** — never start the next task without committing the current one first
+6. If spec-verifier APPROVEs **and** the verification plan's L5/L6 evidence is recorded (validation harness output or runtime observation), promote the row to **✅ (verified)** in `coverage-tracker.md` in a **separate commit** titled `verify: confirm task NNN — <evidence>` (still on the task branch)
+7. **Merge to main** when ready: `git checkout main && git merge task/NNN-<slug>`. The `auto-cleanup-merge.py` hook then deletes the task branch and removes the worktree (if any) automatically. If the merge introduced conflicts or you want to keep the branch around for reference, the hook surfaces a note and leaves it in place.
+8. **Commit and push after each milestone** — never start the next task without committing the current one first
+
+The separation between the task branch and `main` is the load-bearing rule for multi-session safety. Two sessions on different `task/*` branches can work in parallel without ever stepping on each other's files; two sessions both editing `main` cannot. The hook is the floor — the discipline is the goal.
 
 The separation between 🟡 (feat commit) and ✅ (verify commit) is the load-bearing rule: it makes "merged" and "verified" two distinct artifacts in git history, so neither can silently substitute for the other. **Never** mark ✅ in the same commit as the feature work — the verification step must be its own observable event.
 
@@ -80,14 +89,17 @@ The separation between 🟡 (feat commit) and ✅ (verify commit) is the load-be
 
 **You must commit and push after every milestone.** Do not batch multiple tasks into one commit. Do not continue to the next task until the current one is committed and pushed.
 
-| Milestone | What to stage | Message |
-|-----------|--------------|---------|
-| ADR written | `docs/architecture/decisions/NNN-*.md`, any superseded spec entries rewritten in `docs/spec/` | `docs: add ADR NNN — <decision title>` |
-| Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` |
-| Task code merged (🟡) | `src/` changes, moved task file, `coverage-tracker.md` row set to **🟡**, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` |
-| Task verified (✅) | `coverage-tracker.md` row promoted from 🟡 → ✅ with `Verified by` column filled (harness command + final assertion, or operator observation) | `verify: confirm task NNN — <evidence>` |
-| Diagram updated | `docs/architecture/diagrams.md` (with date bump at top) | `docs: refresh diagrams — <what changed>` |
-| Spec rewritten standalone | `docs/spec/<file>.md` | `spec: <what changed and why now>` |
+All commits below land on the **task branch** (`task/NNN-<slug>`), never on `main` directly. The merge to `main` happens after the verify step, in a separate explicit operation.
+
+| Milestone | What to stage | Message | Branch |
+|-----------|--------------|---------|--------|
+| ADR written | `docs/architecture/decisions/NNN-*.md`, any superseded spec entries rewritten in `docs/spec/` | `docs: add ADR NNN — <decision title>` | task branch |
+| Test spec written | `docs/tasks/test-specs/NNN-*-test-spec.md`, updated `coverage-tracker.md` | `test: add spec for task NNN — <name>` | task branch |
+| Task code merged (🟡) | `src/` changes, moved task file, `coverage-tracker.md` row set to **🟡**, **and any affected `docs/spec/` files** | `feat: complete task NNN — <name>` | task branch |
+| Task verified (✅) | `coverage-tracker.md` row promoted from 🟡 → ✅ with `Verified by` column filled (harness command + final assertion, or operator observation) | `verify: confirm task NNN — <evidence>` | task branch |
+| Diagram updated | `docs/architecture/diagrams.md` (with date bump at top) | `docs: refresh diagrams — <what changed>` | task branch (or `[allow-main]` for standalone doc fixes) |
+| Spec rewritten standalone | `docs/spec/<file>.md` | `spec: <what changed and why now>` | task branch (or `[allow-main]` for standalone doc fixes) |
+| Merged into main | (after `git merge task/NNN-<slug>` on `main`) | (uses the default `Merge branch …` message) | `main` |
 
 After each milestone:
 ```bash
@@ -141,6 +153,7 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - **Update `docs/architecture/diagrams.md` in the same commit as any code change that moves a component boundary or alters a diagrammed runtime flow**
 - **Default new task status to 🟡 on the feat commit; ✅ only after spec-verifier APPROVE + recorded L5/L6 evidence, in a separate `verify:` commit**
 - **Run `spec-verifier` on every task** before promoting to ✅ — its APPROVE/BLOCK verdict is the gate, not the executor's self-judgement
+- **Start every task on its own branch via `scripts/start-task.sh <NNN> <slug>`** — the script picks branch or worktree based on whether other Claude Code sessions are active. The task-executor runs this as Step 0 automatically.
 
 ### Ask first
 - Modifying files in `docs/plans/`, `docs/tasks/`, or `docs/architecture/decisions/` — they are planning and historical documents
@@ -160,6 +173,8 @@ export CLAUDE_DISABLED_HOOKS=desktop-notify,batch-format-typecheck  # Disable sp
 - **Add future-tense statements to the spec.** The spec is what *is*, not what *will be*. Planned work goes in `docs/plans/` and `docs/tasks/`.
 - **Mark a task ✅ on the same commit as the feature work.** ✅ is reserved for the separate `verify:` commit after spec-verifier APPROVE plus L5/L6 evidence. Merged-equals-verified is the failure mode this rule exists to prevent.
 - **Claim a verification level you did not actually reach.** If the binary wasn't run, the row says `pending` or `N/A`, not ✅. If the harness doesn't exist, that's a blocker to flag, not an excuse for ✅ at L4.
+- **Commit directly to `main`.** Every task commit lands on `task/NNN-<slug>`. The `no-commit-on-main.py` hook will block you; the rule stands even without the hook. For genuine main-only commits (e.g. a standalone doc fix, a hotfix), include `[allow-main]` in the commit message — it's self-documenting in `git log`.
+- **Forget to `cd` into the worktree.** When `scripts/start-task.sh` returns `WORKTREE <path>`, every subsequent command must run inside that path. Editing the parent repo while believing you're in a worktree is the silent isolation failure that a prior retro names.
 
 ## Agent rules and retros
 

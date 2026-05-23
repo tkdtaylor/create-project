@@ -144,6 +144,7 @@ Templates come from three directories:
 | `.claude/scripts/scope-drift-summary.py` | `.claude/scripts/scope-drift-summary.py` |
 | `.claude/scripts/detect-smoke-tests.py` | `.claude/scripts/detect-smoke-tests.py` |
 | `.claude/scripts/check-fitness.py` | `.claude/scripts/check-fitness.py` |
+| `.claude/scripts/auto-cleanup-merge.py` | `.claude/scripts/auto-cleanup-merge.py` |
 
 **From `common/`** (copy as-is, no placeholders — shared across all project types):
 
@@ -151,10 +152,14 @@ Templates come from three directories:
 |----------|-------------|
 | `agent-rules.md` | `docs/architecture/agent-rules.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
+| `scripts/start-task.sh` | `scripts/start-task.sh` (mode 755) |
 | `scripts/verify-worktree-isolation.sh` | `scripts/verify-worktree-isolation.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
+| `.claude/scripts/no-commit-on-main.py` | `.claude/scripts/no-commit-on-main.py` |
+| `.claude/scripts/session-lock.py` | `.claude/scripts/session-lock.py` |
+| `.claude/scripts/session-lock-touch.py` | `.claude/scripts/session-lock-touch.py` |
 | `.claude/scripts/restructure-plan.py` | `.claude/scripts/restructure-plan.py` |
 | `.claude/scripts/pre-compact.py` | `.claude/scripts/pre-compact.py` |
 | `.claude/scripts/post-compact.py` | `.claude/scripts/post-compact.py` |
@@ -349,6 +354,12 @@ Append to `.gitignore` (create if it does not exist):
 # Docker Sandbox worktrees
 .sbx/
 
+# Per-task worktrees (created by scripts/start-task.sh under concurrent sessions)
+.claude/worktrees/
+
+# Per-session lock files (used by session-lock.py to detect concurrent sessions)
+.claude/sessions/
+
 # Secrets
 .env
 
@@ -505,6 +516,12 @@ Do not substitute `${HOME}` — that is a Docker Compose variable resolved at ru
 
 Append to `.gitignore` (create if it does not exist):
 ```
+# Per-task worktrees (created by scripts/start-task.sh under concurrent sessions)
+.claude/worktrees/
+
+# Per-session lock files (used by session-lock.py to detect concurrent sessions)
+.claude/sessions/
+
 # Secrets
 .env
 
