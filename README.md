@@ -457,7 +457,7 @@ cp "$SKILL/common/scripts/"*.sh scripts/ && chmod +x scripts/*.sh
 [ -f docs/architecture/agent-rules.md ] || cp "$SKILL/common/agent-rules.md" docs/architecture/agent-rules.md
 ```
 
-For data projects, replace `tech` with `data` for `.claude/agents/` and `.claude/settings.json` (everything else comes from `common/` already). For research projects, skip the tech `.claude/scripts/` and `.claude/agents/` lines, and skip the `agent-rules.md` line — the only common-script research needs is `check-task-state.sh`.
+For data projects, replace `tech` with `data` for `.claude/agents/` and `.claude/settings.json` (everything else comes from `common/` already). For research projects, skip the tech `.claude/scripts/` and `.claude/agents/` lines, and skip the `agent-rules.md` line. Research still needs both `check-task-state.sh` and `start-task.sh` from `common/scripts/`; the wildcard `cp "$SKILL/common/scripts/"*.sh scripts/` already does the right thing — just skip `verify-worktree-isolation.sh` manually if you want (it's tech/data only).
 
 ### Updating CLAUDE.md
 
