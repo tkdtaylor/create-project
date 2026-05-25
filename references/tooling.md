@@ -175,7 +175,7 @@ The following hooks are pre-configured in every scaffolded project. All hooks su
 | `restructure-plan` | PostToolUse | ExitPlanMode | standard | Splits plan steps into task files, creates test spec stubs, backs up plan |
 | `edit-tracker` | PostToolUse | Edit\|Write | strict | Accumulates edited file paths for batch processing at Stop (tech/data only) |
 | `pre-compact` | PreCompact | — | standard | Blocks compaction if uncommitted changes exist |
-| `post-compact` | PostCompact | — | standard | Re-injects active task, spec, and branch context after compaction |
+| `post-compact` | SessionStart | compact | standard | Re-injects active task, spec, and branch context after compaction (wired via SessionStart matcher=compact — PostCompact discards additionalContext per the Claude Code hooks spec) |
 | `periodic-checkpoint` | Stop | — | standard | Reminds agent to commit every 15 turns if uncommitted changes exist |
 | `strategic-compact` | Stop | — | standard | Suggests `/compact` after ~25 turns to prevent bad auto-compaction timing |
 | `batch-format-typecheck` | Stop | — | strict | Batch-runs format+typecheck on all files edited this turn (tech/data only) |
