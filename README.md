@@ -8,21 +8,22 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 
 ## What it does
 
-Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", "start a data science project", "sync my skills", "update my skills", or "audit my project". The skill:
+Triggered by phrases like "start a new project", "scaffold a codebase", "set up a research project", "start a data science project", "sync my skills", "update my skills", or "audit my project" — and most flows have an equivalent slash command (`/cp-init`, `/cp-sync`, `/cp-fix-drift`) for deterministic entry. The skill:
 
 1. Interviews you until the goal, scope, and success criteria are unambiguous — confirms a written summary before touching any files
 2. Creates a type-matched directory structure with template files, including requirement-traceable task and test spec templates (`REQ-NNN` IDs flow from task → test spec → code)
 3. Generates a `CLAUDE.md` so every future session starts with full project context
 4. **Technical / Data:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, data pipeline skeleton, etc.)
 5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material; ships output templates (decision brief, deep research report, learning plan) in `outputs/templates/`
-6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
+6. Optionally initialises git (always on `main`) and creates a GitHub repo (with scoped access token for the container)
 7. **Technical / Data:** offers a choice of isolation mode with the trade-offs spelled out — Docker Sandbox (`sbx`, microVM with network policies and credential proxy), Docker Engine (shared base image + project-specific image + per-project named volume), or **Local** (no container, for projects that need to reach other repos on your machine); recommends the strongest available isolation by default
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
 10. Ships five agents out of the box: task-executor (TDD workflow with automatic branch-or-worktree isolation, producer-consumer trace, runtime-visible-change check, and a non-negotiable pre-commit verification gate), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Optional agent templates ship for Step 3d to install when warranted: qa (read-only test/spec gap classifier), docs-writer (README/docstring/CHANGELOG synthesis), task-planner (feature → scoped tasks), and dependency-auditor (cross-ecosystem dep scanning). Model tiers auto-mapped to the best available model
 11. Installs hooks across six lifecycle events, gated by `CLAUDE_HOOK_PROFILE` (minimal/standard/strict): secret file protection, config-protection for linter configs, block-no-verify for git commands, protect-checkout for uncommitted-work preservation, no-commit-on-main with `[allow-main]` opt-out, session locking + stale-lock sweep for multi-session safety, failure-mode retrospective injection at session start, plan-to-tasks restructuring, edit tracking for batch processing, pre-commit spec-coverage enforcement, pre-compact checkpoint enforcement, post-compact context recovery, periodic checkpoint reminders, strategic compaction suggestions, auto-cleanup of merged task branches and worktrees, batch format+typecheck, scope-drift summary, smoke-test detection, fitness-function execution (`make fitness`), and desktop notifications
-12. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
-13. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — defaults to **intelligent merge over overwrite**, prompts only when a merge can't reconcile, and prints a per-file diff summary so `git diff` is the safety net rather than a wall of confirmation prompts
+12. **Technical / Data:** scaffolds a **backlog runner** — project slash commands (`/backlog-run`, `/backlog-run-parallel`, `/backlog-autopilot`, `/backlog-autopilot-parallel`) that triage the backlog (prioritise, build a dependency graph, surface blockers as recommended-option decisions, pick a model tier per task), then work tasks through `task-executor` sub-agents either sequentially or in parallel worktrees, surfacing blockers for you (supervised) or resolving them itself (autonomous). Task closure runs through `finish-task.sh` — merges, deletes the branch, removes the worktree, and verifies all three actually happened, erroring instead of leaving silent drift
+13. Writes a `.claude/skill-manifest.json` that tracks which files came from skill templates, enabling future syncs
+14. **Skill sync:** checks globally installed skills for upstream updates (via git pull) and syncs managed project artifacts (hooks, agents, settings) from updated templates — defaults to **intelligent merge over overwrite**, prompts only when a merge can't reconcile, and prints a per-file diff summary so `git diff` is the safety net rather than a wall of confirmation prompts
 
 ## Across the Claude Code stack
 
@@ -393,7 +394,7 @@ The installed directory name must match the `name:` field in `SKILL.md` (`create
 
 ### Slash commands
 
-The skill exposes three slash commands. They live in `commands/` and must be copied to `~/.claude/commands/` to register (Claude Code loads slash commands from there, not from the skill directory):
+The skill exposes three **global** slash commands (entry points to the skill itself). They live in `commands/` and must be copied to `~/.claude/commands/` to register (Claude Code loads slash commands from there, not from the skill directory):
 
 ```bash
 mkdir -p ~/.claude/commands
@@ -407,6 +408,8 @@ cp ~/.claude/skills/create-project/commands/cp-*.md ~/.claude/commands/
 | `/cp-fix-drift` | Audit the project for doc/spec/diagram/fitness drift and apply fixes. |
 
 The commands are thin wrappers that invoke the `create-project` skill with an explicit `mode=` token, so routing is deterministic instead of relying on phrase-matching. The natural-language triggers (e.g. "sync my skills", "drift check") still work as a fallback. `/cp-sync` re-runs this copy step for you, so the commands stay current after the first install.
+
+These global `cp-*` commands are distinct from the **project-level** `/backlog-*` commands, which are scaffolded into each technical/data project's own `.claude/commands/` and operate on that project's backlog (see the backlog runner in "What it does").
 
 ## Syncing skills and upgrading existing projects
 
