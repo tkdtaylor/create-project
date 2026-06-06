@@ -355,6 +355,9 @@ Append to `.gitignore` (create if it does not exist):
 # Per-session lock files (used by session-lock.py to detect concurrent sessions)
 .claude/sessions/
 
+# Periodic-checkpoint marker (touched by periodic-checkpoint.py / pre-compact.py)
+.claude/.last-checkpoint
+
 # Secrets
 .env
 
@@ -527,6 +530,9 @@ Append to `.gitignore` (create it if it does not exist):
 # Per-session lock files (used by session-lock.py to detect concurrent sessions)
 .claude/sessions/
 
+# Periodic-checkpoint marker (touched by periodic-checkpoint.py / pre-compact.py)
+.claude/.last-checkpoint
+
 # Secrets
 .env
 
@@ -638,6 +644,9 @@ Append to `.gitignore` (create if it does not exist):
 
 # Per-session lock files (used by session-lock.py to detect concurrent sessions)
 .claude/sessions/
+
+# Periodic-checkpoint marker (touched by periodic-checkpoint.py / pre-compact.py)
+.claude/.last-checkpoint
 
 # Secrets
 .env

@@ -240,12 +240,11 @@ if [ "<type>" != "research" ]; then
 fi
 chmod +x scripts/*.sh
 
-# .gitignore — make sure .claude/sessions/ doesn't get committed
-if [ -f .gitignore ]; then
-  grep -qxF ".claude/sessions/" .gitignore || echo ".claude/sessions/" >> .gitignore
-else
-  echo ".claude/sessions/" > .gitignore
-fi
+# .gitignore — keep local Claude session state out of the repo
+touch .gitignore
+for entry in ".claude/sessions/" ".claude/worktrees/" ".claude/.last-checkpoint"; do
+  grep -qxF "$entry" .gitignore || echo "$entry" >> .gitignore
+done
 ```
 
 For **tech/data projects**, this copies the universal hooks (incl. `no-commit-on-main.py`, `session-lock.py`, `session-lock-touch.py`) plus the tech-only hooks (config-protection, protect-checkout, edit-tracker, batch-format-typecheck, spec-coverage-check, scope-drift-summary, detect-smoke-tests, check-fitness, auto-cleanup-merge), 5 always-installed agents (task-executor, architect, code-reviewer, security-auditor, spec-verifier) plus optional templates (qa, docs-writer, task-planner, dependency-auditor for tech), the project scripts (`check-task-state.sh`, `start-task.sh`, `verify-worktree-isolation.sh`), and the starter `agent-rules.md` (only if not already present — it accumulates retro entries). For **research projects**, this copies the universal hooks (incl. session-lock, no-commit-on-main) plus `start-task.sh` and only task-executor.

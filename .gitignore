@@ -1,5 +1,8 @@
 __pycache__/
 
+# Periodic-checkpoint marker (touched by periodic-checkpoint.py / pre-compact.py)
+.claude/.last-checkpoint
+
 # Generated diagram working assets; commit only the final README hero image.
 artifacts/*
 !artifacts/
