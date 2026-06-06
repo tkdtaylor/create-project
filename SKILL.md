@@ -21,6 +21,20 @@ If a user offers a secret in chat, refuse politely and ask them to put it direct
 
 ---
 
+## Step 0 — Explicit mode routing (slash-command entry)
+
+This skill ships slash commands that pass an explicit mode token in `$ARGUMENTS`. **If a mode token is present, route deterministically and skip the phrase-matching below:**
+
+| Token | Command | Action |
+|-------|---------|--------|
+| `mode=init` | `/cp-init` | Run Steps 1–3. Step 2 auto-detects new scaffold vs. existing-codebase adoption. Any text after the token is starting context for the interview. |
+| `mode=sync` | `/cp-sync` | Read and follow `$CLAUDE_SKILL_DIR/references/sync-skills.md`. **Do not run Steps 1–3.** |
+| `mode=fix-drift` | `/cp-fix-drift` | Read and follow `$CLAUDE_SKILL_DIR/references/audit-project.md`. **Do not run Steps 1–3.** |
+
+If no mode token is present, fall back to the natural-language routing in the two sections below, then Step 1.
+
+---
+
 ## Skill sync?
 
 Before starting the interview, check if the user is asking for a skill sync or update rather than a new project or adoption. Trigger phrases: "sync my skills", "update my skills", "make sure my skills are up to date", "pull latest skill changes", "update project hooks", "update project agents", "check for skill updates".
@@ -31,7 +45,7 @@ If this is a sync request: read and follow `$CLAUDE_SKILL_DIR/references/sync-sk
 
 ## Audit?
 
-If the user is asking for a project audit rather than a new project, adoption, or sync. Trigger phrases: "audit my project", "audit the docs", "drift check", "are docs up to date", "check for drift", "project audit", "post-task audit".
+If the user is asking for a project audit rather than a new project, adoption, or sync. Trigger phrases: "audit my project", "audit the docs", "drift check", "are docs up to date", "check for drift", "project audit", "post-task audit", "fix drift".
 
 If this is an audit request: read and follow `$CLAUDE_SKILL_DIR/references/audit-project.md`. **Do not run Steps 1–3.** The audit dispatches five parallel/sequential sub-agents (inventory, hook wiring, spec drift, fitness rows, README freshness), aggregates findings, and offers to apply must-fix and should-fix items.
 
@@ -41,7 +55,7 @@ If this is an audit request: read and follow `$CLAUDE_SKILL_DIR/references/audit
 
 The goal of this step is to reach **high confidence** that you understand the project well enough to make a plan and execute it — not just to collect a name and type. Do not rush to scaffold. A project built on a fuzzy goal produces wasted structure.
 
-Check `$ARGUMENTS` and the current directory name for any starting context.
+Check `$ARGUMENTS` and the current directory name for any starting context. Ignore a leading `mode=…` token — that's a routing marker from Step 0, not project context; treat only the remaining text as the user's description.
 
 ### 1a — Open the interview
 

@@ -333,6 +333,10 @@ assets/
         .env.example
         requirements.txt         # pre-populated with requests, bs4, pdfminer, markdownify
       [outline, task, research-log templates...]
+commands/                        # Slash commands — copied to ~/.claude/commands/ at install
+  cp-init.md                     # /cp-init — scaffold a new project or adopt an existing codebase
+  cp-sync.md                     # /cp-sync — update installed skills + sync project artifacts
+  cp-fix-drift.md                # /cp-fix-drift — audit for doc/spec/diagram/fitness drift and apply fixes
 references/
   tech-project.md                # Step-by-step setup for technical projects (T1–T8)
   data-project.md                # Step-by-step setup for data / ML projects (D1–D8)
@@ -366,6 +370,23 @@ rm -rf ~/.claude/skills/create-project && cp -r /path/to/create-project ~/.claud
 ```
 
 The installed directory name must match the `name:` field in `SKILL.md` (`create-project`).
+
+### Slash commands
+
+The skill exposes three slash commands. They live in `commands/` and must be copied to `~/.claude/commands/` to register (Claude Code loads slash commands from there, not from the skill directory):
+
+```bash
+mkdir -p ~/.claude/commands
+cp ~/.claude/skills/create-project/commands/cp-*.md ~/.claude/commands/
+```
+
+| Command | What it does |
+|---------|--------------|
+| `/cp-init [description]` | Scaffold a new project or adopt an existing codebase — interviews, then auto-detects new vs. existing. |
+| `/cp-sync` | Update globally installed skills and sync this project's managed hooks/agents/settings. |
+| `/cp-fix-drift` | Audit the project for doc/spec/diagram/fitness drift and apply fixes. |
+
+The commands are thin wrappers that invoke the `create-project` skill with an explicit `mode=` token, so routing is deterministic instead of relying on phrase-matching. The natural-language triggers (e.g. "sync my skills", "drift check") still work as a fallback. `/cp-sync` re-runs this copy step for you, so the commands stay current after the first install.
 
 ## Syncing skills and upgrading existing projects
 

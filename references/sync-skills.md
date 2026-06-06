@@ -103,6 +103,20 @@ Global skills:
   simplify — not a git repo (reinstall to update)
 ```
 
+### 2e — Refresh global slash commands
+
+The create-project skill ships slash commands in `commands/` that register from `~/.claude/commands/`. After pulling skill updates, copy them so new or changed commands take effect:
+
+```bash
+if ls ~/.claude/skills/create-project/commands/cp-*.md >/dev/null 2>&1; then
+  mkdir -p ~/.claude/commands
+  cp ~/.claude/skills/create-project/commands/cp-*.md ~/.claude/commands/
+  echo "Refreshed global commands: $(ls ~/.claude/skills/create-project/commands/cp-*.md | xargs -n1 basename | tr '\n' ' ')"
+fi
+```
+
+Mention in the report which commands were refreshed (e.g. `cp-init`, `cp-sync`, `cp-fix-drift`).
+
 ---
 
 ## Step S3 — Sync project artifacts

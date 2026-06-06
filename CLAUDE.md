@@ -5,7 +5,11 @@ A Claude Code skill that scaffolds new projects with opinionated structure, isol
 ## Project structure
 
 ```
-SKILL.md                     <- entry point: interview, routing, tooling config (Step 1-3)
+SKILL.md                     <- entry point: Step 0 mode routing, interview, tooling config (Step 1-3)
+commands/                    <- slash commands (copied to ~/.claude/commands/ at install)
+  cp-init.md                   /cp-init — scaffold new or adopt existing (mode=init)
+  cp-sync.md                   /cp-sync — sync skills + project artifacts (mode=sync)
+  cp-fix-drift.md              /cp-fix-drift — audit for drift and apply fixes (mode=fix-drift)
 references/                  <- step-by-step setup guides and catalogs
   tech-project.md              T1-T8: technical project setup
   data-project.md              D1-D8: data/ML project setup
@@ -34,10 +38,11 @@ Key design: `common/` holds hooks, scripts, and starter content shared across al
 
 ## How it works
 
-1. **SKILL.md** routes to the right reference file based on project type or sync request
-2. **Reference files** contain step-by-step instructions that Claude follows
-3. **Templates** are copied into scaffolded projects with `{{PLACEHOLDER}}` substitution
-4. **Hook scripts** are copied as-is (no placeholders) and tracked via `.claude/skill-manifest.json`
+1. **Slash commands** (`commands/cp-*.md`) invoke the skill with an explicit `mode=` token; they install to `~/.claude/commands/`
+2. **SKILL.md** Step 0 routes deterministically on the mode token; otherwise falls back to phrase-matching, then the interview
+3. **Reference files** contain step-by-step instructions that Claude follows
+4. **Templates** are copied into scaffolded projects with `{{PLACEHOLDER}}` substitution
+5. **Hook scripts** are copied as-is (no placeholders) and tracked via `.claude/skill-manifest.json`
 
 ## Conventions
 
@@ -55,6 +60,7 @@ Key design: `common/` holds hooks, scripts, and starter content shared across al
 - When adding a template file: add to the template table in the relevant reference doc
 - When changing placeholder conventions: update all three project reference files
 - When adding a new spec sub-file (e.g. `interfaces-protocol.md`): add to both tech and data templates if it applies to both, update the table in `spec/SPEC.md`, update the template tables in `tech-project.md` / `data-project.md`, update the README repo structure tree
+- When adding or renaming a slash command: add/rename the `commands/cp-*.md` file, add its `mode=` token to the SKILL.md Step 0 routing table, and update the README slash-command table + repo tree. The `mode=` token must match a Step 0 row or routing silently falls through to phrase-matching.
 - Test with `evals/evals.json` assertions after structural changes
 
 ## Boundaries
