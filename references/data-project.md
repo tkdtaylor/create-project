@@ -277,24 +277,29 @@ gh repo create <project-name> --private --source=. --remote=origin --push
 
 ---
 
-## Step D6 — Sandbox or Docker setup
+## Step D6 — Choose an isolation mode
 
-Detect what's available — prefer Docker Sandbox (`sbx`) when present:
+This is a real decision, not an auto-default — present it to the user with the reasons for each path, then branch on their choice. First detect what's installed so you only offer options that are available:
 
 ```bash
-if command -v sbx >/dev/null 2>&1; then
-    echo "ISOLATION=sbx"
-elif command -v docker >/dev/null 2>&1; then
-    echo "ISOLATION=docker"
-else
-    echo "ISOLATION=none"
-fi
+command -v sbx    >/dev/null 2>&1 && echo "sbx available"
+command -v docker >/dev/null 2>&1 && echo "docker available"
 ```
 
-If `ISOLATION=none`: tell the user neither sbx nor Docker was detected and skip this step entirely.
+Present the trade-off. The deciding factor is usually whether this project needs to reach **other projects on your machine** (e.g. a shared dataset repo, a sibling library, or another model project):
 
-If `ISOLATION=sbx`: proceed with **Option A** below.
-If `ISOLATION=docker`: skip to **Option B** below.
+- **Isolated — Docker Sandbox (Option A) or Docker (Option B).** Best when the project runs untrusted code, installs many or unfamiliar dependencies, needs a reproducible environment decoupled from your host, or benefits from network-egress control. The workspace is walled off from the rest of your machine — which also means it **cannot see other local projects** unless you explicitly mount them.
+- **Local — no container (Option C).** Best when this project needs to **read or reference other projects on your machine** (a container would wall them off), when you want the fastest iteration on your existing host toolchain (e.g. a local GPU/CUDA setup), or when Docker overhead isn't worth it for a small or short-lived project. Claude Code runs directly on the host.
+
+Ask which they prefer. Guidance for steering:
+- If they mention needing to work against, import from, or stay in sync with **another local project or dataset directory**, recommend **Option C (Local)** and capture those paths (Option C handles this).
+- Otherwise, if they have no preference, recommend the strongest isolation available: `sbx` → Option A, else Docker → Option B.
+- If neither `sbx` nor Docker is installed, Option A/B aren't available — present Option C (Local) as the path, or note they can install Docker/`sbx` first.
+
+Routing:
+- **Option A** — user chose sandbox and `sbx` is available
+- **Option B** — user chose Docker and Docker is available
+- **Option C** — user chose Local, or neither `sbx` nor Docker is installed
 
 ---
 
@@ -608,9 +613,68 @@ git remote get-url origin >/dev/null 2>&1 && git push || true
 
 ---
 
+### Option C — Local (no container)
+
+Use this path when the user chose to run on the host — typically because the project needs to read or reference **other projects or dataset directories on their machine**, or to use a local GPU/CUDA toolchain directly. No Dockerfile, compose file, workspace volume, or devcontainer is created; Claude Code runs directly against the working directory.
+
+**C1. Update `.gitignore`**
+
+Append to `.gitignore` (create if it does not exist):
+```
+# Per-task worktrees (created by scripts/start-task.sh under concurrent sessions)
+.claude/worktrees/
+
+# Per-session lock files (used by session-lock.py to detect concurrent sessions)
+.claude/sessions/
+
+# Secrets
+.env
+
+# Python virtual environment
+.venv/
+
+# Python bytecode — also emitted by .claude/scripts/ hooks
+__pycache__/
+*.pyc
+```
+
+**C2. Capture related local projects**
+
+If the project needs awareness of other projects or dataset directories on the host, ask the user for their paths (one or more). Record them in `CLAUDE.md` as **read-only context** so future sessions know where the siblings live and that they are not to be modified from here. Append a `## Related projects` section:
+
+```markdown
+## Related projects
+
+These live elsewhere on this machine and are **read-only context** — reference them, do not edit them from this project:
+
+- `<absolute-or-relative-path>` — <one line: what it is and why this project needs it>
+```
+
+Use absolute paths (or paths relative to this project's root) exactly as the user gives them. Do not copy or symlink the sibling projects — just record where they are. If the user has no related projects to declare, skip this section.
+
+**C3. Append run commands to `CLAUDE.md`**
+
+Add to the `## Commands` section of `CLAUDE.md`:
+```bash
+# Local (run from the project root on the host)
+claude .                                      # start Claude Code in this project
+```
+
+**C4. Commit**
+
+```bash
+git add .gitignore CLAUDE.md
+git diff --cached --quiet || git commit -m "chore: configure local (no-container) environment"
+git remote get-url origin >/dev/null 2>&1 && git push || true
+```
+
+After completing Option C, **skip Step D7** (devcontainer) — there is no container to open into. Continue to Step D8.
+
+---
+
 ## Step D7 — VS Code devcontainer
 
-Only run this step if **Option B (Docker)** was used in Step D6. Skip entirely if `sbx` was configured — the sandbox is the dev environment.
+Only run this step if **Option B (Docker)** was used in Step D6. Skip entirely if `sbx` (Option A) or Local (Option C) was chosen — there is no Docker workspace to open into.
 
 Create `.devcontainer/devcontainer.json` so VS Code can open the project directly inside the Docker workspace.
 

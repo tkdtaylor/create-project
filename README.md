@@ -16,7 +16,7 @@ Triggered by phrases like "start a new project", "scaffold a codebase", "set up 
 4. **Technical / Data:** offers to scaffold a minimal runnable starter in `src/` (health endpoint, CLI entrypoint, data pipeline skeleton, etc.)
 5. **Research:** offers to run initial web searches and seed `sources/web/` so the project starts with real material; ships output templates (decision brief, deep research report, learning plan) in `outputs/templates/`
 6. Optionally initialises git and creates a GitHub repo (with scoped access token for the container)
-7. **Technical / Data:** sets up an isolated workspace automatically — Docker Sandbox (`sbx`) when available (microVM with network policies and credential proxy), falling back to Docker Engine (shared base image + project-specific image + per-project named volume) on Linux or CI
+7. **Technical / Data:** offers a choice of isolation mode with the trade-offs spelled out — Docker Sandbox (`sbx`, microVM with network policies and credential proxy), Docker Engine (shared base image + project-specific image + per-project named volume), or **Local** (no container, for projects that need to reach other repos on your machine); recommends the strongest available isolation by default
 8. **Technical / Data:** adds a VS Code devcontainer config when using Docker Engine (skipped with `sbx` — the sandbox is the dev environment)
 9. **Technical / Data:** configures code quality tooling — auto-detects the language and sets up linting, formatting, pre-commit hooks, coverage thresholds, and a Makefile with standard targets
 10. Ships five agents out of the box: task-executor (TDD workflow with automatic branch-or-worktree isolation, producer-consumer trace, runtime-visible-change check, and a non-negotiable pre-commit verification gate), architect (design review + ADRs + drift audit + fitness function proposal), code-reviewer (10 structured review perspectives), security-auditor (OWASP Top 10), and spec-verifier (assertion-by-assertion spec adherence check before commit). Optional agent templates ship for Step 3d to install when warranted: qa (read-only test/spec gap classifier), docs-writer (README/docstring/CHANGELOG synthesis), task-planner (feature → scoped tasks), and dependency-auditor (cross-ecosystem dep scanning). Model tiers auto-mapped to the best available model
@@ -79,7 +79,7 @@ npm install -g @anthropic-ai/claude-code
 
 ### For isolated workspaces (steps T6/D6/R6)
 
-The skill checks for isolation tools in this order: **Docker Sandbox (`sbx`)** first, then **Docker Engine** as fallback. If neither is found, the isolation step is skipped.
+Setup detects which isolation tools are installed and offers them as a choice: **Docker Sandbox (`sbx`)**, **Docker Engine**, or **Local** (no container). The tools below are only needed for the isolated modes — Local requires none of them. If neither `sbx` nor Docker is installed, Local is the path.
 
 **Docker Sandbox (`sbx`)** *(recommended for macOS / Windows)*
 Runs Claude Code in a microVM with its own kernel — stronger isolation than containers, with built-in network policies and credential management via OS keychain. No Dockerfiles, no volumes, no compose files.
@@ -161,7 +161,7 @@ code --install-extension ms-vscode-remote.remote-containers
 
 ## Isolation architecture
 
-The skill supports two isolation backends. It detects what's available and picks the stronger option automatically.
+Setup presents the isolation mode as an explicit choice with the trade-offs spelled out (steps T6/D6/R6) — it detects what's installed so it only offers available backends, recommends the strongest isolation when there's no preference, and steers toward **Local** when the project needs to reach other projects on your machine. There are three modes: two isolated backends (Docker Sandbox, Docker Engine) and a local, no-container mode.
 
 ### Docker Sandbox (`sbx`) — preferred
 
@@ -229,6 +229,19 @@ open project folder in VS Code
       → VS Code connects as developer user to /app or /workspace
         → Claude Code, terminal, language servers all run inside the container
 ```
+
+### Local — no container
+
+Chosen when the project needs to **read or reference other projects on your machine**, or when container overhead isn't worth it. Claude Code runs directly against the working directory on the host — no Dockerfile, compose file, workspace volume, or devcontainer is created.
+
+| Aspect | How it works |
+|--------|-------------|
+| **Isolation** | None — runs on the host with your existing toolchain |
+| **Cross-project access** | Can read sibling projects directly (the whole point) |
+| **Setup** | `.gitignore` + `## Commands` (`claude .`); no Docker artifacts |
+| **Best for** | Projects that depend on other local repos, fast iteration, short-lived work |
+
+When this mode is chosen because of a cross-project dependency, setup asks for the related project paths and records them in `CLAUDE.md` under a **`## Related projects`** section, flagged as **read-only context** — so future sessions know where the siblings live and that they shouldn't be edited from this project. The sibling projects are referenced in place, never copied or symlinked.
 
 ## Repo structure
 
