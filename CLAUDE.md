@@ -23,9 +23,9 @@ assets/
   templates/
     common/                    shared starters for all/most project types
       .claude/scripts/         12 universal hook scripts (+ _hook_utils.py shared module)
-      scripts/                 check-task-state.sh, start-task.sh (all types) + verify-worktree-isolation.sh (tech/data)
+      scripts/                 check-task-state.sh, start-task.sh, finish-task.sh (all types) + verify-worktree-isolation.sh (tech/data)
       agent-rules.md           starter retro log (tech/data, paired with inject-retros.py)
-    tech/                      tech templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents, tech-only hooks (incl. check-fitness.py + auto-cleanup-merge.py), conditional RELEASE_CHECKLIST.md / CONTRIBUTING.md
+    tech/                      tech templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents, tech-only hooks (incl. check-fitness.py + auto-cleanup-merge.py), the backlog runner (.claude/backlog-playbook.md + .claude/commands/backlog-*.md — data pulls these from tech), conditional RELEASE_CHECKLIST.md / CONTRIBUTING.md
     data/                      data templates incl. C4 diagrams.md, spec/ (7 files incl. architecture.md and fitness-functions.md), settings, agents (hooks from common/ + tech/)
     research/                  research templates, settings, agents (hooks from common/)
   base/                        shared Docker base images (Dockerfiles + entrypoints)
@@ -61,6 +61,8 @@ Key design: `common/` holds hooks, scripts, and starter content shared across al
 - When changing placeholder conventions: update all three project reference files
 - When adding a new spec sub-file (e.g. `interfaces-protocol.md`): add to both tech and data templates if it applies to both, update the table in `spec/SPEC.md`, update the template tables in `tech-project.md` / `data-project.md`, update the README repo structure tree
 - When adding or renaming a slash command: add/rename the `commands/cp-*.md` file, add its `mode=` token to the SKILL.md Step 0 routing table, and update the README slash-command table + repo tree. The `mode=` token must match a Step 0 row or routing silently falls through to phrase-matching.
+- The **project-template** slash commands (the `/backlog-*` runner) live in `assets/templates/tech/.claude/commands/` with shared logic in `assets/templates/tech/.claude/backlog-playbook.md` — tech and data only (data pulls from `tech/`, never a second copy). When changing them: edit the single tech copy, and keep the SKILL.md manifest table, both reference template tables (tech + data's "From tech/"), the sync-skills managed list, and the README repo tree in sync.
+- `finish-task.sh` is the verified task-closure partner to `start-task.sh` (both in `common/scripts/`, all types). It merges + deletes the branch + removes the worktree and exits non-zero if anything is left — the backlog playbook and the general task lifecycle call it instead of a bare `git merge`.
 - Test with `evals/evals.json` assertions after structural changes
 
 ## Boundaries

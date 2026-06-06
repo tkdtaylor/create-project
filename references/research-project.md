@@ -99,6 +99,7 @@ Templates come from two directories:
 |----------|-------------|
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 | `scripts/start-task.sh` | `scripts/start-task.sh` (mode 755) |
+| `scripts/finish-task.sh` | `scripts/finish-task.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
 | `.claude/scripts/block-no-verify.py` | `.claude/scripts/block-no-verify.py` |
@@ -168,8 +169,9 @@ test -d .git && echo "exists" || echo "missing"
 
 If missing, ask whether to initialize. If yes:
 ```bash
-git init
-git branch -m main
+# Initialize on 'main' (never 'master') — robust across git versions and any
+# global init.defaultBranch setting; falls back to repointing the unborn HEAD.
+git init -b main 2>/dev/null || { git init && git symbolic-ref HEAD refs/heads/main; }
 git add .
 git commit -m "chore: initialize research project structure"
 ```

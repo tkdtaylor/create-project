@@ -258,6 +258,7 @@ assets/
       scripts/
         check-task-state.sh      # invariant check: each NNN-*.md task in exactly one of {backlog, active, completed} (all types)
         start-task.sh            # branch-or-worktree setup keyed off live session count (all types)
+        finish-task.sh           # verified task closure: merge + delete branch + remove worktree, errors if anything is left behind (all types)
         verify-worktree-isolation.sh # post-dispatch audit: confirms parallel agents respected isolation: "worktree" (tech/data only)
       .claude/scripts/
         _hook_utils.py           # shared profile gating module (minimal/standard/strict)
@@ -289,6 +290,12 @@ assets/
       CONTRIBUTING.md            # conditional — public/internal contributor guide; renamed to HANDOVER.md for private projects
       .claude/
         settings.json            # permissions + hooks across six lifecycle events (PreToolUse, PostToolUse, SessionStart, PreCompact, PostCompact, Stop)
+        backlog-playbook.md      # shared procedure for the /backlog-* commands (triage → resolve → execute); tech/data, data pulls from tech
+        commands/                # project slash commands (tech/data, data pulls from tech)
+          backlog-run.md           # /backlog-run — sequential, surface blockers before starting
+          backlog-run-parallel.md  # /backlog-run-parallel — parallel worktrees, surface blockers before starting
+          backlog-autopilot.md     # /backlog-autopilot — sequential, resolve blockers autonomously (ADRs)
+          backlog-autopilot-parallel.md # /backlog-autopilot-parallel — parallel worktrees, autonomous
         scripts/
           config-protection.py   # blocks modifications to linter/formatter configs
           protect-checkout.py    # blocks `git checkout -- <path>` over a dirty tree
@@ -328,7 +335,7 @@ assets/
         interfaces.md            # CLI runners, notebook entrypoints, public src/ API
         configuration.md         # experiment configs, env vars, metrics catalog
         fitness-functions.md     # executable invariants — reproducibility, raw-data immutability, perf budgets
-      .claude/                   # settings + agents (hooks from common/ + tech/; optional templates: qa.md, docs-writer.md, task-planner.md). Scripts and agent-rules.md come from common/.
+      .claude/                   # settings + agents (hooks + backlog runner/commands from common/ + tech/; optional templates: qa.md, docs-writer.md, task-planner.md). Scripts and agent-rules.md come from common/.
       docker/                    # same Docker pattern as tech
       experiment-tracker.md      # tracks experiment runs alongside coverage-tracker
       experiments/

@@ -275,12 +275,18 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/scripts/check-fitness.py` | tech, data |
 | `.claude/scripts/auto-cleanup-merge.py` | tech, data |
 | `.claude/agents/task-executor.md` | Yes |
+| `.claude/backlog-playbook.md` | tech, data |
+| `.claude/commands/backlog-run.md` | tech, data |
+| `.claude/commands/backlog-run-parallel.md` | tech, data |
+| `.claude/commands/backlog-autopilot.md` | tech, data |
+| `.claude/commands/backlog-autopilot-parallel.md` | tech, data |
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |
 | `.claude/agents/security-auditor.md` | tech, data |
 | `.claude/agents/spec-verifier.md` | tech, data |
 | `scripts/check-task-state.sh` | Yes |
 | `scripts/start-task.sh` | Yes |
+| `scripts/finish-task.sh` | Yes |
 | `scripts/verify-worktree-isolation.sh` | tech, data |
 
 Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill. Optional agent templates the skill ships (`qa.md`, `docs-writer.md`, `task-planner.md`, `dependency-auditor.md`) are only added to the manifest if Step 3d installed them.
@@ -367,7 +373,7 @@ When asked to add a task to an existing project:
 
 **Important: you must commit and push after every milestone. Never start the next task without committing the current one first. Do not batch multiple tasks into a single commit.**
 
-Implementation work runs through `task-executor`, which calls `scripts/start-task.sh <NNN> <slug>` as Step 0 to create the `task/NNN-<slug>` branch (or a worktree under concurrent sessions). All task commits land on that branch, never on `main`. The project's `CLAUDE.md` describes the full lifecycle (🟡 feat commit → spec-verifier → ✅ verify commit → merge → auto-cleanup).
+Implementation work runs through `task-executor`, which calls `scripts/start-task.sh <NNN> <slug>` as Step 0 to create the `task/NNN-<slug>` branch (or a worktree under concurrent sessions). All task commits land on that branch, never on `main`. Closing a task runs through its symmetric partner `scripts/finish-task.sh <NNN> <slug>`, which merges into `main`, deletes the branch, removes the worktree, and verifies all three (erroring if anything is left behind) — use it instead of a bare `git merge` so a forgotten merge or leftover branch/worktree is a hard failure, not silent drift. The project's `CLAUDE.md` describes the full lifecycle (🟡 feat commit → spec-verifier → ✅ verify commit → `finish-task.sh` → merge + auto-cleanup).
 
 When a **technical** task is completed (on its task branch):
 1. Move the task file from `tasks/active/` to `tasks/completed/`

@@ -132,10 +132,15 @@ Templates come from three directories:
 | `.claude/agents/security-auditor.md` | `.claude/agents/security-auditor.md` |
 | `.claude/agents/spec-verifier.md` | `.claude/agents/spec-verifier.md` |
 
-**From `tech/`** (tech-only hooks, also used by data projects):
+**From `tech/`** (tech-only hooks and the backlog runner, also used by data projects):
 
 | Template | Output path |
 |----------|-------------|
+| `.claude/backlog-playbook.md` | `.claude/backlog-playbook.md` |
+| `.claude/commands/backlog-run.md` | `.claude/commands/backlog-run.md` |
+| `.claude/commands/backlog-run-parallel.md` | `.claude/commands/backlog-run-parallel.md` |
+| `.claude/commands/backlog-autopilot.md` | `.claude/commands/backlog-autopilot.md` |
+| `.claude/commands/backlog-autopilot-parallel.md` | `.claude/commands/backlog-autopilot-parallel.md` |
 | `.claude/scripts/config-protection.py` | `.claude/scripts/config-protection.py` |
 | `.claude/scripts/protect-checkout.py` | `.claude/scripts/protect-checkout.py` |
 | `.claude/scripts/edit-tracker.py` | `.claude/scripts/edit-tracker.py` |
@@ -153,6 +158,7 @@ Templates come from three directories:
 | `agent-rules.md` | `docs/architecture/agent-rules.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 | `scripts/start-task.sh` | `scripts/start-task.sh` (mode 755) |
+| `scripts/finish-task.sh` | `scripts/finish-task.sh` (mode 755) |
 | `scripts/verify-worktree-isolation.sh` | `scripts/verify-worktree-isolation.sh` (mode 755) |
 | `.claude/scripts/_hook_utils.py` | `.claude/scripts/_hook_utils.py` |
 | `.claude/scripts/protect-secrets.py` | `.claude/scripts/protect-secrets.py` |
@@ -235,8 +241,9 @@ test -d .git && echo "exists" || echo "missing"
 
 If missing, ask whether to initialize. If yes:
 ```bash
-git init
-git branch -m main
+# Initialize on 'main' (never 'master') — robust across git versions and any
+# global init.defaultBranch setting; falls back to repointing the unborn HEAD.
+git init -b main 2>/dev/null || { git init && git symbolic-ref HEAD refs/heads/main; }
 git add .
 git commit -m "chore: initialize project structure"
 ```

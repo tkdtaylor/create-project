@@ -176,6 +176,7 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/agents/task-executor.md` → `assets/templates/<type>/.claude/agents/task-executor.md`
 - `scripts/check-task-state.sh` → `assets/templates/common/scripts/check-task-state.sh` (mode 755)
 - `scripts/start-task.sh` → `assets/templates/common/scripts/start-task.sh` (mode 755)
+- `scripts/finish-task.sh` → `assets/templates/common/scripts/finish-task.sh` (mode 755)
 
 **tech and data only (hooks from `tech/`, agents from `<type>/`):**
 - `.claude/scripts/config-protection.py` → `assets/templates/tech/.claude/scripts/config-protection.py`
@@ -187,6 +188,11 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/scripts/detect-smoke-tests.py` → `assets/templates/tech/.claude/scripts/detect-smoke-tests.py`
 - `.claude/scripts/check-fitness.py` → `assets/templates/tech/.claude/scripts/check-fitness.py`
 - `.claude/scripts/auto-cleanup-merge.py` → `assets/templates/tech/.claude/scripts/auto-cleanup-merge.py`
+- `.claude/backlog-playbook.md` → `assets/templates/tech/.claude/backlog-playbook.md` (tech and data — data pulls from `tech/`)
+- `.claude/commands/backlog-run.md` → `assets/templates/tech/.claude/commands/backlog-run.md`
+- `.claude/commands/backlog-run-parallel.md` → `assets/templates/tech/.claude/commands/backlog-run-parallel.md`
+- `.claude/commands/backlog-autopilot.md` → `assets/templates/tech/.claude/commands/backlog-autopilot.md`
+- `.claude/commands/backlog-autopilot-parallel.md` → `assets/templates/tech/.claude/commands/backlog-autopilot-parallel.md`
 - `.claude/agents/architect.md` → `assets/templates/<type>/.claude/agents/architect.md`
 - `.claude/agents/code-reviewer.md` → `assets/templates/<type>/.claude/agents/code-reviewer.md`
 - `.claude/agents/security-auditor.md` → `assets/templates/<type>/.claude/agents/security-auditor.md`

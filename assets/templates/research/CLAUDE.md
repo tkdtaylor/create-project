@@ -53,7 +53,7 @@ Every research task runs on its own branch — working directly on `main` is blo
 3. Use the **task-executor** agent for research tasks — its Step 0 runs `scripts/start-task.sh <NNN> <slug>` to create branch `task/NNN-<slug>` (or a worktree under concurrent sessions)
 4. Log every search before moving on — even dead ends
 5. Save sources before synthesizing — don't rely on memory
-6. When the task is done, **merge to main** explicitly: `git checkout main && git merge task/NNN-<slug> && git branch -d task/NNN-<slug>`
+6. When the task is done, **close it** with `scripts/finish-task.sh <NNN> <slug>` (add `--local` to merge without pushing) — it merges `task/NNN-<slug>` into `main`, deletes the branch, removes the worktree if any, and verifies all three actually happened (exiting non-zero if anything is left behind) rather than relying on you to remember each step
 7. **Commit and push after each milestone** — never start the next task without committing
 
 ## Commit rules
