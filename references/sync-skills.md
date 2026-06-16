@@ -381,7 +381,11 @@ for template_file in \
   "$COMMON_DIR"/.claude/scripts/*.py \
   "$TEMPLATE_DIR"/.claude/scripts/*.py \
   "$TEMPLATE_DIR"/.claude/agents/*.md \
-  "$TECH_DIR"/.claude/scripts/*.py; do
+  "$TEMPLATE_DIR"/.claude/commands/*.md \
+  "$TEMPLATE_DIR"/.claude/backlog-playbook.md \
+  "$TECH_DIR"/.claude/scripts/*.py \
+  "$TECH_DIR"/.claude/commands/*.md \
+  "$TECH_DIR"/.claude/backlog-playbook.md; do
   [ -f "$template_file" ] || continue
   # Determine relative output path (strip template dir prefix)
   for prefix in "$COMMON_DIR/" "$TEMPLATE_DIR/" "$TECH_DIR/"; do
@@ -391,6 +395,8 @@ for template_file in \
   # If not, it's a new file from upstream
 done
 ```
+
+This scan MUST cover every managed-file category listed in Step 3a — not just hook scripts and agents. Slash commands (`.claude/commands/*.md`) and the backlog playbook (`.claude/backlog-playbook.md`) are tech/data managed files that postdate many existing manifests, so a scan that omits them silently skips them on every sync. When adding a new managed category to Step 3a, add it here too.
 
 For new files found, treat **hook scripts** and **agent files** differently — they are not the same kind of thing:
 
@@ -412,6 +418,9 @@ For each missing agent, read the file and present:
 - When to invoke it (typical trigger phrase)
 
 Then let the user pick per-agent. Copy only the selected ones, set the `model:` field based on available models (same mapping as Step 3d), and add them to the manifest.
+
+**Slash commands & playbooks** (`.claude/commands/*.md`, `.claude/backlog-playbook.md`) — **auto-add, then report.**
+Like hook scripts, these are workflow infrastructure rather than opinionated tooling — they only activate when the user explicitly invokes the slash command, so adding one the user never runs costs nothing, while omitting it leaves a referenced command broken. A project missing them almost always predates the templates (they were added upstream after setup) rather than having deliberately removed them. Copy without asking, then list what was added in the final report. Note that project slash commands are picked up at session start, so tell the user to reload for new commands to appear.
 
 **Settings files and other managed content** — handle per their own rules (settings.json uses the merge logic in Step 3e).
 
