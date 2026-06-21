@@ -9,6 +9,13 @@ These diagrams are part of the **authoritative spec** for this project. They are
 
 GitHub and most IDE markdown previewers render Mermaid natively — no build step required. Mermaid's `C4Context`, `C4Container`, `C4Component`, `C4Deployment`, and `C4Dynamic` blocks render as proper C4 diagrams.
 
+> **Mermaid that renders on GitHub.** A few editor-valid patterns make GitHub's renderer fail with *"Unable to render rich display — Parse error on line N"*. Avoid them — or run `python3 scripts/check-mermaid.py` to catch them before you commit:
+> - **No `;` inside a label / message / note** — Mermaid reads it as a statement separator. Use `,` or ` and `. (A `;` *inside double quotes*, e.g. a C4 element description, is fine.)
+> - **Don't name a participant with a reserved word** — `box`, `note`, `end`, `loop`, `alt`, `opt`, `par`, `rect`, `critical`, `break`, `activate`, `deactivate`, `over`, `link`, `title`, `actor`. Give it a distinct id and an `as` alias: `participant Sbx as isolation sandbox`.
+> - **No HTML entities** (`&lt;`, `&gt;`, `&amp;`) in labels — the trailing `;` breaks parsing. Write plain text (`Arc of Client`, not `Arc&lt;Client&gt;`).
+> - **Quote edge labels containing parentheses or operators**: `-->|"Some(a) == b"|`.
+> - **`%%` comments must be on their own line** — never inline after a statement.
+
 > **Scaling rule.** Trivial systems (single container, no integrations) can collapse Container and Component into one section, or skip Container entirely. Large systems may split Component into one diagram per container (3a, 3b, …). The C4 levels are the *grammar* — use as many as the system actually needs. Per-flow runtime sequences (Section 4+) always belong here regardless of size.
 
 ---

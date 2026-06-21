@@ -9,6 +9,13 @@ These diagrams are part of the **authoritative spec** for this project. They are
 
 GitHub and most IDE markdown previewers render Mermaid natively — no build step required.
 
+> **Mermaid that renders on GitHub.** A few editor-valid patterns make GitHub's renderer fail with *"Unable to render rich display — Parse error on line N"*. Avoid them — or run `python3 scripts/check-mermaid.py` to catch them before you commit:
+> - **No `;` inside a label / message / note** — Mermaid reads it as a statement separator. Use `,` or ` and `. (A `;` *inside double quotes* is fine.)
+> - **Don't name a participant with a reserved word** — `box`, `note`, `end`, `loop`, `alt`, `opt`, `par`, `rect`, `critical`, `break`, `activate`, `deactivate`, `over`, `link`, `title`, `actor`. Give it a distinct id and an `as` alias.
+> - **No HTML entities** (`&lt;`, `&gt;`, `&amp;`) in labels — the trailing `;` breaks parsing. Write plain text.
+> - **Quote edge labels containing parentheses or operators**: `-->|"Some(a) == b"|`.
+> - **`%%` comments must be on their own line** — never inline after a statement.
+
 > **Scaling rule.** Single-script analysis projects can skip Section 2 (Containers) and go straight from Context to Lineage. Multi-service ML platforms might split Component into per-container diagrams (3a, 3b, …). Use as many C4 levels as the system actually needs — but always include the lineage diagram (Section 4); it is the one a new contributor needs first.
 
 ---

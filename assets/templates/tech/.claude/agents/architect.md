@@ -82,7 +82,7 @@ When asked to audit drift between the spec, the diagrams, and the code:
    - `data-model.md` → read schema definitions, migrations, and type definitions; spot-check that field lists match
    - `interfaces.md` → read CLI argument parsers, route definitions, public trait/interface declarations
    - `configuration.md` → read config struct/dict definitions and default values; check env var reads
-   - `diagrams.md` → read the entry points and the modules named as boxes; verify the named edges exist as imports/calls; cross-check that every C4 box in the diagrams has a matching row in `architecture.md`
+   - `diagrams.md` → read the entry points and the modules named as boxes; verify the named edges exist as imports/calls; cross-check that every C4 box in the diagrams has a matching row in `architecture.md`. Also run `python3 scripts/check-mermaid.py` and report any block that won't render on GitHub (`;` in labels, reserved-word participant ids, HTML entities, unquoted parens in edge labels, inline `%%`) — a diagram that doesn't render is drift between the doc and what a reader sees. When you *author or edit* a Mermaid diagram, follow the same rules so you never introduce a non-rendering block.
 
 3. **Compare and categorize findings.** For every mismatch, classify as:
    - **Spec is wrong** — code is the truth; the spec entry must be rewritten to match

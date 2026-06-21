@@ -111,6 +111,10 @@ Read docs/spec/* and docs/architecture/diagrams.md. For each spec entry
 or diagrammed component, verify the current source code under src/ still
 reflects what the spec/diagram claims.
 
+Also run `python3 scripts/check-mermaid.py` (zero-dependency). Any block it
+flags will NOT render on GitHub (Parse error) — list each as a must-fix with
+file:line, since a broken diagram is invisible drift.
+
 For each divergence:
 - Which spec file or diagram is stale (file:line range)
 - What the code actually does now
