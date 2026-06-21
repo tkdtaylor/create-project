@@ -280,6 +280,7 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 | `.claude/commands/backlog-run-parallel.md` | tech, data |
 | `.claude/commands/backlog-autopilot.md` | tech, data |
 | `.claude/commands/backlog-autopilot-parallel.md` | tech, data |
+| `.claude/commands/autopilot.md` | tech, data |
 | `.claude/agents/architect.md` | tech, data |
 | `.claude/agents/code-reviewer.md` | tech, data |
 | `.claude/agents/security-auditor.md` | tech, data |
