@@ -44,19 +44,28 @@ Read-only audit. Do not modify any files.
 Verify the project's file inventory is consistent with how it's documented:
 
 1. Every file referenced by a manifest, table, or copy instruction in
-   .claude/skill-manifest.json, README.md, CLAUDE.md, or docs/spec/* must
-   exist on disk. Flag missing files.
+   .claude/skill-manifest.json, README.md, AGENTS.md, CLAUDE.md, or
+   docs/spec/* must exist on disk. Flag missing files.
 
 2. Every file in directories the skill manages (.claude/scripts/,
    .claude/agents/, scripts/, docs/spec/, docs/architecture/) should be
    referenced somewhere it would be discovered. Flag orphans the user
    may have forgotten.
 
-3. Every markdown link in README.md, CLAUDE.md, and docs/architecture/*.md
-   that points to a relative path must resolve. Flag broken links.
+3. Every markdown link in README.md, AGENTS.md, CLAUDE.md, and
+   docs/architecture/*.md that points to a relative path must resolve.
+   Flag broken links.
 
 4. Every TC-NNN-XX marker cited in docs/spec/* should be findable in
    tests/ or in the test-spec it came from. Flag dangling markers.
+
+5. Cross-harness layout integrity. If the repo has an AGENTS.md-canonical
+   layout, verify it is intact: AGENTS.md exists and is tracked by git,
+   GEMINI.md is a symlink pointing to AGENTS.md, and CLAUDE.md contains an
+   `@AGENTS.md` import near the top. Flag drift: a CLAUDE.md with no
+   AGENTS.md (un-migrated — most cross-references and cited numbers now
+   belong in AGENTS.md), a GEMINI.md that is a regular file rather than a
+   symlink → AGENTS.md, or a CLAUDE.md missing its `@AGENTS.md` import.
 
 Output a punch list:
 - One bullet per finding
@@ -78,9 +87,10 @@ Verify hook plumbing and number-citations match reality:
 2. Every command path in .claude/settings.json should resolve to a real
    script. Flag broken references (settings entry → missing script).
 
-3. Cited numbers in prose are dangerous when they drift. Grep CLAUDE.md,
-   README.md, SKILL.md (if present), and references/*.md for patterns
-   like "N hooks", "N agents", "N lifecycle events", "N project types".
+3. Cited numbers in prose are dangerous when they drift. Grep AGENTS.md,
+   CLAUDE.md, README.md, SKILL.md (if present), and references/*.md for
+   patterns like "N hooks", "N agents", "N lifecycle events", "N project
+   types" (AGENTS.md is now where most cited numbers live).
    Verify each against reality (count files, count settings.json
    invocations, etc.). Flag every stale number with the actual count.
 
@@ -163,8 +173,9 @@ Read README.md in full. Verify each claim it makes:
 5. Any section describing a removed feature should be removed or marked
    deprecated.
 
-6. Cross-document references (links to CLAUDE.md, docs/spec/, ADRs) all
-   resolve and still describe what the README claims they describe.
+6. Cross-document references (links to AGENTS.md, CLAUDE.md, docs/spec/,
+   ADRs) all resolve and still describe what the README claims they
+   describe.
 
 The README is the project's front door. It being wrong is a higher-
 impact finding than internal-doc drift — order findings accordingly.

@@ -1,77 +1,29 @@
-# {{PROJECT_NAME}}
+# {{PROJECT_NAME}} — Claude Code layer
 
-{{PROJECT_DESCRIPTION}}
+The canonical, harness-neutral briefing for this repo is **`AGENTS.md`**. Read it
+first — it holds project context, the research approach, conventions, the task
+workflow, source-handling rules, commit rules, boundaries, and the load-bearing
+process rules. This file adds only what is **specific to Claude Code** (subagents,
+plan mode, hooks).
 
-## Project structure
+@AGENTS.md
+
+---
+
+Everything below is Claude Code-specific and supplements `AGENTS.md`.
+
+## Subagents
+
+Use the **task-executor** agent to work through research tasks one at a time. Each
+agent call is ephemeral — it reads the task file, does the research, logs findings,
+and reports back without bloating the main conversation.
 
 ```
-sources/       <- input materials (never edited — treat as read-only)
-  local/         files the user provided
-  web/           saved pages and downloaded references
-notes/         <- working synthesis (scratchpad — can be messy)
-  by-topic/      notes organized by research area
-outputs/       <- final deliverables
-  templates/     output structure templates (decision brief, research report, learning plan)
-  drafts/        work in progress
-  final/         completed and approved pieces
-docs/          <- project management
-  research-log.md   running log of searches and findings
-  outline.md        target structure for the output
-  tasks/            active, backlog, completed
+use task-executor — task: docs/tasks/backlog/NNN-name.md
 ```
 
-The key distinction: `sources/` and `docs/` are the input side, `notes/` and `outputs/` are the output side.
-
-## Research approach
-
-> TODO: fill in specifics — e.g. primary domains to search, databases or journals to prioritize, geographic or time scope, intended audience for the output.
-
-## Output templates
-
-When starting a new output, copy the matching template from `outputs/templates/` to `outputs/drafts/` and fill it in:
-
-- **Decision brief** (`outputs/templates/decision-brief.md`) — comparing options with a structured recommendation
-- **Deep research report** (`outputs/templates/deep-research.md`) — in-depth investigation with methodology, findings, and analysis
-- **Learning plan** (`outputs/templates/learning-plan.md`) — three-phase syllabus (Apprentice → Journeyman → Master)
-
-If the output doesn't match any template, create a free-form document in `outputs/drafts/` — templates are a starting point, not a constraint.
-
-## Conventions
-
-- Log every search in `docs/research-log.md` — include the query, platform, date, and key result
-- Save web sources worth keeping to `sources/web/` as markdown with URL + date at the top
-- Notes in `notes/` are working material; only move content to `outputs/` when it's ready to share
-- Tasks define a research question, not a deliverable — done means the question is **answered**, not just "searched"
-- Distinguish 🟡 (sources gathered) from ✅ (question answered with citations). The `progress-tracker.md` ladder spells out which level each task earns; default to 🟡 when synthesis is incomplete — never inflate to ✅ because "I looked into it"
-
-## Working in this project
-
-Every research task runs on its own branch — working directly on `main` is blocked by the `no-commit-on-main.py` hook so concurrent sessions never overwrite each other's notes. `scripts/start-task.sh` is how you set it up.
-
-1. Start each session by reading the active task file and `docs/research-log.md`
-2. Check `docs/outline.md` for the target output structure
-3. Use the **task-executor** agent for research tasks — its Step 0 runs `scripts/start-task.sh <NNN> <slug>` to create branch `task/NNN-<slug>` (or a worktree under concurrent sessions)
-4. Log every search before moving on — even dead ends
-5. Save sources before synthesizing — don't rely on memory
-6. When the task is done, **close it** with `scripts/finish-task.sh <NNN> <slug>` (add `--local` to merge without pushing) — it merges `task/NNN-<slug>` into `main`, deletes the branch, removes the worktree if any, and verifies all three actually happened (exiting non-zero if anything is left behind) rather than relying on you to remember each step
-7. **Commit and push after each milestone** — never start the next task without committing
-
-## Commit rules
-
-**You must commit and push after every milestone.** Do not batch multiple tasks into one commit. Do not continue to the next task until the current one is committed and pushed.
-
-| Milestone | What to stage | Message |
-|-----------|--------------|---------|
-| Task completed | `sources/`, `notes/`, `docs/tasks/`, `docs/research-log.md` | `research: complete task NNN — <name>` |
-| Outline updated | `docs/outline.md` | `docs: update outline — <what changed>` |
-| Draft written | `outputs/drafts/` | `docs: draft <section or output name>` |
-
-After each milestone:
-```bash
-git add <relevant files>
-git commit -m "<message>"
-git push
-```
+The workflow (log-before-moving-on, `scripts/start-task.sh` for isolation, the
+🟡→✅ progress ladder, `finish-task.sh` to close a task) is defined in `AGENTS.md`.
 
 ## Plan mode
 
@@ -79,12 +31,6 @@ When you exit plan mode, a hook automatically restructures the plan:
 - Each step becomes a task file in `docs/tasks/backlog/`
 - The plan is replaced with a lightweight skeleton to save context tokens
 - The full plan is backed up to `docs/plans/`
-
-Use the **task-executor** agent to work through tasks one at a time. Each agent call is ephemeral — it reads the task file, does the research, logs findings, and reports back without bloating the main conversation.
-
-```
-use task-executor — task: docs/tasks/backlog/NNN-name.md
-```
 
 ### End handoffs with a resume command
 
@@ -105,38 +51,10 @@ export CLAUDE_HOOK_PROFILE=strict     # + desktop notifications
 export CLAUDE_DISABLED_HOOKS=desktop-notify  # Disable specific hooks
 ```
 
-## Boundaries
+## Agent rules and retros
 
-### Always
-- Log every search in `docs/research-log.md` — including empty results
-- Save sources to `sources/web/` with URL and date before synthesizing
-- Commit and push after every milestone (task completed, draft written, outline updated)
-- Read the task file (including its **Verification plan**) and research log before starting work
-- Default a task's progress-tracker row to 🟡 if synthesis is incomplete; only promote to ✅ when the research question has a stated, sourced answer
-- Start every task on its own branch via `scripts/start-task.sh <NNN> <slug>` — the task-executor runs this as Step 0
-
-### Ask first
-- Modifying `docs/outline.md` — structural changes affect the whole project
-- Writing to `outputs/drafts/` — only when findings are ready to draft
-- Adding a new research direction not in the current task
-
-### Never
-- Edit files in `sources/` — they are reference material, not drafts
-- Write to `outputs/final/` — that requires user review first
-- Skip logging a search — dead ends prevent duplicate work
-- Combine multiple tasks into one commit
-- Add a `Co-Authored-By` line to commits unless explicitly asked
-- Commit directly to `main`. Every task commit lands on `task/NNN-<slug>`. For a standalone fix to a typo or outline tweak that doesn't warrant a task, include `[allow-main]` in the commit message.
-
-## Common rationalizations
-
-These are excuses agents use to skip steps. Don't fall for them.
-
-| Excuse | Reality |
-|--------|---------|
-| "This source isn't worth saving" | Save it. You'll forget why you dismissed it, and someone else may find it useful. |
-| "I'll log the search later" | Log now. Empty searches matter — they prevent duplicate work next session. |
-| "I'll commit after the next task too" | No. Commit now. Batched commits are impossible to untangle later. |
-| "The outline doesn't need updating for this" | If your findings change the structure, update the outline. |
-| "I'll just quickly look into this tangent" | Stay on your task. Note it for later — don't scope-creep. |
-| "This note is too rough to save" | Notes are supposed to be rough. Save it in `notes/` — don't lose the synthesis. |
+Process-level rules, common rationalizations, and project-specific retros live in
+`docs/agent-rules.md` (their essentials are also inlined in `AGENTS.md` so every
+harness sees them). The `inject-retros.py` SessionStart hook reads that file and
+surfaces relevant entries at the start of every session, so adding an entry there is
+how a one-time mistake becomes a permanent guard.

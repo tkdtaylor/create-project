@@ -15,7 +15,7 @@ Before creating directories (Step R1), ask: *"What are the main categories you n
 | Job search | `companies/`, `applications/`, `interviews/`, `offers/` |
 | Product launch | `research/`, `decisions/`, `risks/`, `stakeholders/` |
 
-Keep `docs/` as-is (task tracking, log, README). Adapt the CLAUDE.md "Research approach" section to describe the tracking/planning approach rather than research methodology.
+Keep `docs/` as-is (task tracking, log, README). Adapt the AGENTS.md "Research approach" section to describe the tracking/planning approach rather than research methodology.
 
 ---
 
@@ -24,7 +24,9 @@ Keep `docs/` as-is (task tracking, log, README). Adapt the CLAUDE.md "Research a
 ```
 project-root/
 ├── README.md                   # Project landing page (for GitHub and users)
-├── CLAUDE.md                   # Project context for Claude Code sessions
+├── AGENTS.md                   # Canonical, harness-neutral agent briefing (source of truth)
+├── CLAUDE.md                   # Claude Code layer — imports @AGENTS.md, adds Claude-specific mechanics
+├── GEMINI.md                   # Symlink → AGENTS.md (Gemini / Antigravity load path)
 ├── sources/                    # Input materials — never edited, only read
 │   ├── local/                  # PDFs, docs, files the user provides
 │   └── web/                    # Saved pages, downloaded references, search results
@@ -129,11 +131,38 @@ For `outline.md`: if the user has described what they're trying to produce (a re
 
 ---
 
-## Step R3 — Create CLAUDE.md
+## Step R3 — Create the agent briefing (AGENTS.md + CLAUDE.md + GEMINI.md)
 
-Read `$CLAUDE_SKILL_DIR/assets/templates/research/CLAUDE.md`, substitute placeholders, and write to `CLAUDE.md` at the project root.
+The briefing is split into a canonical, harness-neutral layer (`AGENTS.md`) and a
+slim Claude-specific layer (`CLAUDE.md` that imports it), with `GEMINI.md` as a
+symlink so Gemini / Antigravity load the same canonical file. Every coding-agent
+harness reads the same source of truth.
 
-For the **Research approach** section: tailor based on the project. For a literature review, note the domains and databases to prioritize. For competitive analysis, note the scope (geography, market segment). For report writing, note the intended audience and tone. Keep it specific.
+1. **`AGENTS.md` (canonical).** Read
+   `$CLAUDE_SKILL_DIR/assets/templates/research/AGENTS.md`, substitute placeholders,
+   and write to `AGENTS.md` at the project root. This holds project context, the
+   research approach, conventions, the task workflow, source-handling rules, commit
+   rules, boundaries, and the load-bearing process rules. For the **Research
+   approach** section: tailor based on the project. For a literature review, note the
+   domains and databases to prioritize. For competitive analysis, note the scope
+   (geography, market segment). For report writing, note the intended audience and
+   tone. Keep it specific.
+
+2. **`CLAUDE.md` (Claude layer).** Read
+   `$CLAUDE_SKILL_DIR/assets/templates/research/CLAUDE.md`, substitute placeholders,
+   and write to `CLAUDE.md` at the project root. It already imports `@AGENTS.md` near
+   the top and contains only the Claude-specific mechanics (subagents, plan mode,
+   hook profiles, inject-retros). Do **not** duplicate the neutral content from
+   `AGENTS.md` here.
+
+3. **`GEMINI.md` (symlink).** A symlink can't ship reliably as a template file, so
+   create it at scaffold time as a **relative symlink to AGENTS.md**:
+   ```bash
+   ln -s AGENTS.md GEMINI.md
+   ```
+   Run this from the project root so the link is relative (`AGENTS.md`, not an
+   absolute path). On a filesystem that does not support symlinks, fall back to a
+   one-line `GEMINI.md` containing `@AGENTS.md` and note it to the user.
 
 ---
 
@@ -297,9 +326,10 @@ __pycache__/
 *.pyc
 ```
 
-**A4. Add a Commands section to `CLAUDE.md`**
+**A4. Add a Commands section to `AGENTS.md`**
 
-The research `CLAUDE.md` template has no `## Commands` section. Create one:
+The research `AGENTS.md` template has no `## Commands` section — commands are
+harness-neutral, so they go in the canonical briefing. Create one:
 
 ```markdown
 ## Commands
@@ -319,7 +349,7 @@ sbx rm <project-name>                         # remove (destroys sandbox state)
 **A5. Commit**
 
 ```bash
-git add .gitignore CLAUDE.md
+git add .gitignore AGENTS.md
 git diff --cached --quiet || git commit -m "chore: configure Docker Sandbox environment"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
@@ -438,9 +468,12 @@ Tell the user to open `.env` in their editor and fill in:
 
 **Never ask the user to paste the token or API key into the chat.** They should open `.env` directly and type them in. The container entrypoint configures git from these values on every start — the token is never written to disk inside the container.
 
-**7. Add a Commands section to `CLAUDE.md`**
+**7. Add a Commands section to `AGENTS.md`**
 
-The research `CLAUDE.md` template has no `## Commands` section. Create one and add the block below. Substitute `<project-name>` with the actual lowercased, hyphenated project name:
+The research `AGENTS.md` template has no `## Commands` section — commands are
+harness-neutral, so they go in the canonical briefing. Create one and add the block
+below. Substitute `<project-name>` with the actual lowercased, hyphenated project
+name:
 ```markdown
 ## Commands
 
@@ -500,7 +533,7 @@ __pycache__/
 
 **C2. Capture related local projects**
 
-If the research needs awareness of other projects, notes folders, or document collections on the host, ask the user for their paths (one or more). Record them in `CLAUDE.md` as **read-only context** so future sessions know where they live and that they are not to be modified from here. Append a `## Related projects` section:
+If the research needs awareness of other projects, notes folders, or document collections on the host, ask the user for their paths (one or more). Record them in `AGENTS.md` as **read-only context** so future sessions know where they live and that they are not to be modified from here — this is harness-neutral content, so it belongs in the canonical briefing. Append a `## Related projects` section:
 
 ```markdown
 ## Related projects
@@ -512,9 +545,9 @@ These live elsewhere on this machine and are **read-only context** — reference
 
 Use absolute paths (or paths relative to this project's root) exactly as the user gives them. Do not copy or symlink the sources — just record where they are. If the user has no related projects to declare, skip this section.
 
-**C3. Append run commands to `CLAUDE.md`**
+**C3. Append run commands to `AGENTS.md`**
 
-Add to the `## Commands` section of `CLAUDE.md`:
+Add to the `## Commands` section of `AGENTS.md` (commands are harness-neutral):
 ```bash
 # Local (run from the project root on the host)
 claude .                                      # start Claude Code in this project
@@ -523,7 +556,7 @@ claude .                                      # start Claude Code in this projec
 **C4. Commit**
 
 ```bash
-git add .gitignore CLAUDE.md
+git add .gitignore AGENTS.md
 git diff --cached --quiet || git commit -m "chore: configure local (no-container) environment"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
