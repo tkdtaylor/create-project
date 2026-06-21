@@ -146,11 +146,11 @@ When recommending tools in the steps below, apply this preference order:
 4. **External CLI tools** — standalone tools invoked via Bash (e.g. `dep-scan`, `gh`, `psql`)
 5. **MCP servers — almost never.** Most things people install MCPs for are already covered by built-in tools (WebSearch, WebFetch) or CLI commands via Bash (`gh`, `psql`, `sqlite3`). Only a handful of MCPs add genuine capability: `puppeteer`/`playwright` for browser automation, `context7` for live framework docs, `sequential-thinking` for complex decisions, and `supabase` for Supabase projects. Do not recommend GitHub, search, fetch, database, or memory MCPs — they are redundant.
 
-### 3a — Enrich CLAUDE.md
+### 3a — Enrich the briefing (CLAUDE.md + AGENTS.md)
 
-Read the `CLAUDE.md` at the project root. Append a `## Recommended tooling` section. This section stays in CLAUDE.md so future sessions know what tools are available without being told again.
+Read the `CLAUDE.md` at the project root. Append a `## Recommended tooling` section. Tooling recommendations name Claude Code skills/agents/hooks, so they live in `CLAUDE.md` (the Claude layer) — this section stays there so future sessions know what tools are available without being told again.
 
-**Framework-specific conventions:** Before writing the tooling section, check `$CLAUDE_SKILL_DIR/references/framework-snippets.md` for framework-specific rules that match the project's tech stack (e.g. Next.js, Supabase, Go, FastAPI). Append matching snippets to the CLAUDE.md's **Conventions** section. These encode hard-won rules that prevent common agent mistakes — they're not generic best practices but specific footguns.
+**Framework-specific conventions:** Before writing the tooling section, check `$CLAUDE_SKILL_DIR/references/framework-snippets.md` for framework-specific rules that match the project's tech stack (e.g. Next.js, Supabase, Go, FastAPI). Append matching snippets to the **`## Conventions`** section of **`AGENTS.md`** (the canonical, harness-neutral briefing) — framework footguns apply to every harness, not just Claude Code. These encode hard-won rules that prevent common agent mistakes — they're not generic best practices but specific footguns.
 
 Use the project context to write real content — not a copy of the catalog, but a curated short list with a sentence on why each tool is relevant *to this specific project*. Follow the tool preference order above. Include:
 
@@ -235,7 +235,7 @@ If yes, for each agent:
 
 1. **Check for a template file** at `$CLAUDE_SKILL_DIR/assets/templates/<type>/.claude/agents/<name>.md`. The skill ships templates for some optional agents (e.g. `dependency-auditor`) so they don't need to be regenerated from scratch. For **data** projects, if no template exists under `data/.claude/agents/`, also check `tech/.claude/agents/` — tech templates (like `dependency-auditor`) are ecosystem-agnostic and work fine for data/ML projects that install from PyPI or npm.
 2. **If a template exists:** copy it, substitute the `model:` field with the tier mapping from Step 1, preserve the `# model-tier:` comment, and lightly tailor the instructions to the actual stack (e.g. trim unused ecosystem sections in `dependency-auditor` if the project is single-language).
-3. **If no template exists:** write from scratch using the format in `references/tooling.md`, setting the `model:` field from the tier mapping and including the `# model-tier:` comment. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's CLAUDE.md conventions. Don't use generic placeholder text.
+3. **If no template exists:** write from scratch using the format in `references/tooling.md`, setting the `model:` field from the tier mapping and including the `# model-tier:` comment. Populate the instructions with project-specific context — reference actual file paths, the tech stack, and the project's `AGENTS.md` conventions. Don't use generic placeholder text.
 
 For **research projects**, always create source-evaluator and outline-builder at minimum. gap-analyst is worth adding if the project has a well-defined output (report, paper, analysis).
 
@@ -292,9 +292,9 @@ The manifest records a sha256 hash of each managed file as installed and the tem
 Also include any additional agents created in Step 3d — these are project-specific but still managed by the skill. Optional agent templates the skill ships (`qa.md`, `docs-writer.md`, `task-planner.md`, `dependency-auditor.md`) are only added to the manifest if Step 3d installed them.
 
 **Starter / conditional files are intentionally NOT tracked in the manifest:**
-- `docs/architecture/agent-rules.md` — projects accumulate retro entries here, so sync should not overwrite. Sync only seeds it if absent.
+- `docs/agent-rules.md` — projects accumulate retro entries here, so sync should not overwrite. Sync only seeds it if absent.
 - `docs/architecture/diagrams.md` — gets edited as the architecture evolves.
-- `CLAUDE.md`, `README.md`, `docs/spec/*` — project-specific content with placeholders expanded at scaffold time.
+- `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/spec/*` — project-specific content with placeholders expanded at scaffold time. (`GEMINI.md` is a symlink to `AGENTS.md`, created at scaffold time — not a tracked file.)
 - `RELEASE_CHECKLIST.md`, `CONTRIBUTING.md` — only copied if the user opts in (Step 3a/3b in tech-project.md), so they're project-specific too.
 
 These files are excluded from the manifest by design: tracking them would either cause noisy "drift" reports for benign edits, or pressure sync to overwrite content the user actively maintains.
@@ -337,7 +337,7 @@ Note: `installed_hash` and `template_hash` will differ for agent files because S
 
 After completing 3a–3e, commit everything created or modified in this step:
 ```bash
-git add CLAUDE.md .claude/skill-manifest.json
+git add AGENTS.md CLAUDE.md .claude/skill-manifest.json
 test -d .claude/agents/ && git add .claude/agents/ || true
 git diff --cached --quiet || git commit -m "chore: add project agents and tooling recommendations"
 git remote get-url origin >/dev/null 2>&1 && git push || true

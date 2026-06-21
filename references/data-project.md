@@ -7,7 +7,9 @@ Follow these steps for data science, machine learning, and analytics projects. R
 ```
 project-root/
 ├── README.md                         # Project landing page (for GitHub and users)
-├── CLAUDE.md                         # Project context for Claude Code sessions
+├── AGENTS.md                         # Canonical, harness-neutral agent briefing (source of truth)
+├── CLAUDE.md                         # Claude Code layer — imports @AGENTS.md, adds Claude-specific mechanics
+├── GEMINI.md                         # Symlink → AGENTS.md (Gemini / Antigravity load path)
 ├── data/
 │   ├── raw/                          # Original, immutable data
 │   ├── processed/                    # Cleaned and transformed data
@@ -155,7 +157,7 @@ Templates come from three directories:
 
 | Template | Output path |
 |----------|-------------|
-| `agent-rules.md` | `docs/architecture/agent-rules.md` |
+| `agent-rules.md` | `docs/agent-rules.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 | `scripts/start-task.sh` | `scripts/start-task.sh` (mode 755) |
 | `scripts/finish-task.sh` | `scripts/finish-task.sh` (mode 755) |
@@ -189,13 +191,41 @@ Fill in the tech stack table using what the user provided. If a layer wasn't men
 
 ---
 
-## Step D3 — Create CLAUDE.md
+## Step D3 — Create the agent briefing (AGENTS.md + CLAUDE.md + GEMINI.md)
 
-Read `$CLAUDE_SKILL_DIR/assets/templates/data/CLAUDE.md`, substitute placeholders, and write to `CLAUDE.md` at the project root.
+The briefing is split into a canonical, harness-neutral layer (`AGENTS.md`) and a
+slim Claude-specific layer (`CLAUDE.md` that imports it), with `GEMINI.md` as a
+symlink so Gemini / Antigravity load the same canonical file. This is the
+cross-harness layout from ADR 039 — every coding-agent harness reads the same source
+of truth.
 
-For the **Commands** section: fill in real commands based on the tech stack (e.g. `pytest` for testing, `jupyter lab` for notebooks, `python -m src.models.train` for training). Mark anything unknown as `# TODO: fill in`.
+1. **`AGENTS.md` (canonical).** Read
+   `$CLAUDE_SKILL_DIR/assets/templates/data/AGENTS.md`, substitute placeholders, and
+   write to `AGENTS.md` at the project root. This holds project context, commands,
+   conventions, the task and experiment workflow, commit rules, boundaries, the
+   data-specific rationalizations, and the load-bearing process rules. For the
+   **Commands** section: fill in real commands based on the tech stack (e.g. `pytest`
+   for testing, `jupyter lab` for notebooks, `python -m src.models.train` for
+   training). Mark anything unknown as `# TODO: fill in`. For the **Tech stack**
+   section: fill in the ML stack table — include any libraries the user mentioned
+   (PyTorch, scikit-learn, etc.); otherwise use reasonable defaults for the project
+   type.
 
-For the **Tech stack** section: fill in the ML stack table. If the user mentioned specific libraries (PyTorch, scikit-learn, etc.), include them. Otherwise use reasonable defaults for the project type.
+2. **`CLAUDE.md` (Claude layer).** Read
+   `$CLAUDE_SKILL_DIR/assets/templates/data/CLAUDE.md`, substitute placeholders, and
+   write to `CLAUDE.md` at the project root. It already imports `@AGENTS.md` near the
+   top and contains only the Claude-specific mechanics (subagents, plan mode, hook
+   profiles, inject-retros). Do **not** duplicate the neutral content from `AGENTS.md`
+   here — Step 3a appends the `## Recommended tooling` section to this file later.
+
+3. **`GEMINI.md` (symlink).** A symlink can't ship reliably as a template file, so
+   create it at scaffold time as a **relative symlink to AGENTS.md**:
+   ```bash
+   ln -s AGENTS.md GEMINI.md
+   ```
+   Run this from the project root so the link is relative (`AGENTS.md`, not an
+   absolute path). On a filesystem that does not support symlinks, fall back to a
+   one-line `GEMINI.md` containing `@AGENTS.md` and note it to the user.
 
 ---
 

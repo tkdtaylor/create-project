@@ -7,7 +7,9 @@ Follow these steps for software/code projects. Return to the main skill (Step 3)
 ```
 project-root/
 ├── README.md                         # Project landing page (for GitHub and users)
-├── CLAUDE.md                         # Project context for Claude Code sessions
+├── AGENTS.md                         # Canonical, harness-neutral agent briefing (source of truth)
+├── CLAUDE.md                         # Claude Code layer — imports @AGENTS.md, adds Claude-specific mechanics
+├── GEMINI.md                         # Symlink → AGENTS.md (Gemini / Antigravity load path)
 ├── src/                              # Code outputs — written by Claude, committed to repo
 ├── artifacts/                        # Non-code outputs (rendered diagrams, schemas, exports)
 │   ├── diagrams/
@@ -124,7 +126,7 @@ Templates come from two directories:
 
 | Template | Output path |
 |----------|-------------|
-| `agent-rules.md` | `docs/architecture/agent-rules.md` |
+| `agent-rules.md` | `docs/agent-rules.md` |
 | `scripts/check-task-state.sh` | `scripts/check-task-state.sh` (mode 755) |
 | `scripts/start-task.sh` | `scripts/start-task.sh` (mode 755) |
 | `scripts/finish-task.sh` | `scripts/finish-task.sh` (mode 755) |
@@ -150,7 +152,7 @@ All scripts and settings are tracked in `.claude/skill-manifest.json` (Step 3e) 
 | Profile | Hooks |
 |---------|-------|
 | **minimal** | `protect-secrets` (block writes to keys/certs), `block-no-verify` (block git hook bypass), `config-protection` (block linter config edits), `protect-checkout` (block `git checkout -- <path>` over a dirty tree), `no-commit-on-main` (block `git commit` on main/master/trunk once `task/*` branches exist, with `[allow-main]` opt-out), `session-lock` + `session-lock-touch` (SessionStart writes a per-session lock and sweeps stale ones; Stop refreshes the lock) |
-| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns), `inject-retros` (SessionStart — surface relevant Failure-mode entries from CLAUDE.md), `spec-coverage-check` (block `git commit` if active task's TC markers have no test references), `scope-drift-summary` (Stop — print one-line summary of diff vs spec coverage), `detect-smoke-tests` (Stop — flag tests in diff with no assertions), `auto-cleanup-merge` (PostToolUse Bash — after `git merge task/...` or `gh pr merge`, auto-deletes the branch and removes the worktree) |
+| **standard** | + `restructure-plan` (plan→tasks on ExitPlanMode), `pre-compact` (block compaction if uncommitted), `post-compact` (re-inject task context), `periodic-checkpoint` (commit reminder every 15 turns), `strategic-compact` (suggest /compact after ~25 turns), `inject-retros` (SessionStart — surface relevant Failure-mode entries from AGENTS.md / CLAUDE.md / docs/agent-rules.md), `spec-coverage-check` (block `git commit` if active task's TC markers have no test references), `scope-drift-summary` (Stop — print one-line summary of diff vs spec coverage), `detect-smoke-tests` (Stop — flag tests in diff with no assertions), `auto-cleanup-merge` (PostToolUse Bash — after `git merge task/...` or `gh pr merge`, auto-deletes the branch and removes the worktree) |
 | **strict** | + `edit-tracker` + `batch-format-typecheck` (batch format/typecheck at Stop), `check-fitness` (Stop — runs `make fitness` if defined, warns on failures, doesn't block), `desktop-notify` (OS notification on completion) |
 
 **Agents:** Ship with `model: inherit` and a `# model-tier:` comment — Step 3d detects available models and updates the field.
@@ -166,13 +168,40 @@ Fill in the tech stack table using what the user provided. If a layer (e.g. fram
 
 ---
 
-## Step T3 — Create CLAUDE.md
+## Step T3 — Create the agent briefing (AGENTS.md + CLAUDE.md + GEMINI.md)
 
-Read `$CLAUDE_SKILL_DIR/assets/templates/tech/CLAUDE.md`, substitute placeholders, and write to `CLAUDE.md` at the project root.
+The briefing is split into a canonical, harness-neutral layer (`AGENTS.md`) and a
+slim Claude-specific layer (`CLAUDE.md` that imports it), with `GEMINI.md` as a
+symlink so Gemini / Antigravity load the same canonical file. This is the
+cross-harness layout from ADR 039 — every coding-agent harness reads the same source
+of truth.
 
-For the **Commands** section: fill in real commands based on the tech stack (e.g. `npm test` for Node, `pytest` for Python, `go test ./...` for Go). Mark anything unknown as `# TODO: fill in`.
+1. **`AGENTS.md` (canonical).** Read
+   `$CLAUDE_SKILL_DIR/assets/templates/tech/AGENTS.md`, substitute placeholders, and
+   write to `AGENTS.md` at the project root. This holds project context, commands,
+   conventions, the task workflow, commit rules, boundaries, and the load-bearing
+   process rules. For the **Commands** section: fill in real commands based on the
+   tech stack (e.g. `npm test` for Node, `pytest` for Python, `go test ./...` for
+   Go). Mark anything unknown as `# TODO: fill in`. For the **Boundaries → Never**
+   list: add 1–2 project-type-specific guardrails beyond the defaults — e.g. for an
+   API project "do not add authentication logic until Task 003", for a CLI "do not
+   write to files outside the designated output directory".
 
-For the **Do not** section: add 1–2 project-type-specific guardrails beyond the defaults — e.g. for an API project "do not add authentication logic until Task 003", for a CLI "do not write to files outside the designated output directory".
+2. **`CLAUDE.md` (Claude layer).** Read
+   `$CLAUDE_SKILL_DIR/assets/templates/tech/CLAUDE.md`, substitute placeholders, and
+   write to `CLAUDE.md` at the project root. It already imports `@AGENTS.md` near the
+   top and contains only the Claude-specific mechanics (subagents, plan mode, hook
+   profiles, inject-retros). Do **not** duplicate the neutral content from `AGENTS.md`
+   here — Step 3a appends the `## Recommended tooling` section to this file later.
+
+3. **`GEMINI.md` (symlink).** A symlink can't ship reliably as a template file, so
+   create it at scaffold time as a **relative symlink to AGENTS.md**:
+   ```bash
+   ln -s AGENTS.md GEMINI.md
+   ```
+   Run this from the project root so the link is relative (`AGENTS.md`, not an
+   absolute path). On a filesystem that does not support symlinks, fall back to a
+   one-line `GEMINI.md` containing `@AGENTS.md` and note it to the user.
 
 ---
 

@@ -70,23 +70,41 @@ Do not proceed until the user confirms. If they correct or expand your understan
 
 ---
 
-## Step A3 — Generate CLAUDE.md
+## Step A3 — Generate the agent briefing (AGENTS.md + CLAUDE.md + GEMINI.md)
 
-This is the most important output. Write a `CLAUDE.md` at the project root that accurately describes the project as it exists — not as it would be if scaffolded from scratch.
+This is the most important output. Use the cross-harness layout from ADR 039: a
+canonical, harness-neutral `AGENTS.md` (the source of truth), a slim `CLAUDE.md`
+that imports it, and a `GEMINI.md` symlink. Describe the project as it exists — not
+as it would be if scaffolded from scratch.
 
-Read the appropriate CLAUDE.md template from `$CLAUDE_SKILL_DIR/assets/templates/<type>/CLAUDE.md` as a structural guide, but **rewrite every section to match the actual project**:
+**1. `AGENTS.md` (canonical).** Read
+`$CLAUDE_SKILL_DIR/assets/templates/<type>/AGENTS.md` as a structural guide, but
+**rewrite every section to match the actual project**:
 
-- **Project structure**: describe the real directory layout, not the template's layout
+- **What this is / Project structure**: describe the real directory layout, not the template's layout
 - **Tech stack**: the actual stack, not placeholders
 - **Commands**: real build/test/run/lint commands discovered in A1 — not `# TODO: fill in`
 - **Conventions**: describe patterns actually in use (naming, file organization, test location, commit style from git log)
 - **Working in this project**: adapt to the real workflow — if tests exist, reference them; if there's CI, reference it
 - **Commit rules**: include the milestone-based commit rules from the template
 - **Boundaries**: write the Always / Ask First / Never tiers based on this project's actual conventions
-- **Common rationalizations**: include these from the template — they're universal
-- **Plan mode**: include this section from the template — it works in any project with `docs/tasks/`
+- **Load-bearing process rules**: include these from the template — they're universal
 
-If the project already has a CLAUDE.md, read it first and merge — preserve anything the user already wrote, add what's missing.
+**2. `CLAUDE.md` (Claude layer).** Read
+`$CLAUDE_SKILL_DIR/assets/templates/<type>/CLAUDE.md` — it imports `@AGENTS.md` and
+holds only the Claude-specific mechanics (subagents, plan mode, hook profiles,
+inject-retros). Keep it slim; do not duplicate the neutral content that now lives in
+`AGENTS.md`.
+
+**3. `GEMINI.md` (symlink).** Create a relative symlink so Gemini / Antigravity load
+the canonical file:
+```bash
+ln -s AGENTS.md GEMINI.md
+```
+
+If the project already has a `CLAUDE.md` (and no `AGENTS.md`), read it first: move
+its harness-neutral content into the new `AGENTS.md`, leave only Claude-specific
+mechanics in `CLAUDE.md`, and preserve anything the user wrote.
 
 ---
 
@@ -233,9 +251,9 @@ if [ "<type>" != "research" ]; then
   cp "$COMMON_DIR/scripts/verify-worktree-isolation.sh" scripts/
 
   # Starter retro log — paired with inject-retros.py (tech/data only)
-  mkdir -p docs/architecture
-  if [ ! -f docs/architecture/agent-rules.md ]; then
-    cp "$COMMON_DIR/agent-rules.md" docs/architecture/agent-rules.md
+  mkdir -p docs
+  if [ ! -f docs/agent-rules.md ]; then
+    cp "$COMMON_DIR/agent-rules.md" docs/agent-rules.md
   fi
 fi
 chmod +x scripts/*.sh
@@ -277,7 +295,7 @@ Run Step 3 of the main skill flow (3a through 3d) using the project context gath
 ## Step A9 — Commit
 
 ```bash
-git add CLAUDE.md docs/ .claude/
+git add AGENTS.md CLAUDE.md GEMINI.md docs/ .claude/
 git diff --cached --quiet || git commit -m "chore: add project docs, spec, task structure, and Claude Code tooling"
 git remote get-url origin >/dev/null 2>&1 && git push || true
 ```
@@ -291,5 +309,5 @@ Note: `.claude/skill-manifest.json` is committed here as part of `.claude/` — 
 - **Does not restructure existing source code** — files stay where they are
 - **Does not create a Docker setup** — the project already has its own environment
 - **Does not initialize git** — the project is already tracked
-- **Does not create a README from scratch** — if one exists, it's left alone; CLAUDE.md is the new addition
+- **Does not create a README from scratch** — if one exists, it's left alone; the agent briefing (`AGENTS.md` + `CLAUDE.md` + `GEMINI.md`) is the new addition
 - **Does not create starter code** — the code already exists

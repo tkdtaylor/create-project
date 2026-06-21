@@ -205,7 +205,7 @@ TEMPLATE_DIR="$SKILL_DIR/assets/templates/$PROJECT_TYPE"
 - `.claude/agents/task-planner.md` → `assets/templates/<type>/.claude/agents/task-planner.md` (tech, data)
 - `.claude/agents/dependency-auditor.md` → `assets/templates/tech/.claude/agents/dependency-auditor.md` (tech only; data projects pull from tech)
 
-`docs/architecture/agent-rules.md` is a **starter file** (like CLAUDE.md and `docs/architecture/diagrams.md`) — projects accumulate retro entries there, so sync should never overwrite it. Source: `assets/templates/common/agent-rules.md` (tech and data only — research projects skip). Only offer to seed it if the file is missing entirely.
+`docs/agent-rules.md` is a **starter file** (like AGENTS.md / CLAUDE.md and `docs/architecture/diagrams.md`) — projects accumulate retro entries there, so sync should never overwrite it. Source: `assets/templates/common/agent-rules.md` (tech and data only — research projects skip). Only offer to seed it if the file is missing entirely. Note: earlier scaffolds placed this file under `docs/architecture/` instead; if you find a retro log there, leave it in place (don't move a file the project may have edited) — new scaffolds use `docs/agent-rules.md`.
 
 5. Set `FIRST_SYNC=true` in memory and proceed to 3b. Do not write a manifest yet — it gets written at S4 from post-sync hashes.
 
