@@ -67,6 +67,7 @@ Key workflow:
 
 - [CLAUDE.md](CLAUDE.md) — project context for Claude Code sessions
 - [docs/architecture/overview.md](docs/architecture/overview.md) — system design
+- [docs/architecture/diagrams.md](docs/architecture/diagrams.md) — C4 diagrams and runtime flows
 - [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) — full tech stack table
 - [docs/plans/roadmap.md](docs/plans/roadmap.md) — planned work
 - [docs/tasks/test-specs/coverage-tracker.md](docs/tasks/test-specs/coverage-tracker.md) — test coverage by task

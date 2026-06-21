@@ -181,10 +181,32 @@ Read README.md in full. Verify each claim it makes:
    ADRs) all resolve and still describe what the README claims they
    describe.
 
+7. Architecture discoverability. The README is meant to be an overview of
+   what the project is AND how to work with it — that includes links to the
+   architecture docs. If docs/architecture/overview.md or
+   docs/architecture/diagrams.md exist but the README never links them,
+   flag it (recommend a short "Documentation" or "Architecture & docs"
+   section, or a Key-files entry). Likewise flag a missing "how to work on
+   this project" pointer when the repo has a task/TDD workflow.
+
+8. Status duplication vs. the roadmap. If docs/plans/roadmap.md exists AND
+   the README carries a verbose "Status" section that re-states deferred /
+   planned / known-gap detail, flag it: the README should keep a one-line
+   current-state summary and link the roadmap, not track status in two
+   places that drift apart. (Before recommending removal, confirm the
+   roadmap actually covers the detail — never propose deleting status that
+   lives nowhere else.)
+
+9. Hard-wrapped prose. Flag prose paragraphs that are manually wrapped at a
+   fixed column (lines broken mid-sentence at ~80–90 chars). These render
+   fine on GitHub but look ragged in an editor at a different width; prose
+   should be one line per paragraph and soft-wrap. (Do NOT flag wrapping
+   inside code fences, tables, or list items — only flowing prose.)
+
 The README is the project's front door. It being wrong is a higher-
 impact finding than internal-doc drift — order findings accordingly.
 
-Output a punch list. Under 400 words.
+Output a punch list. Under 450 words.
 
 Prior layers' findings: <inline the four punch lists from AU2>
 ```

@@ -97,5 +97,6 @@ Key workflow:
 
 - [CLAUDE.md](CLAUDE.md) — project context for Claude Code sessions
 - [docs/architecture/overview.md](docs/architecture/overview.md) — data flow and system design
+- [docs/architecture/diagrams.md](docs/architecture/diagrams.md) — pipeline diagrams and data lineage
 - [docs/tasks/experiment-tracker.md](docs/tasks/experiment-tracker.md) — experiment log
 - [docs/tasks/test-specs/coverage-tracker.md](docs/tasks/test-specs/coverage-tracker.md) — test coverage by task
