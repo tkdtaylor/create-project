@@ -69,7 +69,9 @@ Standalone tools that aren't skills or MCPs but are worth recommending during pr
 
 **Install:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh -o /tmp/dep-scan-install.sh
+# review the script (or verify its checksum per the dep-scan README), then:
+bash /tmp/dep-scan-install.sh
 ```
 
 **Usage:** Use drop-in wrappers (`npmds`, `pipds`, `cargods`, `gods`) that scan before installing, or invoke the CLI directly in CI.

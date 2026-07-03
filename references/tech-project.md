@@ -994,6 +994,21 @@ The template ships with a header reminding the user about the rename. The struct
 
 If the project is a one-off script or throwaway prototype, skip this step.
 
+**3c. SECURITY.md *(any project with an external audience)***
+
+If the project is public (or will be), copy the security-policy starter and fill its
+placeholders (`{{GITHUB_OWNER}}`, `{{PROJECT_NAME}}`, `{{SECURITY_CONTACT_EMAIL}}`,
+scope items):
+
+```bash
+cp "$CLAUDE_SKILL_DIR/assets/templates/tech/SECURITY.md" SECURITY.md
+```
+
+Remind the user to enable **GitHub → Settings → Code security and analysis → Private
+vulnerability reporting** once the repo exists — the template's advisory link depends
+on it. Internal-only projects can skip this or point the reporting section at their
+incident process instead.
+
 **4. Update CLAUDE.md commands**
 
 Fill in the TODO placeholders in the `## Commands` section of `CLAUDE.md` with the actual lint, format, and test commands configured above.

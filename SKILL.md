@@ -176,7 +176,7 @@ Example format to append:
 - Pre-commit lint: runs `npm run lint` before every git commit (add via `/update-config`)
 
 ### External tools
-- **dep-scan** — scans npm/pypi/cargo/go packages for supply-chain attacks before install. Use `npmds` / `pipds` / `cargods` / `gods` wrappers. Install: `curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh | bash`
+- **dep-scan** — scans npm/pypi/cargo/go packages for supply-chain attacks before install. Use `npmds` / `pipds` / `cargods` / `gods` wrappers. Install: download `https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh`, review it (or verify its checksum per the dep-scan README), then run it — don't pipe straight to bash
 ```
 
 ### 3b — Installed skills *(recommend first)*

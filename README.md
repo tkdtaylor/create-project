@@ -580,3 +580,10 @@ The three-tier boundary system (Always / Ask First / Never) and anti-rationaliza
 The structured code review perspectives (10 review dimensions with selective application), research output templates (decision brief, deep research report, learning plan), and the approach to auto-configuring code quality tooling (per-language linting, formatting, pre-commit hooks, coverage thresholds) are inspired by [claude-coding-commands](https://github.com/awood45/claude-coding-commands) by Alex Wood.
 
 The hook profile gating system, block-no-verify hook, config-protection hook, batch format+typecheck pattern (accumulate edits then process at Stop), desktop notification hook, strategic compaction suggestions, framework-specific CLAUDE.md snippets, expanded MCP server catalog, and language-specific code reviewer agent templates are inspired by [everything-claude-code](https://github.com/affaan-m/everything-claude-code) by Affaan Mustafa.
+
+## License
+
+MIT — a deliberate choice, not drift: create-project is a scaffolding tool whose
+templates are copied into projects under any license, so it carries the most
+permissive common license rather than the Apache-2.0 the surrounding ecosystem
+blocks standardized on.

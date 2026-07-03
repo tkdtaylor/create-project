@@ -142,7 +142,7 @@ fitness-complexity:
 
 | Stack | Tool | Install | Example rule | Where it goes |
 |-------|------|---------|--------------|---------------|
-| Multi-language | `dep-scan` (skill catalog tool) | `curl -fsSL https://raw.githubusercontent.com/tkdtaylor/dep-scan/main/install.sh \| bash` | "No high or critical CVEs in installed deps" | `make fitness-deps` |
+| Multi-language | `dep-scan` (skill catalog tool) | download + review `install.sh` from the dep-scan repo, then run it | "No high or critical CVEs in installed deps" | `make fitness-deps` |
 | Python | `pip-audit` | `pip install pip-audit` | "0 known vulns" | shell |
 | JS | `npm audit` | built-in | "0 high+ vulns" | shell |
 | Go | `govulncheck` | `go install golang.org/x/vuln/cmd/govulncheck@latest` | "0 known vulns reachable" | shell |
